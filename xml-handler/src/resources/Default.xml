@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<data>
+    <group id="SWEEP" type="Sweep">
+		<!--<variables>-->
+		<variable id="sourceFunction">
+			<default>voltage</default>
+			<reference id="smu@.source.function"/>
+		</variable>
+		<variable id="sourceRange">
+			<depends ref="sourceFunction">
+				<case value="voltage">
+					<default>AUTO</default>
+					<reference id="smu@.source.autorange" useall="false" value="1">AUTO</reference>
+					<reference id="smu@.source.rangev"/>
+				</case>
+				<case value="voltage:fixed">
+					<default>1 V</default>
+					<reference id="smu@.source.rangev"/>
+				</case>
+				<case value="voltage:pulse">
+					<default>1 V</default>
+					<reference id="smu@.source.rangev"/>
+				</case>
+				<case value="current">
+					<default>AUTO</default>
+					<reference id="smu@.source.autorange" useall="false" value="1">AUTO</reference>
+					<reference id="smu@.source.rangei"/>
+				</case>
+				<case value="current:fixed">
+					<default>10 mA</default>
+					<reference id="smu@.source.rangei"/>
+				</case>
+				<case value="current:pulse">
+					<default>10 mA</default>
+					<reference id="smu@.source.rangei:pulse"/>
+				</case>
+			</depends>
+		</variable>
+		<variable id="sourceLimitV">
+			<default>1 V</default>
+			<reference id="smu@.source.limitv"/>
+		</variable>
+		<variable id="sourceLimitI">
+			<default>1 mA</default>
+			<reference id="smu@.source.limiti"/>
+		</variable>
+		<variable id="measureFunction">
+			<default>current</default>
+			<reference id="smu@.measure.function"/>
+		</variable>
+		<variable id="measureRange">
+			<depends ref="measureFunction">
+				<case value="voltage">
+					<default>AUTO</default>
+					<reference id="smu@.measure.autorange" useall="false" value="1">AUTO</reference>
+					<reference id="smu@.measure.rangev"/>
+				</case>
+				<case value="voltage:fixed">
+					<default>1 V</default>
+					<reference id="smu@.measure.rangev"/>
+				</case>
+				<case value="voltage:pulse">
+					<default>1 V</default>
+					<reference id="smu@.measure.rangev"/>
+				</case>
+				<case value="voltage:highc">
+					<!--
+					Although voltage autorange is suppored in highc mode, we ommit it to avoid
+					confusion since there is an "Autoscale enable" button in the sweep interface
+					that is mutually exclusive with highc
+					<default>AUTO</default>
+					<reference id="smu@.measure.autorange" useall="false" value="1">AUTO</reference>
+					-->
+					<default>1 V</default>
+					<reference id="smu@.measure.rangev"/>
+				</case>
+				<case value="current">
+					<default>AUTO</default>
+					<reference id="smu@.measure.autorange" useall="false" value="1">AUTO</reference>
+					<reference id="smu@.measure.rangei"/>
+				</case>
+				<case value="current:fixed">
+					<default>100 mA</default>
+					<reference id="smu@.measure.rangei"/>
+				</case>
+				<case value="current:pulse">
+					<default>100 mA</default>
+					<reference id="smu@.measure.rangei:pulse"/>
+				</case>
+				<case value="current:highc">
+					<default>follow limiti</default>
+					<reference id="smu@.measure.rangei:highc"/>
+				</case>
+				<case value="resistance">
+					<default>AUTO</default>
+					<reference id="smu@.measure.autorange" useall="false" value="1">AUTO</reference>
+					<reference id="smu@.measure.ranger"/>
+				</case>
+				<case value="resistance:fixed">
+					<default>1 MOhm</default>
+					<reference id="smu@.measure.ranger"/>
+				</case>
+				<case value="resistance:pulse">
+					<default>1 MOhm</default>
+					<reference id="smu@.measure.ranger"/>
+				</case>
+				<case value="resistance:highc">
+					<default>1 MOhm</default>
+					<reference id="smu@.measure.ranger"/>
+				</case>
+				<case value="current,voltage(current)">
+					<default>AUTO</default>
+					<reference id="smu@.measure.autorange" useall="false" value="1">AUTO</reference>
+					<reference id="smu@.measure.rangeiv(current)"/>
+				</case>
+				<case value="current,voltage(voltage)">
+					<default>AUTO</default>
+					<reference id="smu@.measure.autorange" useall="false" value="1">AUTO</reference>
+					<reference id="smu@.measure.rangeiv(voltage)"/>
+				</case>
+				<case value="current,voltage(current):fixed">
+					<default>1 V</default>
+					<reference id="smu@.measure.rangeiv(current)"/>
+				</case>
+				<case value="current,voltage(voltage):fixed">
+					<default>10 mA</default>
+					<reference id="smu@.measure.rangeiv(voltage)"/>
+				</case>
+				<case value="current,voltage(current):pulse">
+					<default>1 V</default>
+					<reference id="smu@.measure.rangeiv(current)"/>
+				</case>
+				<case value="current,voltage(voltage):pulse">
+					<default>10 mA</default>
+					<reference id="smu@.measure.rangeiv(voltage):pulse"/>
+				</case>
+				<case value="current,voltage(current):highc">
+					<default>1 V</default>
+					<reference id="smu@.measure.rangeiv(current)"/>
+				</case>
+				<case value="current,voltage(voltage):highc">
+					<default>10 mA</default>
+					<reference id="smu@.measure.rangeiv(voltage):highc"/>
+				</case>
+			</depends>
+		</variable>
+		<variable id="sourceValue">
+			<depends ref="sourceFunction">
+				<case value="voltage">
+					<default>0</default>
+					<reference id="smu@.source.levelv"/>
+				</case>
+				<case value="current">
+					<default>0</default>
+					<reference id="smu@.source.leveli"/>
+				</case>
+			</depends>
+		</variable>
+		<variable id="sweepStyle">
+			<default>LIN</default>
+			<reference id="smu@.sweep.style"/>
+		</variable>
+		<variable id="sensemode">
+			<default>Two-Wire</default>
+			<reference id="smu@.sensemode"/>
+		</variable>
+		<variable id="sourcemode">
+			<depends ref="allowHighC">
+				<case value="0">
+					<default>Normal</default>
+					<reference id="smu@.sourcemode:0"/>
+				</case>
+				<case value="1">
+					<default>Normal</default>
+					<reference id="smu@.sourcemode:1"/>
+				</case>
+			</depends>
+		</variable>
+		<!-- the next variables define constraints that are used for all devices.  this is usually
+		     because the GUI is using a single control and applying the value to all devices -->
+		<include path="data/DefaultLimits.xml"/>
+		<!-- The ChunkModel (i.e. the script template) -->
+		<include path="data/DefaultSweepChunk.xml"/>
+	</group>
+
+	<group id="USER" type="User">
+		<!-- no chunk!  added programatically -->
+	</group>
+
+	<group id="REPORT" type="DataReport">
+		<!-- The ChunkModel (i.e. the script template) -->
+		<composite name="DataReport">
+			<substitute name="READING-BUFFERS">%READING-BUFFERS%</substitute>
+			<substitute name="READING-BUFFER-NAMES">%READING-BUFFER-NAMES%</substitute>
+			<substitute name="READING-BUFFER-SMU-NAMES">%READING-BUFFER-SMU-NAMES%</substitute>
+			<substitute name="WAIT-INTERVAL">%WAIT-INTERVAL%</substitute>
+			<substitute name="MAX-READINGS-TO-RETURN">%MAX-READINGS-TO-RETURN%</substitute>
+
+			<substitute name="TAG-DATA-REPORT">%TAG-DATA-REPORT%</substitute>
+			<substitute name="TAG-SWEEP-START">%TAG-SWEEP-START%</substitute>
+			<substitute name="TAG-START">%TAG-START%</substitute>
+			<substitute name="TAG-NAME">%TAG-NAME%</substitute>
+			<substitute name="TAG-EXPECTED-COUNT">%TAG-EXPECTED-COUNT%</substitute>
+			<substitute name="TAG-PTS-IN-BUFF">%TAG-PTS-IN-BUFF%</substitute>
+			<substitute name="TAG-PTS-RETURNED">%TAG-PTS-RETURNED%</substitute>
+			<substitute name="TAG-BASE-TIME-STAMP">%TAG-BASE-TIME-STAMP%</substitute>
+			<substitute name="TAG-READINGS">%TAG-READINGS%</substitute>
+			<substitute name="TAG-TIMESTAMPS">%TAG-TIMESTAMPS%</substitute>
+			<substitute name="TAG-SRCVALS">%TAG-SRCVALS%</substitute>
+			<substitute name="TAG-END">%TAG-END%</substitute>
+			<substitute name="TAG-COMPLETE">%TAG-COMPLETE%</substitute>
+			
+			<include path="xml-handler\\src\\resources\\DataReport.xml"/>
+		</composite>
+	</group>
+
+    <group id="INITIALIZE" type="Initialize">
+		<!-- The ChunkModel (i.e. the script template) -->
+
+		<composite name="Initialize">
+			<substitute name="MAX-NODES">%MAX-NODES%</substitute>
+			<substitute name="PRODUCT-SETUP">%PRODUCT-SETUP%</substitute>
+			<substitute name="APPEND-MODE">%APPEND-MODE%</substitute>
+			<substitute name="INCLUDE-TIMESTAMPS">%INCLUDE-TIMESTAMPS%</substitute>
+			<substitute name="INCLUDE-SRCVALS">%INCLUDE-SRCVALS%</substitute>
+			<include path="xml-handler\\src\\resources\\Initialize.xml"/>
+		</composite>
+
+		<!-- type 'aux' goes into FunctionMetadata.auxChunkModel -->
+		<composite name="hidden" type="aux">
+			<substitute name="APPEND-MODE">%APPEND-MODE%</substitute>
+			<include path="xml-handler\\src\\resources\\Support.xml"/>
+		</composite>
+
+	</group>
+
+    <group id="FINALIZE" type="Finalize">
+		<!-- The ChunkModel (i.e. the script template) -->
+		<composite name="Finalize">
+			<include path="xml-Handler\\src\\resources\\Finalize.xml"/>
+		</composite>
+	</group>
+</data>

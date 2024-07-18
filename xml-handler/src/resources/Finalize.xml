@@ -1,0 +1,50 @@
+<snippet>
+	-- Wait for test completion
+	local sweepCompleted = _WaitForComplete(-1)
+
+	-- Check for abnornal completion
+	if (sweepCompleted == false) then
+		-- Abort all overlapped operations on all smus
+		for i, selNode in ipairs(systemNodes) do
+			for j, selSmu in ipairs(systemSmus[i]) do
+				selSmu.abort()
+			end
+		end
+
+		-- Check for errors
+		local numErrors = errorqueue.count
+		if (numErrors &gt; 0) then
+			local errorMsgs = [[]]
+			for i=1, numErrors do
+				local errorcode = [[]]
+				local message   = [[]]
+				local severity  = [[]]
+				local who       = [[]]
+				errorcode,message,severity,who = errorqueue.next()
+				errorMsgs = errorMsgs .. string.format('%s (error code = %d){eol}', message, errorcode or 'nil')
+				print(string.format('[{errque}]%d,%s,%s,%s', errorcode, message, severity, who or 'nil'))
+			end
+			print("[{error}]Script stopped due to error(s):{eol}" .. errorMsgs )
+		else
+			print("[{error}]Script stopped before completion." )
+		end
+	end
+
+	-- Set output level to 0V and 0A for all SMUs
+	for i, selNode in ipairs(systemNodes) do
+		for j, selSmu in ipairs(systemSmus[i]) do
+	    	selSmu.source.leveli = 0
+			selSmu.source.levelv = 0
+		end
+	end
+
+	-- Turn output off for all SMUs
+	for i, selNode in ipairs(systemNodes) do
+		for j, selSmu in ipairs(systemSmus[i]) do
+	    	selSmu.source.output = 0
+		end
+	end
+
+	-- Reset the system,  placing it into a known safe state.
+	reset()
+</snippet>

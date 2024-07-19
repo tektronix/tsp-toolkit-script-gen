@@ -1,0 +1,98 @@
+<!-- the next variables define constraints that are used for all devices.  this is usually
+     because the GUI is using a single control and applying the value to all devices -->
+<variables>
+	<variable id="stepCount">
+		<!-- imposed by model, not by instrument -->
+		<default>10</default>
+		<constraints>
+			<min>1</min>
+			<max>39</max> <!-- KavaChart is limited to 39 data sets (PR37205) -->
+		</constraints>
+	</variable>
+	<variable id="stepToSweepDelay">
+		<!-- imposed by model, not by instrument -->
+		<default>0.0</default>
+		<constraints>
+			<min>0.0</min>
+			<max>100.0</max>
+		</constraints>
+	</variable>
+	<variable id="sweepCount">
+		<!-- imposed by model, not by instrument -->
+		<default>10</default>
+		<constraints>
+			<min>1</min>
+			<max>1000</max>
+		</constraints>
+	</variable>
+	<variable id="sweepTimePerPoint">
+		<!-- imposed by model, not by instrument -->
+		<default>50.0e-3</default>
+		<constraints>
+			<min>110.0e-6</min>
+			<max>100</max>
+		</constraints>
+	</variable>
+	<variable id="pulseWidth">
+		<!-- imposed by model, not by instrument -->
+		<default>1.0e-3</default>
+		<constraints>
+			<min>1.0e-6</min>
+			<max>100</max>
+		</constraints>
+	</variable>
+	<variable id="pulseWidthDelta">
+		<!-- Minimum time between a pulse width and timer/point -->
+		<default>10e-6</default>
+	</variable>
+	<variable id="nplc">
+		<default>0.1</default>
+		<constraints>
+			<min>1.0e-3</min>
+			<max>25</max>
+		</constraints>
+	</variable>
+	<variable id="sourceDelay">
+		<default>0</default>
+		<constraints>
+			<min>0</min>
+			<max>4294</max>
+		</constraints>
+	</variable>
+	<variable id="measureDelay">
+		<default>0</default>
+		<constraints>
+			<min>0</min>
+			<max>4294</max>
+		</constraints>
+	</variable>
+	<variable id="measureDelayFactor">
+		<!-- imposed by model, not by instrument -->
+		<default>1</default>
+		<constraints>
+			<min>0</min>
+			<max>1000</max>
+		</constraints>
+	</variable>
+	<variable id="measureCount">
+		<default>1</default>
+		<constraints>
+			<min>1</min>
+			<max>60000</max>
+		</constraints>
+	</variable>
+	<variable id="measureFilterCount">
+		<default>1</default>
+		<constraints>
+			<min>1</min>
+			<max>100</max>
+		</constraints>
+	</variable>
+	<variable id="measureInterval">
+		<default>1.0e-6</default>
+		<constraints>
+			<min>1.0e-6</min>
+			<max>1</max>
+		</constraints>
+	</variable>
+</variables>

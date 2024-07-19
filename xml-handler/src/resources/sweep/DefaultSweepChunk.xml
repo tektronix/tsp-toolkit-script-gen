@@ -1,0 +1,998 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    This snippet of XML is included in DefaultFunctionMetadata.xml using the <include path="..." /> element
+    *************************************************************************************************
+    *** DO NOT FORMAT WITH IntelliJ (which discards indentation in text elements) ***
+    *************************************************************************************************
+ -->
+<!-- The ChunkModel (i.e. the script template) -->
+<composite name="Sweep" indent="default">
+	<!-- global substitutions -->
+	<substitute name="LINE-FREQUENCY">%LINE-FREQUENCY%</substitute>
+	<substitute name="EPSILON">%EPSILON%</substitute>
+	<substitute name="AUTOZERO">%AUTOZERO%</substitute>
+	<substitute name="MASTER-NODE">%MASTER-NODE%</substitute>
+	<substitute name="STEP-MASTER">%STEP-MASTER%</substitute>
+	<substitute name="SWEEP-NODES">%SWEEP-NODES%</substitute>
+	<substitute name="SWEEP-SMUS">%SWEEP-SMUS%</substitute>
+	<substitute name="SWEEP-MASTER">%SWEEP-MASTER%</substitute>
+	<substitute name="SWEEP-SLAVE-NODES">,%SWEEP-SLAVE-NODES%</substitute>
+	<substitute name="SWEEP-SLAVE-SMUS">,%SWEEP-SLAVE-SMUS%</substitute>
+	<substitute name="MEASURE-COUNT">%MEASURE-COUNT%</substitute>
+	<substitute name="STEP-COUNT">%STEP-COUNT%</substitute>
+	<substitute name="STEP-TO-SWEEP-DELAY">%STEP-TO-SWEEP-DELAY%</substitute>
+	<substitute name="PULSE-WIDTH">%PULSE-WIDTH%</substitute>
+	<substitute name="SWEEP-TIME-PER-POINT">%SWEEP-TIME-PER-POINT%</substitute>
+	<substitute name="SWEEP-POINTS">%SWEEP-POINTS%</substitute>
+	<substitute name="SWEEP-MASTER-PULSE">%SWEEP-MASTER-PULSE%</substitute>
+	<substitute name="SWEEP-PULSE">%SWEEP-PULSE%</substitute>
+	<substitute name="SWEEP-SLAVE-PULSE">,%SWEEP-SLAVE-PULSE%</substitute>
+	<substitute name="BIAS-NODES">%BIAS-NODES%</substitute>
+	<substitute name="BIAS-SMUS">%BIAS-SMUS%</substitute>
+	<substitute name="NPLC">%NPLC%</substitute>
+	<substitute name="SOURCE-DELAY">%SOURCE-DELAY%</substitute>
+	<substitute name="MEASURE-DELAY">%MEASURE-DELAY%</substitute>
+	<substitute name="MEASURE-DELAY-FACTOR">%MEASURE-DELAY-FACTOR%</substitute>
+	<substitute name="MEASURE-FILTER-ENABLE">%MEASURE-FILTER-ENABLE%</substitute>
+	<substitute name="MEASURE-FILTER-TYPE">%MEASURE-FILTER-TYPE%</substitute>
+	<substitute name="MEASURE-FILTER-COUNT">%MEASURE-FILTER-COUNT%</substitute>
+	<substitute name="MEASURE-ANALOG-FILTER">%MEASURE-ANALOG-FILTER%</substitute>
+	<substitute name="MEASURE-POINT-TIME">%MEASURE-POINT-TIME%</substitute>
+	<substitute name="EFFECTIVE-FILTER-COUNT">%EFFECTIVE-FILTER-COUNT%</substitute>
+	<substitute name="HIGH-SPEED-SAMPLING">%HIGH-SPEED-SAMPLING%</substitute>
+	<substitute name="SAMPLING-INTERVAL">%SAMPLING-INTERVAL%</substitute>
+	<substitute name="SAMPLING-COUNT">%SAMPLING-COUNT%</substitute>
+	<substitute name="SAMPLING-DELAY">%SAMPLING-DELAY%</substitute>
+	<substitute name="SAMPLING-ANALOG-FILTER">%SAMPLING-ANALOG-FILTER%</substitute>
+    <!-- setup local aliases for SMUs (e.g. smu1=localnode.smua), test attributes, etc. -->
+	<snippet>
+		local highSpeedSampling = %HIGH-SPEED-SAMPLING%
+		local errorTag = "[{error}]"
+		local biasIndex = 1
+		local stepIndex = 2
+		local sweepIndex = 3
+		local numLevels = 3
+		local nvBuffersUsed = {1,1,1}
+	</snippet>
+	<composite>
+		<snippet>-- local alias for SMUs</snippet>
+		<snippet name="SMU assignment" repeat="DEVICES">
+			<substitute name="DEVICES:">%SMUX%</substitute>
+			<substitute name="DEVICES:ASSIGN">%ASSIGN%</substitute>
+			<substitute name="DEVICES:MODEL">%MODEL%</substitute>
+			local %SMUX% = %ASSIGN% -- is a %MODEL%
+		</snippet>
+	</composite>
+	<!-- =========================== the main body of the test ========================= -->
+	<composite>
+		<composite>
+			<condition name="AUTORANGE-ENABLED">true</condition>
+			<condition name="STEP-CHANNEL-COUNT" op="eq">0</condition>
+			<snippet>-- "NoStepAuto" configuration (autorange enabled = true,  #step channels = 0):</snippet>
+			<include path="data/sweep/NoStepAuto.xml"/>
+		</composite>
+		<composite>
+			<condition name="AUTORANGE-ENABLED">true</condition>
+			<condition name="STEP-CHANNEL-COUNT" op="gt">0</condition>
+			<snippet>-- "StepAuto" configuration (autorange enabled = true,  #step channels > 0):</snippet>
+			<include path="data/sweep/StepAuto.xml"/>
+		</composite>
+		<composite>
+			<condition name="AUTORANGE-ENABLED">false</condition>
+			<condition name="STEP-CHANNEL-COUNT" op="eq">0</condition>
+			<snippet>-- "NoStepFixed" configuration (autorange enabled = false,  #step channels = 0):</snippet>
+			<include path="data/sweep/NoStepFixed.xml"/>
+		</composite>
+		<composite>
+			<condition name="AUTORANGE-ENABLED">false</condition>
+			<condition name="STEP-CHANNEL-COUNT" op="gt">0</condition>
+			<snippet>-- "StepFixed" configuration (autorange enabled = false,  #step channels > 0):</snippet>
+			<include path="data/sweep/StepFixed.xml"/>
+		</composite>
+	</composite>
+	<!-- =========================== local method ConfigureSmus ========================= -->
+	<composite>
+		<snippet>
+			--==========================================================================
+			-- Resets all components that may be used in the test.
+			--==========================================================================
+			local Reset = function()
+				for i, selTest in ipairs(testSmus) do
+					for j, selNode in ipairs(testNodes[i]) do
+						if(selNode ~= nil) then
+							-- Reset tsplink triggers
+							local k = 1
+							if(selNode.tsplink ~= nil) then
+								while(selNode.tsplink.trigger[k] ~= nil) do
+									selNode.tsplink.trigger[k].reset()
+									k = k+1
+								end
+							end
+
+							-- Reset blenders
+							k=1
+							while(selNode.trigger.blender[k] ~= nil) do
+								selNode.trigger.blender[k].reset()
+								k = k+1
+							end
+
+							-- Reset Timers
+							k =1
+							while(selNode.trigger.timer[k] ~= nil) do
+								selNode.trigger.timer[k].reset()
+								k = k+1
+							end
+						end
+					end
+
+					-- Reset Smus
+					for j, selNode in ipairs(selTest) do
+						for k, selSmu in ipairs(selNode) do
+							if(selSmu ~= nil) then
+								-- Resets all smus in the test.
+								selSmu.reset()
+							end
+						end
+					end
+				end
+			end
+
+			--==========================================================================
+			-- Turns all smus in the test on.
+			--==========================================================================
+			local TurnSmusOn = function()
+				for i, selTest in ipairs(testSmus) do
+					for j, selNode in ipairs(selTest) do
+						for k, selSmu in ipairs(selNode) do
+							if(selSmu ~= nil) then
+								if(selSmu.source.output ~= 1) then
+									selSmu.source.output = 1
+								end
+							end
+						end
+					end
+				end
+			end
+
+			--==========================================================================
+			-- This function initiates the steping and sweeping smus.
+			--==========================================================================
+			local InitiateSmus = function()
+				for i=2,numLevels do
+					for j, selNode in ipairs(testSmus[i]) do
+						for k, selSmu in ipairs(selNode) do
+							if(selSmu ~= nil) then
+								selSmu.trigger.initiate()
+							end
+						end
+					end
+				end
+			end
+
+			--==========================================================================
+			-- This function determines the number of points that will be in the buffer at the end of the test.
+			--==========================================================================
+			local StoreReadingBufferIndexes = function()
+				--==========================================================================
+				-- Determines reading buffer starting and stopping indexes.
+				-- parameter    testLevel    Index referring to bias, step, or sweep.
+				-- parameter    i            Node index.
+				-- parameter    selSmuIndex  Selected smu index.
+				--==========================================================================
+				local SetupLastPoints = function(testLevel, i, selSmuIndex)
+					local stoppingPoint1 = 0
+					local stoppingPoint2 = 0
+					local incVal = 0
+					local selSmuRbIndex1 = systemSmuReadingBufferIndexes[i][selSmuIndex][1]
+					local selSmuRbIndex2 = systemSmuReadingBufferIndexes[i][selSmuIndex][2]
+
+					selSmuRbIndex1["start"] = 1
+					selSmuRbIndex2["start"] = 1
+
+					-- appendMode is a local variable common to the script.
+					if(appendMode == 1) then
+						stoppingPoint1 = selSmuRbIndex1["stop"]
+						stoppingPoint2 = selSmuRbIndex2["stop"]
+					end
+					-- Bias setup
+					if(testLevel == biasIndex) then
+						incVal = %MEASURE-COUNT%
+					-- Step setup
+					elseif (testLevel == stepIndex) then
+						incVal = (%STEP-COUNT% * %MEASURE-COUNT%)
+					-- Sweep setup
+					elseif (testLevel == sweepIndex) then
+						if (highSpeedSampling == true) then
+							incVal = (%STEP-COUNT% * %SWEEP-POINTS% * %SAMPLING-COUNT%)
+						else
+							incVal = (%STEP-COUNT% * %SWEEP-POINTS% * %MEASURE-COUNT%)
+						end
+					end
+
+					selSmuRbIndex1["stop"] = stoppingPoint1 + incVal
+					if(nvBuffersUsed[testLevel] == 2) then
+						selSmuRbIndex2["stop"] = stoppingPoint2 + incVal
+					end
+				end
+
+				for i, selTest in ipairs(testSmus) do
+					for j, selNode in ipairs(selTest) do
+						for k, selSmu in ipairs(selNode) do
+							for l, selSysNode in ipairs(systemSmus) do
+								if(selSysNode[1] == selSmu) then
+									SetupLastPoints(i, l, 1)
+								end
+
+								if(selSysNode[2] ~= nil) then
+									if(selSysNode[2] == selSmu) then
+										SetupLastPoints(i, l, 2)
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+		</snippet>
+		<snippet>
+			---==========================================================================
+			-- The following makes sure we capture a measurement from the bias channels
+			--==========================================================================
+			local MeasureBiasChannels = function()
+		</snippet>
+		<composite repeat="BIAS-DEVICE">
+		    <substitute name="BIAS-DEVICE:">%SMUX%</substitute>
+			<composite name="Voltage Measurement (for bias)">
+				<condition name="BIAS-DEVICE:MFUNCTION">voltage</condition>
+				<snippet>
+					%SMUX%.measure.v(%SMUX%.nvbuffer1)
+				</snippet>
+			</composite>
+			<composite name="Current Measurement (for bias)">
+				<condition name="BIAS-DEVICE:MFUNCTION">current</condition>
+				<snippet>
+					%SMUX%.measure.i(%SMUX%.nvbuffer1)
+				</snippet>
+			</composite>
+			<composite name="Resistance Measurement (for bias)">
+				<condition name="BIAS-DEVICE:MFUNCTION">resistance</condition>
+				<snippet>
+					%SMUX%.measure.r(%SMUX%.nvbuffer1)
+				</snippet>
+			</composite>
+		    <composite name="IV Measurement (for bias)">
+				<condition name="BIAS-DEVICE:MFUNCTION">current,voltage</condition>
+				<snippet>
+					%SMUX%.measure.iv(%SMUX%.nvbuffer1, %SMUX%.nvbuffer2)
+					nvBuffersUsed[biasIndex] = 2
+				</snippet>
+			</composite>
+		</composite>
+		<snippet>
+			end
+		</snippet>
+		<snippet>
+            --==========================================================================
+            -- This function Configures the smu options such as nplc, function, range, etc.
+            --==========================================================================
+            local ConfigureSmus = function()
+
+		</snippet>
+        <composite repeat="BIAS-DEVICE">
+            <substitute name="BIAS-DEVICE:">%SMUX%</substitute>
+            <substitute name="BIAS-DEVICE:BIAS">%BIAS-VALUE%</substitute>
+            <substitute name="BIAS-DEVICE:SRANGE">%SOURCE-RANGE%</substitute>
+	        <substitute name="BIAS-DEVICE:LIMITI">%LIMITI%</substitute>
+	        <substitute name="BIAS-DEVICE:LIMITV">%LIMITV%</substitute>
+	        <substitute name="BIAS-DEVICE:MRANGE">%MEASURE-RANGE%</substitute>
+	        <substitute name="BIAS-DEVICE:SENSE">%SENSE%</substitute>
+            <snippet>
+	            
+                -- set up Bias for %SMUX%
+	            %SMUX%.source.delay = %SOURCE-DELAY%
+	            %SMUX%.sense = %SMUX%.%SENSE%
+	            %SMUX%.measure.nplc = nplc
+                %SMUX%.measure.autozero = %SMUX%.%AUTOZERO%
+	            %SMUX%.measure.count = %MEASURE-COUNT%
+	            %SMUX%.measure.filter.enable = %SMUX%.%MEASURE-FILTER-ENABLE%
+	            %SMUX%.measure.filter.type = %SMUX%.%MEASURE-FILTER-TYPE%
+	            %SMUX%.measure.filter.count = %MEASURE-FILTER-COUNT%
+	            %SMUX%.measure.delay = %MEASURE-DELAY%
+		        %SMUX%.measure.delayfactor = %MEASURE-DELAY-FACTOR%
+            </snippet>
+	        <snippet>
+		        <condition name="BIAS-DEVICE:MODEL" op="in">2635A,2636A,2634B,2635B,2636B</condition>
+		        %SMUX%.measure.analogfilter = %MEASURE-ANALOG-FILTER%
+	        </snippet>
+	        <composite>
+		        <condition name="BIAS-DEVICE:MODEL" op="in">2651A,2657A</condition>
+		        <condition name="BIAS-DEVICE:COMP-SMU">true</condition>
+		        <snippet>
+			        %SMUX%.source.offmode = %SMUX%.OUTPUT_NORMAL
+		        </snippet>
+		        <snippet>
+			        <condition name="BIAS-DEVICE:COMP-SMU-PARALLEL">true</condition>
+			        <condition name="BIAS-DEVICE:COMP-SMU-INDEX" op="eq">0</condition>
+			        %SMUX%.source.offfunc = %SMUX%.OUTPUT_DCVOLTS
+			        %SMUX%.source.offlimiti = 1e-3
+		        </snippet>
+		        <snippet>
+			        <condition name="BIAS-DEVICE:COMP-SMU-PARALLEL">true</condition>
+			        <condition name="BIAS-DEVICE:COMP-SMU-INDEX" op="eq">1</condition>
+			        %SMUX%.source.offfunc = %SMUX%.OUTPUT_DCAMPS
+			        %SMUX%.source.offlimitv = 40
+		        </snippet>
+		        <snippet>
+			        <condition name="BIAS-DEVICE:COMP-SMU-PARALLEL">false</condition>
+			        <condition name="BIAS-DEVICE:COMP-SMU-INDEX" op="eq">0</condition>
+			        %SMUX%.source.offfunc = %SMUX%.OUTPUT_DCVOLTS
+			        %SMUX%.source.offlimiti = 1e-3
+		        </snippet>
+		        <snippet>
+			        <condition name="BIAS-DEVICE:COMP-SMU-PARALLEL">false</condition>
+			        <condition name="BIAS-DEVICE:COMP-SMU-INDEX" op="eq">1</condition>
+			        %SMUX%.source.offfunc = %SMUX%.OUTPUT_DCVOLTS
+			        %SMUX%.source.offlimiti = 0.9e-3
+		        </snippet>
+		    </composite>
+            <composite name="Voltage Bias">
+                <condition name="BIAS-DEVICE:SFUNCTION" op="eq">voltage</condition>
+                <snippet>
+	                <condition name="BIAS-DEVICE:SMODE" op="eq">Normal</condition>
+                    %SMUX%.source.func = %SMUX%.OUTPUT_DCVOLTS
+	                if %SMUX%.source.highc == %SMUX%.ENABLE then %SMUX%.source.highc = %SMUX%.DISABLE end
+	                %SMUX%.source.limiti = %LIMITI%
+                </snippet>
+                 <snippet>
+	                <condition name="BIAS-DEVICE:SMODE" op="eq">High-C</condition>
+                    %SMUX%.source.func = %SMUX%.OUTPUT_DCVOLTS
+	                %SMUX%.source.highc = %SMUX%.ENABLE
+	                %SMUX%.source.limiti = %LIMITI%
+                </snippet>
+                <snippet>
+                    <condition name="BIAS-DEVICE:SRANGE" op="eq">AUTO</condition>
+                    %SMUX%.source.autorangev = 1
+                </snippet>
+                <snippet>
+                    <condition name="BIAS-DEVICE:SRANGE" op="ne">AUTO</condition>
+                    %SMUX%.source.autorangev = 0
+                    %SMUX%.source.rangev = %SOURCE-RANGE%
+                </snippet>
+                <snippet>
+                    %SMUX%.source.levelv = %BIAS-VALUE%
+                </snippet>
+            </composite>
+            <composite name="Current Bias">
+                <condition name="BIAS-DEVICE:SFUNCTION">current</condition>
+                <snippet>
+	                <condition name="BIAS-DEVICE:SMODE" op="eq">Normal</condition>
+                    %SMUX%.source.func = %SMUX%.OUTPUT_DCAMPS
+	                if %SMUX%.source.highc == %SMUX%.ENABLE then %SMUX%.source.highc = %SMUX%.DISABLE end
+	                %SMUX%.source.limitv = %LIMITV%
+                </snippet>
+	            <snippet>
+		            <condition name="BIAS-DEVICE:SMODE" op="eq">High-C</condition>
+	                %SMUX%.source.func = %SMUX%.OUTPUT_DCAMPS
+		            %SMUX%.source.highc = %SMUX%.ENABLE
+		            %SMUX%.source.limitv = %LIMITV%
+	            </snippet>
+                <snippet>
+                    <condition name="BIAS-DEVICE:SRANGE" op="eq">AUTO</condition>
+                    %SMUX%.source.autorangei = 1
+                </snippet>
+                <snippet>
+                    <condition name="BIAS-DEVICE:SRANGE" op="ne">AUTO</condition>
+                    %SMUX%.source.autorangei = 0
+                    %SMUX%.source.rangei = %SOURCE-RANGE%
+                </snippet>
+                <snippet>
+                    %SMUX%.source.leveli = %BIAS-VALUE%
+                </snippet>
+            </composite>
+            <composite name="Voltage Measurement (for bias)">
+                <condition name="BIAS-DEVICE:MFUNCTION">voltage</condition>
+	            <snippet>
+		            <condition name="BIAS-DEVICE:SFUNCTION" op="eq">voltage</condition>
+		            <condition name="BIAS-DEVICE:SMODE" op="ne">High-C</condition>
+		            %SMUX%.measure.autorangei = 0
+		            %SMUX%.measure.rangei = %SMUX%.source.limiti
+	            </snippet>
+                <snippet>
+                    <condition name="BIAS-DEVICE:MRANGE" op="eq">AUTO</condition>
+                    %SMUX%.measure.autorangev = 1
+                </snippet>
+                <snippet>
+                    <condition name="BIAS-DEVICE:MRANGE" op="ne">AUTO</condition>
+                    %SMUX%.measure.autorangev = 0
+                    %SMUX%.measure.rangev = %MEASURE-RANGE%
+                </snippet>
+                <snippet>
+                    %SMUX%.trigger.measure.v(%SMUX%.nvbuffer1)
+                </snippet>
+            </composite>
+            <composite name="Current Measurement (for bias)">
+                <condition name="BIAS-DEVICE:MFUNCTION">current</condition>
+                <snippet>
+                    <condition name="BIAS-DEVICE:MRANGE" op="eq">AUTO</condition>
+                    <condition name="BIAS-DEVICE:SMODE" op="ne">High-C</condition>
+                    %SMUX%.measure.autorangei = 1
+                </snippet>
+	            <snippet>
+		            <condition name="BIAS-DEVICE:SMODE" op="eq">High-C</condition>
+		            -- %SMUX%.source.highc is enabled, so %SMUX%.measure.autorangei is
+		            -- already %SMUX%.AUTORANGE_FOLLOW_LIMIT
+	            </snippet>
+                <snippet>
+	                <condition name="BIAS-DEVICE:MRANGE" op="ne">AUTO</condition>
+	                <condition name="BIAS-DEVICE:SMODE" op="ne">High-C</condition>
+                    %SMUX%.measure.autorangei = 0
+                    %SMUX%.measure.rangei = %MEASURE-RANGE%
+                </snippet>
+                <snippet>
+                    %SMUX%.trigger.measure.i(%SMUX%.nvbuffer1)
+                </snippet>
+            </composite>
+            <composite name="Resistance Measurement (for bias)">
+                <condition name="BIAS-DEVICE:MFUNCTION">resistance</condition>
+                <snippet>
+                    <condition name="BIAS-DEVICE:MRANGE" op="eq">AUTO</condition>
+                    <!-- There are no autoranger or ranger commands. -->
+	                <!--
+                    %SMUX%.measure.autoranger = 1
+                    -->
+                </snippet>
+                <snippet>
+                    <condition name="BIAS-DEVICE:MRANGE" op="ne">AUTO</condition>
+	                <!-- There are no autoranger or ranger commands. -->
+	                <!--
+                    %SMUX%.measure.autoranger = 0
+                    %SMUX%.measure.ranger = %MEASURE-RANGE%
+                    -->
+                </snippet>
+                <snippet>
+                    %SMUX%.trigger.measure.r(%SMUX%.nvbuffer1)
+                </snippet>
+            </composite>
+	        <composite name="IV Measurement (for bias)">
+                <condition name="BIAS-DEVICE:MFUNCTION">current,voltage</condition>
+	            <composite name="IV Measurement (for bias sourcing current)">
+	                <condition name="BIAS-DEVICE:SFUNCTION" op="eq">current</condition>
+					<snippet>
+						<condition name="BIAS-DEVICE:MRANGE" op="eq">AUTO</condition>
+						%SMUX%.measure.autorangev = 1
+					</snippet>
+					<snippet>
+						<condition name="BIAS-DEVICE:MRANGE" op="ne">AUTO</condition>
+						%SMUX%.measure.autorangev = 0
+						%SMUX%.measure.rangev = %MEASURE-RANGE%
+					</snippet>
+		        </composite>
+				<composite name="IV Measurement (for bias sourcing voltage)">
+					<condition name="BIAS-DEVICE:SFUNCTION">voltage</condition>
+					<snippet>
+						<condition name="BIAS-DEVICE:MRANGE" op="eq">AUTO</condition>
+						<condition name="BIAS-DEVICE:SMODE" op="ne">High-C</condition>
+						%SMUX%.measure.autorangei = 1
+					</snippet>
+					<snippet>
+						<condition name="BIAS-DEVICE:SMODE" op="eq">High-C</condition>
+						-- %SMUX%.source.highc is enabled, so %SMUX%.measure.autorangei is
+						-- already %SMUX%.AUTORANGE_FOLLOW_LIMIT
+					</snippet>
+					 <snippet>
+						<condition name="BIAS-DEVICE:MRANGE" op="ne">AUTO</condition>
+						<condition name="BIAS-DEVICE:SMODE" op="ne">High-C</condition>
+						%SMUX%.measure.autorangei = 0
+						%SMUX%.measure.rangei = %MEASURE-RANGE%
+					</snippet>
+				</composite>
+			</composite>
+        </composite>
+        <composite repeat="STEP-DEVICE">
+            <substitute name="STEP-DEVICE:">%SMUX%</substitute>
+            <substitute name="STEP-DEVICE:START">%START%</substitute>
+            <substitute name="STEP-DEVICE:STOP">%STOP%</substitute>
+	        <substitute name="STEP-DEVICE:ASYMPTOTE">%ASYMPTOTE%</substitute>
+            <substitute name="STEP-COUNT">%COUNT%</substitute>
+            <substitute name="STEP-DEVICE:SRANGE">%SOURCE-RANGE%</substitute>
+	        <substitute name="STEP-DEVICE:LIMITI">%LIMITI%</substitute>
+	        <substitute name="STEP-DEVICE:LIMITV">%LIMITV%</substitute>
+            <substitute name="STEP-DEVICE:MRANGE">%MEASURE-RANGE%</substitute>
+	        <substitute name="STEP-DEVICE:SENSE">%SENSE%</substitute>
+            <snippet>
+
+                -- set up Step (outer sweep) for %SMUX%
+	            %SMUX%.source.delay = %SOURCE-DELAY%
+	            %SMUX%.sense = %SMUX%.%SENSE%
+	            %SMUX%.measure.nplc = nplc
+                %SMUX%.measure.autozero = %SMUX%.%AUTOZERO%
+	            %SMUX%.measure.count = %MEASURE-COUNT%
+	            %SMUX%.measure.filter.enable = %SMUX%.%MEASURE-FILTER-ENABLE%
+	            %SMUX%.measure.filter.type = %SMUX%.%MEASURE-FILTER-TYPE%
+	            %SMUX%.measure.filter.count = %MEASURE-FILTER-COUNT%
+	            %SMUX%.measure.delay = %MEASURE-DELAY%
+		        %SMUX%.measure.delayfactor = %MEASURE-DELAY-FACTOR%
+            </snippet>
+	        <snippet>
+		        <condition name="STEP-DEVICE:MODEL" op="in">2635A,2636A,2634B,2635B,2636B</condition>
+		        %SMUX%.measure.analogfilter = %MEASURE-ANALOG-FILTER%
+	        </snippet>
+            <composite name="Voltage Step">
+                <condition name="STEP-DEVICE:SFUNCTION">voltage</condition>
+                 <snippet>
+	                <condition name="STEP-DEVICE:SMODE" op="eq">Normal</condition>
+                    %SMUX%.source.func = %SMUX%.OUTPUT_DCVOLTS
+	                 if %SMUX%.source.highc == %SMUX%.ENABLE then %SMUX%.source.highc = %SMUX%.DISABLE end
+	                %SMUX%.source.limiti = %LIMITI%
+                </snippet>
+                 <snippet>
+	                <condition name="STEP-DEVICE:SMODE" op="eq">High-C</condition>
+                    %SMUX%.source.func = %SMUX%.OUTPUT_DCVOLTS
+	                %SMUX%.source.highc = %SMUX%.ENABLE
+	                %SMUX%.source.limiti = %LIMITI%
+                </snippet>
+                <snippet>
+                    <condition name="STEP-DEVICE:SRANGE" op="eq">AUTO</condition>
+                    %SMUX%.source.autorangev = 1
+                </snippet>
+                <snippet>
+                    <condition name="STEP-DEVICE:SRANGE" op="ne">AUTO</condition>
+                    %SMUX%.source.autorangev = 0
+                    %SMUX%.source.rangev = %SOURCE-RANGE%
+                </snippet>
+                <snippet>
+                    <condition name="STEP-DEVICE:MODE">LIN</condition>
+                    %SMUX%.trigger.source.linearv(%START%, %STOP%, %COUNT%)
+                </snippet>
+                <snippet>
+                    <condition name="STEP-DEVICE:MODE">LOG</condition>
+                    %SMUX%.trigger.source.logv(%START%, %STOP%, %COUNT%, %ASYMPTOTE%)
+                </snippet>
+            </composite>
+            <composite name="Current Step">
+                <condition name="STEP-DEVICE:SFUNCTION">current</condition>
+                <snippet>
+	                <condition name="STEP-DEVICE:SMODE" op="eq">Normal</condition>
+                    %SMUX%.source.func = %SMUX%.OUTPUT_DCAMPS
+	                if %SMUX%.source.highc == %SMUX%.ENABLE then %SMUX%.source.highc = %SMUX%.DISABLE end
+	                %SMUX%.source.limitv = %LIMITV%
+                </snippet>
+	            <snippet>
+		            <condition name="STEP-DEVICE:SMODE" op="eq">High-C</condition>
+	                %SMUX%.source.func = %SMUX%.OUTPUT_DCAMPS
+		            %SMUX%.source.highc = %SMUX%.ENABLE
+		            %SMUX%.source.limitv = %LIMITV%
+	            </snippet>
+                 <snippet>
+                    <condition name="STEP-DEVICE:SRANGE" op="eq">AUTO</condition>
+                    %SMUX%.source.autorangei = 1
+                </snippet>
+                <snippet>
+                    <condition name="STEP-DEVICE:SRANGE" op="ne">AUTO</condition>
+                    %SMUX%.source.autorangei = 0
+                    %SMUX%.source.rangei = %SOURCE-RANGE%
+                </snippet>
+                <snippet>
+                    <condition name="STEP-DEVICE:MODE">LIN</condition>
+                    %SMUX%.trigger.source.lineari(%START%, %STOP%, %COUNT%)
+                </snippet>
+                <snippet>
+                    <condition name="STEP-DEVICE:MODE">LOG</condition>
+                    %SMUX%.trigger.source.logi(%START%, %STOP%, %COUNT%, %ASYMPTOTE%)
+                </snippet>
+            </composite>
+            <composite name="Voltage Measurement (for step)">
+                <condition name="STEP-DEVICE:MFUNCTION">voltage</condition>
+	            <snippet>
+		            <condition name="STEP-DEVICE:SFUNCTION" op="eq">voltage</condition>
+		            <condition name="STEP-DEVICE:SMODE" op="ne">High-C</condition>
+		            %SMUX%.measure.autorangei = 0
+		            %SMUX%.measure.rangei = %SMUX%.source.limiti
+	            </snippet>
+                <snippet>
+                    <condition name="STEP-DEVICE:MRANGE" op="eq">AUTO</condition>
+                    %SMUX%.measure.autorangev = 1
+                </snippet>
+                <snippet>
+                    <condition name="STEP-DEVICE:MRANGE" op="ne">AUTO</condition>
+                    %SMUX%.measure.autorangev = 0
+                    %SMUX%.measure.rangev = %MEASURE-RANGE%
+                </snippet>
+                <snippet>
+                    %SMUX%.trigger.measure.v(%SMUX%.nvbuffer1)
+                </snippet>
+            </composite>
+            <composite name="Current Measurement (for step)">
+                <condition name="STEP-DEVICE:MFUNCTION">current</condition>
+                <snippet>
+                    <condition name="STEP-DEVICE:MRANGE" op="eq">AUTO</condition>
+                    <condition name="STEP-DEVICE:SMODE" op="ne">High-C</condition>
+                    %SMUX%.measure.autorangei = 1
+                </snippet>
+	            <snippet>
+	                <condition name="STEP-DEVICE:SMODE" op="eq">High-C</condition>
+		            -- %SMUX%.source.highc is enabled, so %SMUX%.measure.autorangei is
+		            -- already %SMUX%.AUTORANGE_FOLLOW_LIMIT
+	            </snippet>
+                <snippet>
+                    <condition name="STEP-DEVICE:MRANGE" op="ne">AUTO</condition>
+                    <condition name="STEP-DEVICE:SMODE" op="ne">High-C</condition>
+                    %SMUX%.measure.autorangei = 0
+                    %SMUX%.measure.rangei = %MEASURE-RANGE%
+                </snippet>
+                <snippet>
+                    %SMUX%.trigger.measure.i(%SMUX%.nvbuffer1)
+                </snippet>
+            </composite>
+            <composite name="Resistance Measurement (for step)">
+                <condition name="STEP-DEVICE:MFUNCTION">resistance</condition>
+                <snippet>
+                    <condition name="STEP-DEVICE:MRANGE" op="eq">AUTO</condition>
+                    %SMUX%.measure.autoranger = 1
+                </snippet>
+                <snippet>
+                    <condition name="STEP-DEVICE:MRANGE" op="ne">AUTO</condition>
+                    %SMUX%.measure.autoranger = 0
+                    %SMUX%.measure.ranger = %MEASURE-RANGE%
+                </snippet>
+                <snippet>
+                    %SMUX%.trigger.measure.r(%SMUX%.nvbuffer1)
+                </snippet>
+            </composite>
+	        <composite name="IV Measurement (for step)">
+                <condition name="STEP-DEVICE:MFUNCTION">current,voltage</condition>
+	            <composite name="IV Measurement (for step sourcing current)">
+	                <condition name="STEP-DEVICE:SFUNCTION" op="eq">current</condition>
+					<snippet>
+						<condition name="STEP-DEVICE:MRANGE" op="eq">AUTO</condition>
+						%SMUX%.measure.autorangev = 1
+					</snippet>
+					<snippet>
+						<condition name="STEP-DEVICE:MRANGE" op="ne">AUTO</condition>
+						%SMUX%.measure.autorangev = 0
+						%SMUX%.measure.rangev = %MEASURE-RANGE%
+					</snippet>
+					<snippet>
+						%SMUX%.trigger.measure.iv(%SMUX%.nvbuffer1, %SMUX%.nvbuffer2)
+						nvBuffersUsed[stepIndex] = 2
+					</snippet>
+		        </composite>
+				<composite name="IV Measurement (for step sourcing voltage)">
+					<condition name="STEP-DEVICE:SFUNCTION">voltage</condition>
+					<snippet>
+						<condition name="STEP-DEVICE:MRANGE" op="eq">AUTO</condition>
+						<condition name="STEP-DEVICE:SMODE" op="ne">High-C</condition>
+						%SMUX%.measure.autorangei = 1
+					</snippet>
+					<snippet>
+						<condition name="STEP-DEVICE:SMODE" op="eq">High-C</condition>
+						-- %SMUX%.source.highc is enabled, so %SMUX%.measure.autorangei is
+						-- already %SMUX%.AUTORANGE_FOLLOW_LIMIT
+					</snippet>
+					 <snippet>
+						<condition name="STEP-DEVICE:MRANGE" op="ne">AUTO</condition>
+						<condition name="STEP-DEVICE:SMODE" op="ne">High-C</condition>
+						%SMUX%.measure.autorangei = 0
+						%SMUX%.measure.rangei = %MEASURE-RANGE%
+					</snippet>
+					<snippet>
+						%SMUX%.trigger.measure.iv(%SMUX%.nvbuffer1, %SMUX%.nvbuffer2)
+						nvBuffersUsed[stepIndex] = 2
+					</snippet>
+				</composite>
+			</composite>
+        </composite>
+        <composite repeat="SWEEP-DEVICE">
+            <substitute name="SWEEP-DEVICE:">%SMUX%</substitute>
+            <substitute name="SWEEP-DEVICE:START">%START%</substitute>
+	        <substitute name="SWEEP-DEVICE:STOP">%STOP%</substitute>
+	        <substitute name="SWEEP-DEVICE:ASYMPTOTE">%ASYMPTOTE%</substitute>
+            <substitute name="SWEEP-DEVICE:LIST">%LIST%</substitute>
+            <substitute name="SWEEP-POINTS">%SWEEP-POINTS%</substitute>
+            <substitute name="SWEEP-DEVICE:SRANGE">%SOURCE-RANGE%</substitute>
+	        <substitute name="SWEEP-DEVICE:LIMITI">%LIMITI%</substitute>
+	        <substitute name="SWEEP-DEVICE:LIMITV">%LIMITV%</substitute>
+	        <substitute name="SWEEP-DEVICE:TRIGLIMITI">%TRIGLIMITI%</substitute>
+	        <substitute name="SWEEP-DEVICE:TRIGLIMITV">%TRIGLIMITV%</substitute>
+            <substitute name="SWEEP-DEVICE:MRANGE">%MEASURE-RANGE%</substitute>
+	        <substitute name="SWEEP-DEVICE:SENSE">%SENSE%</substitute>
+	        <substitute name="SWEEP-DEVICE:PULSE-BIAS">%PULSE-BIAS%</substitute>
+            <snippet>
+
+                -- set up Sweep (inner sweep) for %SMUX%
+	            %SMUX%.sense = %SMUX%.%SENSE%
+            </snippet>
+	        <composite>
+		        <condition name="SWEEP-DEVICE:MODEL" op="in">2651A,2657A</condition>
+		        <condition name="SWEEP-DEVICE:COMP-SMU">true</condition>
+		        <snippet>
+			        %SMUX%.source.offmode = %SMUX%.OUTPUT_NORMAL
+		        </snippet>
+		        <snippet>
+			        <condition name="SWEEP-DEVICE:COMP-SMU-PARALLEL">true</condition>
+			        <condition name="SWEEP-DEVICE:COMP-SMU-INDEX" op="eq">0</condition>
+			        %SMUX%.source.offfunc = %SMUX%.OUTPUT_DCVOLTS
+			        %SMUX%.source.offlimiti = 1e-3
+		        </snippet>
+		        <snippet>
+			        <condition name="SWEEP-DEVICE:COMP-SMU-PARALLEL">true</condition>
+			        <condition name="SWEEP-DEVICE:COMP-SMU-INDEX" op="eq">1</condition>
+			        %SMUX%.source.offfunc = %SMUX%.OUTPUT_DCAMPS
+			        %SMUX%.source.offlimitv = 40
+		        </snippet>
+		        <snippet>
+			        <condition name="SWEEP-DEVICE:COMP-SMU-PARALLEL">false</condition>
+			        <condition name="SWEEP-DEVICE:COMP-SMU-INDEX" op="eq">0</condition>
+			        %SMUX%.source.offfunc = %SMUX%.OUTPUT_DCVOLTS
+			        %SMUX%.source.offlimiti = 1e-3
+		        </snippet>
+		        <snippet>
+			        <condition name="SWEEP-DEVICE:COMP-SMU-PARALLEL">false</condition>
+			        <condition name="SWEEP-DEVICE:COMP-SMU-INDEX" op="eq">1</condition>
+			        %SMUX%.source.offfunc = %SMUX%.OUTPUT_DCVOLTS
+			        %SMUX%.source.offlimiti = 0.9e-3
+		        </snippet>
+		    </composite>
+	        <composite>
+		        <condition name="HIGH-SPEED-SAMPLING">false</condition>
+		        <snippet>
+					%SMUX%.source.delay = %SOURCE-DELAY%
+					%SMUX%.measure.nplc = nplc
+					%SMUX%.measure.autozero = %SMUX%.%AUTOZERO%
+					%SMUX%.measure.count = %MEASURE-COUNT%
+					%SMUX%.measure.filter.enable = %SMUX%.%MEASURE-FILTER-ENABLE%
+					%SMUX%.measure.filter.type = %SMUX%.%MEASURE-FILTER-TYPE%
+					%SMUX%.measure.filter.count = %MEASURE-FILTER-COUNT%
+					%SMUX%.measure.delay = %MEASURE-DELAY%
+					%SMUX%.measure.delayfactor = %MEASURE-DELAY-FACTOR%
+		        </snippet>
+		        <snippet>
+		            <condition name="SWEEP-DEVICE:MODEL" op="in">2635A,2636A,2634B,2635B,2636B</condition>
+		            %SMUX%.measure.analogfilter = %MEASURE-ANALOG-FILTER%
+	            </snippet>
+	        </composite>
+	        <composite>
+		        <condition name="HIGH-SPEED-SAMPLING">true</condition>
+		        <snippet>
+					%SMUX%.source.delay = 0
+					%SMUX%.measure.nplc = 0.001
+					%SMUX%.measure.autozero = %SMUX%.AUTOZERO_ONCE
+					%SMUX%.measure.count = %SAMPLING-COUNT%
+					%SMUX%.measure.filter.enable = %SMUX%.FILTER_OFF
+					%SMUX%.measure.filter.type = %SMUX%.FILTER_MOVING_AVG
+					%SMUX%.measure.filter.count = 1
+					%SMUX%.measure.delay = %SAMPLING-DELAY%
+					%SMUX%.measure.delayfactor = 1
+					%SMUX%.measure.adc = %SMUX%.ADC_FAST
+					%SMUX%.measure.interval = %SAMPLING-INTERVAL%
+		        </snippet>
+		        <snippet>
+		            <condition name="SWEEP-DEVICE:MODEL" op="in">2635A,2636A,2634B,2635B,2636B</condition>
+		            %SMUX%.measure.analogfilter = %SAMPLING-ANALOG-FILTER%
+	            </snippet>
+	        </composite>
+            <composite name="Voltage Sweep">
+                <condition name="SWEEP-DEVICE:SFUNCTION" op="eq">voltage</condition>
+                <snippet>
+	                <condition name="SWEEP-DEVICE:SMODE" op="eq">Normal</condition>
+                    %SMUX%.source.func = %SMUX%.OUTPUT_DCVOLTS
+	                if %SMUX%.source.highc == %SMUX%.ENABLE then %SMUX%.source.highc = %SMUX%.DISABLE end
+                </snippet>
+                 <snippet>
+	                <condition name="SWEEP-DEVICE:SMODE" op="eq">High-C</condition>
+                    %SMUX%.source.func = %SMUX%.OUTPUT_DCVOLTS
+	                %SMUX%.source.highc = %SMUX%.ENABLE
+                </snippet>
+	            <snippet>
+		            <condition name="SWEEP-DEVICE:PULSE-MODE" op="eq">false</condition>
+		            %SMUX%.source.limiti = %LIMITI%
+		            %SMUX%.trigger.source.limiti = %SMUX%.LIMIT_AUTO
+	            </snippet>
+	            <snippet>
+		            <condition name="SWEEP-DEVICE:PULSE-MODE" op="eq">true</condition>
+		            %SMUX%.source.levelv = %PULSE-BIAS%
+		            %SMUX%.source.limiti = %LIMITI%
+		            %SMUX%.trigger.source.limiti = %TRIGLIMITI%
+	            </snippet>
+                 <snippet>
+                    <condition name="SWEEP-DEVICE:SRANGE" op="eq">AUTO</condition>
+                    %SMUX%.source.autorangev = 1
+                </snippet>
+                <snippet>
+                    <condition name="SWEEP-DEVICE:SRANGE" op="ne">AUTO</condition>
+                    %SMUX%.source.autorangev = 0
+                    %SMUX%.source.rangev = %SOURCE-RANGE%
+                </snippet>
+                <snippet>
+                    <condition name="SWEEP-DEVICE:MODE">LIN</condition>
+                    %SMUX%.trigger.source.linearv(%START%, %STOP%, %SWEEP-POINTS%)
+                </snippet>
+                <snippet>
+                    <condition name="SWEEP-DEVICE:MODE">LOG</condition>
+                    %SMUX%.trigger.source.logv(%START%, %STOP%, %SWEEP-POINTS%, %ASYMPTOTE%)
+                </snippet>
+                <snippet>
+                    <condition name="SWEEP-DEVICE:MODE">LIST</condition>
+                    %SMUX%.trigger.source.listv({%LIST%})
+                </snippet>
+            </composite>
+            <composite name="Current Sweep">
+	            <!-- Source range must be set first. -->
+                <condition name="SWEEP-DEVICE:SFUNCTION">current</condition>
+                <snippet>
+	                <condition name="SWEEP-DEVICE:SMODE" op="eq">Normal</condition>
+                    %SMUX%.source.func = %SMUX%.OUTPUT_DCAMPS
+	                if %SMUX%.source.highc == %SMUX%.ENABLE then %SMUX%.source.highc = %SMUX%.DISABLE end
+                </snippet>
+	            <snippet>
+		            <condition name="SWEEP-DEVICE:SMODE" op="eq">High-C</condition>
+	                %SMUX%.source.func = %SMUX%.OUTPUT_DCAMPS
+		            %SMUX%.source.highc = %SMUX%.ENABLE
+	            </snippet>
+	            <snippet>
+		            <condition name="SWEEP-DEVICE:PULSE-MODE" op="eq">false</condition>
+		            %SMUX%.source.limitv = %LIMITV%
+		            %SMUX%.trigger.source.limitv = %SMUX%.LIMIT_AUTO
+	            </snippet>
+	            <snippet>
+		            <condition name="SWEEP-DEVICE:PULSE-MODE" op="eq">true</condition>
+		            %SMUX%.source.leveli = %PULSE-BIAS%
+		            %SMUX%.source.limitv = %LIMITV%
+		            %SMUX%.trigger.source.limitv = %TRIGLIMITV%
+	            </snippet>
+                 <snippet>
+                    <condition name="SWEEP-DEVICE:SRANGE" op="eq">AUTO</condition>
+                    %SMUX%.source.autorangei = 1
+                </snippet>
+                <snippet>
+                    <condition name="SWEEP-DEVICE:SRANGE" op="ne">AUTO</condition>
+                    %SMUX%.source.autorangei = 0
+                    %SMUX%.source.rangei = %SOURCE-RANGE%
+                </snippet>
+                <snippet>
+                    <condition name="SWEEP-DEVICE:MODE">LIN</condition>
+                    %SMUX%.trigger.source.lineari(%START%, %STOP%, %SWEEP-POINTS%)
+                </snippet>
+                <snippet>
+                    <condition name="SWEEP-DEVICE:MODE">LOG</condition>
+                    %SMUX%.trigger.source.logi(%START%, %STOP%, %SWEEP-POINTS%, %ASYMPTOTE%)
+                </snippet>
+                <snippet>
+                    <condition name="SWEEP-DEVICE:MODE">LIST</condition>
+                    %SMUX%.trigger.source.listi({%LIST%})
+                </snippet>
+            </composite>
+            <composite name="Voltage Measurement (for sweep)">
+                <condition name="SWEEP-DEVICE:MFUNCTION">voltage</condition>
+	            <snippet>
+		            <condition name="SWEEP-DEVICE:SFUNCTION" op="eq">voltage</condition>
+		            <condition name="SWEEP-DEVICE:PULSE-MODE" op="eq">false</condition>
+		            <condition name="SWEEP-DEVICE:SMODE" op="ne">High-C</condition>
+		            %SMUX%.measure.autorangei = 0
+		            %SMUX%.measure.rangei = %SMUX%.source.limiti
+	            </snippet>
+	            <snippet>
+		            <condition name="SWEEP-DEVICE:SFUNCTION" op="eq">voltage</condition>
+		            <condition name="SWEEP-DEVICE:PULSE-MODE" op="eq">true</condition>
+		            <condition name="SWEEP-DEVICE:SMODE" op="ne">High-C</condition>
+		            %SMUX%.measure.autorangei = 0
+		            %SMUX%.measure.rangei = %SMUX%.trigger.source.limiti
+	            </snippet>
+                <snippet>
+                    <condition name="SWEEP-DEVICE:MRANGE" op="eq">AUTO</condition>
+                    %SMUX%.measure.autorangev = 1
+                </snippet>
+                <snippet>
+                    <condition name="SWEEP-DEVICE:MRANGE" op="ne">AUTO</condition>
+                    %SMUX%.measure.autorangev = 0
+                    %SMUX%.measure.rangev = %MEASURE-RANGE%
+                </snippet>
+                <snippet>
+                    %SMUX%.trigger.measure.v(%SMUX%.nvbuffer1)
+                </snippet>
+            </composite>
+            <composite name="Current Measurement (for sweep)">
+                <condition name="SWEEP-DEVICE:MFUNCTION">current</condition>
+                <snippet>
+                    <condition name="SWEEP-DEVICE:MRANGE" op="eq">AUTO</condition>
+                    <condition name="SWEEP-DEVICE:SMODE" op="ne">High-C</condition>
+                    %SMUX%.measure.autorangei = 1
+                </snippet>
+	            <snippet>
+	                <condition name="SWEEP-DEVICE:SMODE" op="eq">High-C</condition>
+		            -- %SMUX%.source.highc is enabled, so %SMUX%.measure.autorangei is
+		            -- already %SMUX%.AUTORANGE_FOLLOW_LIMIT
+	            </snippet>
+                <snippet>
+                    <condition name="SWEEP-DEVICE:MRANGE" op="ne">AUTO</condition>
+                    <condition name="SWEEP-DEVICE:SMODE" op="ne">High-C</condition>
+                    %SMUX%.measure.autorangei = 0
+                    %SMUX%.measure.rangei = %MEASURE-RANGE%
+                </snippet>
+                <snippet>
+                    %SMUX%.trigger.measure.i(%SMUX%.nvbuffer1)
+                </snippet>
+            </composite>
+            <composite name="IV Measurement (for sweep)">
+                <condition name="SWEEP-DEVICE:MFUNCTION">current,voltage</condition>
+	            <composite name="IV Measurement (for sweep sourcing current)">
+	                <condition name="SWEEP-DEVICE:SFUNCTION" op="eq">current</condition>
+					<snippet>
+						<condition name="SWEEP-DEVICE:MRANGE" op="eq">AUTO</condition>
+						%SMUX%.measure.autorangev = 1
+					</snippet>
+					<snippet>
+						<condition name="SWEEP-DEVICE:MRANGE" op="ne">AUTO</condition>
+						%SMUX%.measure.autorangev = 0
+						%SMUX%.measure.rangev = %MEASURE-RANGE%
+					</snippet>
+					<snippet>
+						%SMUX%.trigger.measure.iv(%SMUX%.nvbuffer1, %SMUX%.nvbuffer2)
+						nvBuffersUsed[sweepIndex] = 2
+					</snippet>
+		        </composite>
+				<composite name="IV Measurement (for sweep sourcing voltage)">
+					<condition name="SWEEP-DEVICE:SFUNCTION">voltage</condition>
+					<snippet>
+						<condition name="SWEEP-DEVICE:MRANGE" op="eq">AUTO</condition>
+						<condition name="SWEEP-DEVICE:SMODE" op="ne">High-C</condition>
+						%SMUX%.measure.autorangei = 1
+					</snippet>
+					<snippet>
+						<condition name="SWEEP-DEVICE:SMODE" op="eq">High-C</condition>
+						-- %SMUX%.source.highc is enabled, so %SMUX%.measure.autorangei is
+						-- already %SMUX%.AUTORANGE_FOLLOW_LIMIT
+					</snippet>
+					<snippet>
+						<condition name="SWEEP-DEVICE:MRANGE" op="ne">AUTO</condition>
+						<condition name="SWEEP-DEVICE:SMODE" op="ne">High-C</condition>
+						%SMUX%.measure.autorangei = 0
+						%SMUX%.measure.rangei = %MEASURE-RANGE%
+					</snippet>
+					<snippet>
+						%SMUX%.trigger.measure.iv(%SMUX%.nvbuffer1, %SMUX%.nvbuffer2)
+						nvBuffersUsed[sweepIndex] = 2
+					</snippet>
+				</composite>
+			</composite>
+            <composite name="Resistance Measurement (for sweep)">
+                <condition name="SWEEP-DEVICE:MFUNCTION">resistance</condition>
+                <snippet>
+                    <condition name="SWEEP-DEVICE:MRANGE" op="eq">AUTO</condition>
+                    %SMUX%.measure.autoranger = 1
+                </snippet>
+                <snippet>
+                    <condition name="SWEEP-DEVICE:MRANGE" op="ne">AUTO</condition>
+                    %SMUX%.measure.autoranger = 0
+                    %SMUX%.measure.ranger = %MEASURE-RANGE%
+                </snippet>
+                <snippet>
+                    %SMUX%.trigger.measure.r(%SMUX%.nvbuffer1)
+                </snippet>
+            </composite>
+        </composite>
+        <snippet>
+            end
+        </snippet>
+    </composite>
+    <!-- =========================== test control ========================= -->
+	<snippet>
+		-- Test starts here.
+
+		-- Make sure previous test is done.
+
+		_WaitForComplete(-1)
+
+		CheckSettings()
+		Reset()
+		ConfigureSmus()
+		ConfigureTriggerLines()
+
+		StoreReadingBufferIndexes()
+		TurnSmusOn()
+		MeasureBiasChannels()
+
+		InitiateSmus()
+		StartSweep()
+	</snippet>
+</composite>

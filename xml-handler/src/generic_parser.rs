@@ -3,6 +3,8 @@ use quick_xml::{events::Event, name::QName};
 
 use std::{fs::File, io::Read};
 
+use crate::substitute::Substitute;
+
 #[derive(Debug)]
 struct Group {
     id: String,
@@ -16,12 +18,6 @@ struct Composite {
     type_: Option<String>,
     substitutes: Vec<Substitute>,
     includes: Vec<Composite>, // Changed to store included composites directly
-}
-
-#[derive(Debug)]
-struct Substitute {
-    name: String,
-    value: String,
 }
 
 pub fn parse_xml() -> quick_xml::Result<()> {
@@ -124,7 +120,8 @@ fn parse_composite<R: std::io::BufRead>(
                 println!("Error at position {}: {:?}", reader.error_position(), e)
             }
             Ok(Event::Start(e)) if e.name().as_ref() == b"substitute" => {
-                substitutes.push(parse_substitute(reader, e.attributes())?);
+                //substitutes.push(parse_substitute(reader, e.attributes())?);
+                substitutes.push(Substitute::parse_substitute(reader, e.attributes())?);
             }
             Ok(Event::Start(e)) if e.name().as_ref() == b"include" => {
                 //substitutes.push(parse_include(reader, e.attributes())?);
@@ -141,37 +138,6 @@ fn parse_composite<R: std::io::BufRead>(
             _ => (),
         }
     }
-}
-
-fn parse_substitute<R: std::io::BufRead>(
-    reader: &mut Reader<R>,
-    attributes: quick_xml::events::attributes::Attributes,
-) -> quick_xml::Result<Substitute> {
-    let mut name = String::new();
-    let mut value = String::new();
-    let mut buf: Vec<u8> = Vec::new();
-
-    for attr in attributes {
-        let attr = attr?;
-        match attr.key {
-            QName(b"name") => name = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
-            //QName(b"value") => value = String::from_utf8(attr.value.into_owned()).unwrap(),
-            _ => {}
-        }
-    }
-
-    match reader.read_event_into(&mut buf) {
-        Ok(Event::Text(e)) => {
-            // Capture the text content inside the <substitute> tag
-            match e.unescape() {
-                Ok(text) => value = text.to_string(),
-                Err(_) => {}
-            }
-        }
-        _ => (),
-    }
-
-    Ok(Substitute { name, value })
 }
 
 fn parse_include<R: std::io::BufRead>(

@@ -13,7 +13,13 @@ pub struct Snippet {
 
 impl Snippet {
     // Function to create a new instance of Substitute
-    fn new(name: String, repeat: String, code_snippet: String, substitutions: Vec<Substitute>, conditions:  Vec<Condition>) -> Self {
+    fn new(
+        name: String,
+        repeat: String,
+        code_snippet: String,
+        substitutions: Vec<Substitute>,
+        conditions: Vec<Condition>,
+    ) -> Self {
         Snippet {
             name,
             repeat,
@@ -44,25 +50,35 @@ impl Snippet {
             }
         }
 
-        match reader.read_event_into(&mut buf) {
-            Ok(Event::Text(e)) => {
-                // Capture the text content inside the <snippet> tag
-                match e.unescape() {
-                    Ok(text) => code_snippet = text.to_string(),
-                    Err(_) => {}
+        loop {
+            match reader.read_event_into(&mut buf) {
+                Ok(Event::Text(e)) => {
+                    // Capture the text content inside the <snippet> tag
+                    code_snippet.push_str(&e.unescape().unwrap());
+                    match e.unescape() {
+                        Ok(text) => code_snippet = text.to_string(),
+                        Err(_) => {}
+                    }
                 }
-            },
-            Ok(Event::Start(e)) if e.name().as_ref() == b"substitute" => {
-                //substitutes.push(parse_substitute(reader, e.attributes())?);
-                substitutions.push(Substitute::parse_substitute(reader, e.attributes())?);
-            },
-            Ok(Event::Start(e)) if e.name().as_ref() == b"condition" => {
-                //substitutes.push(parse_substitute(reader, e.attributes())?);
-                conditions.push(Condition::parse_condition(reader, e.attributes())?);
-            },
-            _ => (),
+                Ok(Event::Start(e)) if e.name().as_ref() == b"substitute" => {
+                    //substitutes.push(parse_substitute(reader, e.attributes())?);
+                    substitutions.push(Substitute::parse_substitute(reader, e.attributes())?);
+                }
+                Ok(Event::Start(e)) if e.name().as_ref() == b"condition" => {
+                    //substitutes.push(parse_substitute(reader, e.attributes())?);
+                    conditions.push(Condition::parse_condition(reader, e.attributes())?);
+                }
+                Ok(Event::End(e)) if e.name().as_ref() == b"snippet" => {
+                    return Ok(Snippet::new(
+                        name,
+                        repeat,
+                        code_snippet,
+                        substitutions,
+                        conditions,
+                    ));
+                }
+                _ => (),
+            }
         }
-
-        Ok(Snippet::new(name, repeat, code_snippet, substitutions, conditions))
     }
 }

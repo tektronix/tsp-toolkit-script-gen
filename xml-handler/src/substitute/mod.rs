@@ -47,8 +47,6 @@ impl Substitute {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use quick_xml::Reader;
-    use std::io::Cursor;
 
     #[test]
     fn test_new_substitute() {
@@ -98,7 +96,33 @@ mod tests {
                 Ok(Event::Start(ref e)) if e.name() == QName(b"substitute") => {
                     let result = Substitute::parse_substitute(&mut reader, e.attributes()).unwrap();
 
-                    println!("result ---------> {:?}", result);
+                    assert_eq!(result.name, "");
+                    assert_eq!(result.value, "");
+                    break; // Assuming only one Substitute element for simplicity
+                }
+                Ok(Event::Eof) => break, // End of file
+                _ => (), // There are other events like Text, End, etc., that we're not handling here
+            }
+            buf.clear();
+        }
+    }
+
+    #[test]
+    fn test_invalid_xml_format() {
+        let xml_data = r#"This is not XML"#;
+        // Implement the test logic here
+
+        let mut reader = Reader::from_str(xml_data);
+
+        reader.config_mut().trim_text(true);
+
+        let mut buf = Vec::new();
+
+        // Move to the <substitute> start tag and collect its attributes
+        loop {
+            match reader.read_event_into(&mut buf) {
+                Ok(Event::Start(ref e)) if e.name() == QName(b"substitute") => {
+                    let result = Substitute::parse_substitute(&mut reader, e.attributes()).unwrap();
 
                     assert_eq!(result.name, "");
                     assert_eq!(result.value, "");
@@ -110,4 +134,5 @@ mod tests {
             buf.clear();
         }
     }
+
 }

@@ -179,9 +179,9 @@
 		</variable>
 		<!-- the next variables define constraints that are used for all devices.  this is usually
 		     because the GUI is using a single control and applying the value to all devices -->
-		<include path="data/DefaultLimits.xml"/>
+		<include path="xml-handler\src\resources\sweep\DefaultLimits.xml"/>
 		<!-- The ChunkModel (i.e. the script template) -->
-		<include path="data/DefaultSweepChunk.xml"/>
+		<include path="xml-handler\src\resources\sweep\DefaultSweepChunk.xml"/>
 	</group>
 
 	<group id="USER" type="User">

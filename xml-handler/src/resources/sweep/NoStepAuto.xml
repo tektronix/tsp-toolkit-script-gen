@@ -1,0 +1,214 @@
+<snippet>
+    -- This function configures any number of sweeping smus with no stepping smus.
+    -- It synchronizes the measure and endpulse actions between all smus.
+    local testSmus = {
+                        {%BIAS-SMUS%}, -- Bias
+                        {{}}, -- Step
+                        {%SWEEP-SMUS%}, -- Sweep
+                     }
+
+    local testNodes = {
+                        {%BIAS-NODES%}, -- Bias
+                        {}, -- Step
+                        {%SWEEP-NODES%} -- Sweep
+                      }
+
+    local numberOfSteps  = %STEP-COUNT%
+    local numberOfSweeps = %SWEEP-POINTS%
+    
+    local timePoint = %SWEEP-TIME-PER-POINT%
+    local enforceStepWidth = false
+
+	local nplc = %NPLC%
+	local lineFrequency = %LINE-FREQUENCY%
+
+	local numNodes = table.getn(testNodes[sweepIndex])
+	local numMasterSmus = table.getn(testSmus[sweepIndex][1])
+	local masterNode = testNodes[sweepIndex][1]
+	local masterSweepSmu = testSmus[sweepIndex][1][1]
+	
+    --==========================================================================
+    -- This function checks for errors or conflicts in the
+	-- test settings (timing, ranges, etc.)
+    --==========================================================================
+    local CheckSettings = function()
+        if(masterSweepSmu == nil) then
+			local errorMsg =  [[Must have at least one sweeping smu.]]
+            print(errorTag .. errorMsg)
+			error(errorMsg)
+        end
+    end 
+    
+    --==========================================================================
+    -- This function configures the trigger line interaction between the smus. 
+    --==========================================================================
+    local ConfigureTriggerLines = function()    
+        --==========================================================================
+        -- This function configures the sweeping smus.
+        --==========================================================================
+        local ConfigureSweep = function()
+            --==========================================================================
+            -- Configures the timers that are used in the test.
+            --==========================================================================
+            local ConfigureSweepTimer = function(tTimer, stimulusEventId)
+                tTimer.count = 1
+                tTimer.stimulus = stimulusEventId 
+                tTimer.passthrough = false
+                tTimer.delay = timePoint
+            end
+
+			--==========================================================================
+			-- Configures a particular smu for sweeping.
+			--
+			-- parameter selSmu                     Smu to configure.
+			-- parameter measureStimulusEventId     Measurement stimulus event.
+	        -- parameter armStimulusEventId         Arm stimulus event.
+			-- parameter endpulseStimulusEventId    End Pulse stimulus event.
+			--==========================================================================
+            local ConfigureSweepSmu = function(selSmu, measureStimulusEventId, armStimulusEventId, endpulseStimulusEventId)
+                selSmu.trigger.arm.stimulus = armStimulusEventId
+                selSmu.trigger.measure.stimulus = measureStimulusEventId
+                selSmu.trigger.source.stimulus = 0
+
+                selSmu.trigger.arm.count = numberOfSteps
+                selSmu.trigger.count = numberOfSweeps
+                    
+                -- End pulse action.
+                selSmu.trigger.endpulse.stimulus =  endpulseStimulusEventId
+                selSmu.trigger.endpulse.action = selSmu.SOURCE_HOLD
+                
+                -- Enable measure and source actions.
+                selSmu.trigger.measure.action = selSmu.ENABLE 
+                selSmu.trigger.source.action = selSmu.ENABLE    
+            end
+            
+            local masterInMeasureBlender = masterNode.trigger.blender[1]
+            local masterOutMeasureBlender =  masterNode.trigger.blender[2]
+            local masterInEndpulseBlender = masterNode.trigger.blender[3]
+            local masterOutEndpulseBlender = masterNode.trigger.blender[4]
+            
+            masterInMeasureBlender.orenable = false
+            masterOutMeasureBlender.orenable = false
+            masterInEndpulseBlender.orenable = false
+            masterOutEndpulseBlender.orenable = false
+            
+            masterInMeasureBlender.clear()
+            masterOutMeasureBlender.clear()
+            masterInEndpulseBlender.clear()
+            masterOutEndpulseBlender.clear()
+                        
+            local masterInEndpulseIndex = 1
+            
+            if (enforceStepWidth == true) then
+                local sweepTimer = masterNode.trigger.timer[1]
+                
+                ConfigureSweepTimer(sweepTimer, masterOutMeasureBlender.EVENT_ID)
+                masterInEndpulseBlender.stimulus[masterInEndpulseIndex] = sweepTimer.EVENT_ID
+                masterInEndpulseIndex = masterInEndpulseIndex + 1
+            end
+                    
+            for i=1, numMasterSmus do   
+                local locSmu = testSmus[sweepIndex][1][i]
+                
+                masterInMeasureBlender.stimulus[i] = locSmu.trigger.SOURCE_COMPLETE_EVENT_ID
+                masterOutMeasureBlender.stimulus[i] = locSmu.trigger.SOURCE_COMPLETE_EVENT_ID
+
+                masterInEndpulseBlender.stimulus[masterInEndpulseIndex] = locSmu.trigger.MEASURE_COMPLETE_EVENT_ID
+                masterOutEndpulseBlender.stimulus[i] = locSmu.trigger.MEASURE_COMPLETE_EVENT_ID
+                masterInEndpulseIndex = masterInEndpulseIndex + 1
+                
+				if (localnode.tsplink ~= nil) then
+					ConfigureSweepSmu(locSmu, masterInMeasureBlender.EVENT_ID, masterNode.tsplink.trigger[3].EVENT_ID, masterInEndpulseBlender.EVENT_ID)
+				else
+					ConfigureSweepSmu(locSmu, masterInMeasureBlender.EVENT_ID, masterNode.trigger.generator[1].EVENT_ID, masterInEndpulseBlender.EVENT_ID)
+				end
+            end
+
+			if (localnode.tsplink ~= nil) then
+				local masterTspLine3 = masterNode.tsplink.trigger[3]
+				masterTspLine3.mode = tsplink.TRIG_FALLING
+				masterTspLine3.pulsewidth = 1e-6
+				masterTspLine3.stimulus = 0
+			end
+
+            if (numNodes > 1) then
+                local masterTspLine1 = masterNode.tsplink.trigger[1]
+                masterTspLine1.mode = tsplink.TRIG_SYNCHRONOUSM
+				masterTspLine1.pulsewidth = 1e-6
+                masterTspLine1.stimulus = masterOutMeasureBlender.EVENT_ID
+                
+                local masterTspLine2 = masterNode.tsplink.trigger[2]
+                masterTspLine2.mode = tsplink.TRIG_SYNCHRONOUSM
+				masterTspLine2.pulsewidth = 1e-6
+                masterTspLine2.stimulus = masterOutEndpulseBlender.EVENT_ID
+
+                masterInMeasureBlender.stimulus[1 + numMasterSmus] = masterTspLine1.EVENT_ID
+                masterInEndpulseBlender.stimulus[masterInEndpulseIndex] = masterTspLine2.EVENT_ID
+
+                for i=2, numNodes do
+                    local selNode = testNodes[sweepIndex][i]
+            
+                    local extInMeasureBlender = selNode.trigger.blender[1]
+                    local extInEndpulseBlender = selNode.trigger.blender[3]
+                        
+                    extInMeasureBlender.orenable = false
+                    extInEndpulseBlender.orenable = false
+                    
+                    local tspl1 = selNode.tsplink.trigger[1]
+                    tspl1.mode = tsplink.TRIG_SYNCHRONOUSA
+                    tspl1.pulsewidth = 1e-6
+                    tspl1.stimulus = extInMeasureBlender.EVENT_ID
+                                
+                    local tspl2 = selNode.tsplink.trigger[2]
+                    tspl2.mode = tsplink.TRIG_SYNCHRONOUSA
+                    tspl2.pulsewidth = 1e-6
+                    tspl2.stimulus = extInEndpulseBlender.EVENT_ID
+                    
+                    local tspl3 = selNode.tsplink.trigger[3]
+                    tspl3.mode = tsplink.TRIG_FALLING
+                    tspl3.pulsewidth = 1e-6
+                    tspl3.stimulus = 0
+                                        
+                    extInMeasureBlender.stimulus[1] = tspl1.EVENT_ID
+                    extInEndpulseBlender.stimulus[1] = tspl2.EVENT_ID
+                    local extInEndpulseIndex = 2
+                    
+                    if (enforceStepWidth == true) then
+                        local sweepTimer = selNode.trigger.timer[1]
+                
+                        ConfigureSweepTimer(sweepTimer, extInMeasureBlender.EVENT_ID)
+                        extInEndpulseBlender.stimulus[extInEndpulseIndex] = sweepTimer.EVENT_ID
+                        extInEndpulseIndex = extInEndpulseIndex + 1
+                    end
+                    
+                    local sweepSmus = testSmus[sweepIndex]
+                    local numSmus = table.getn(sweepSmus[i])
+                    
+                    for j=1, numSmus do 
+                        local extSmu = sweepSmus[i][j]
+                        
+                        extInMeasureBlender.stimulus[1 + j] = extSmu.trigger.SOURCE_COMPLETE_EVENT_ID                       
+                        extInEndpulseBlender.stimulus[extInEndpulseIndex] = extSmu.trigger.MEASURE_COMPLETE_EVENT_ID
+                        extInEndpulseIndex = extInEndpulseIndex + 1
+                        
+                        ConfigureSweepSmu(extSmu, extInMeasureBlender.EVENT_ID, tspl3.EVENT_ID, extInEndpulseBlender.EVENT_ID)
+                    end
+                end 
+            end 
+        end 
+        
+        -- Configure step and sweep trigger lines.
+        ConfigureSweep()
+    end
+    
+    --==========================================================================
+    -- This function kicks off the sweep.
+    --==========================================================================
+    local StartSweep = function()
+		if (localnode.tsplink ~= nil) then
+			masterNode.tsplink.trigger[3].assert()
+		else
+			masterNode.trigger.generator[1].assert()
+		end
+    end
+</snippet>

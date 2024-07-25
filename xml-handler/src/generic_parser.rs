@@ -4,13 +4,13 @@ use quick_xml::{events::Event, name::QName};
 use std::{fs::File, io::Read};
 
 use crate::snippet::{self, Snippet};
-use crate::substitute::Substitute;
+use crate::substitute::{self, Substitute};
 
 #[derive(Debug)]
 struct Group {
     id: String,
     type_: String,
-    composites: Vec<Composite>,
+    children: Vec<IncludeResult>,
 }
 
 #[derive(Debug)]
@@ -19,8 +19,7 @@ struct Composite {
     type_: Option<String>,
 
     substitutions: Vec<Substitute>,
-    snippets: Vec<Snippet>,
-    sub_composites: Vec<Composite>,
+    sub_children: Vec<IncludeResult>,
 }
 
 pub fn parse_xml() -> quick_xml::Result<()> {
@@ -62,7 +61,7 @@ fn parse_group<R: std::io::BufRead>(
     attributes: quick_xml::events::attributes::Attributes,
 ) -> quick_xml::Result<Group> {
     let mut buf: Vec<u8> = Vec::new();
-    let mut composites: Vec<Composite> = Vec::new();
+    let mut children: Vec<IncludeResult> = Vec::new();
 
     let mut id = String::new();
     let mut type_ = String::new();
@@ -82,7 +81,8 @@ fn parse_group<R: std::io::BufRead>(
                 println!("Error at position {}: {:?}", reader.error_position(), e)
             }
             Ok(Event::Start(e)) if e.name().as_ref() == b"composite" => {
-                composites.push(parse_composite(reader, e.attributes())?);
+                let res = parse_composite(reader, e.attributes())?;
+                children.push(IncludeResult::Composite(res));
             }
             Ok(Event::Empty(e)) if e.name().as_ref() == b"include" => {
                 println!("inside include of group");
@@ -92,7 +92,7 @@ fn parse_group<R: std::io::BufRead>(
                         //ToDo!
                     }
                     Ok(IncludeResult::Composite(composite)) => {
-                        composites.push(composite);
+                        children.push(IncludeResult::Composite(composite));
                     }
                     _ => {}
                 }
@@ -101,7 +101,7 @@ fn parse_group<R: std::io::BufRead>(
                 return Ok(Group {
                     id,
                     type_,
-                    composites,
+                    children,
                 });
             }
 
@@ -116,8 +116,7 @@ fn parse_composite<R: std::io::BufRead>(
 ) -> quick_xml::Result<Composite> {
     let mut buf: Vec<u8> = Vec::new();
     let mut substitutions: Vec<Substitute> = Vec::new();
-    let mut snippets: Vec<Snippet> = Vec::new();
-    let mut sub_composites: Vec<Composite> = Vec::new();
+    let mut sub_children: Vec<IncludeResult> = Vec::new();
 
     let mut name = String::new();
     let mut type_: Option<String> = None;
@@ -143,26 +142,27 @@ fn parse_composite<R: std::io::BufRead>(
                 let res = parse_include(e.attributes())?;
                 match res {
                     IncludeResult::Snippet(snippet) => {
-                        snippets.push(snippet);
+                        sub_children.push(IncludeResult::Snippet(snippet));
                     }
                     IncludeResult::Composite(composite) => {
-                        sub_composites.push(composite);
+                        sub_children.push(IncludeResult::Composite(composite));
                     }
                 }
             }
             Ok(Event::Start(e)) if e.name().as_ref() == b"snippet" => {
-                snippets.push(Snippet::parse_snippet(reader, e.attributes())?);
+                let res = Snippet::parse_snippet(reader, e.attributes())?;
+                sub_children.push(IncludeResult::Snippet(res));
             }
             Ok(Event::Start(e)) if e.name().as_ref() == b"composite" => {
-                sub_composites.push(parse_composite(reader, e.attributes())?);
+                let res = parse_composite(reader, e.attributes())?;
+                sub_children.push(IncludeResult::Composite(res));
             }
             Ok(Event::End(e)) if e.name().as_ref() == b"composite" => {
                 return Ok(Composite {
                     name,
                     type_,
                     substitutions,
-                    snippets,
-                    sub_composites,
+                    sub_children,
                 });
             }
 
@@ -213,6 +213,7 @@ fn parse_include(
     }
 }
 
+#[derive(Debug)]
 enum IncludeResult {
     Snippet(Snippet),
     Composite(Composite),

@@ -95,4 +95,179 @@
 			<max>1</max>
 		</constraints>
 	</variable>
+	<!--<variables>-->
+	<variable id="sourceFunction">
+		<default>voltage</default>
+		<reference id="smu@.source.function"/>
+	</variable>
+	<variable id="sourceRange">
+		<depends ref="sourceFunction">
+			<case value="voltage">
+				<default>AUTO</default>
+				<reference id="smu@.source.autorange" useall="false" value="1">AUTO</reference>
+				<reference id="smu@.source.rangev"/>
+			</case>
+			<case value="voltage:fixed">
+				<default>1 V</default>
+				<reference id="smu@.source.rangev"/>
+			</case>
+			<case value="voltage:pulse">
+				<default>1 V</default>
+				<reference id="smu@.source.rangev"/>
+			</case>
+			<case value="current">
+				<default>AUTO</default>
+				<reference id="smu@.source.autorange" useall="false" value="1">AUTO</reference>
+				<reference id="smu@.source.rangei"/>
+			</case>
+			<case value="current:fixed">
+				<default>10 mA</default>
+				<reference id="smu@.source.rangei"/>
+			</case>
+			<case value="current:pulse">
+				<default>10 mA</default>
+				<reference id="smu@.source.rangei:pulse"/>
+			</case>
+		</depends>
+	</variable>
+	<variable id="sourceLimitV">
+		<default>1 V</default>
+		<reference id="smu@.source.limitv"/>
+	</variable>
+	<variable id="sourceLimitI">
+		<default>1 mA</default>
+		<reference id="smu@.source.limiti"/>
+	</variable>
+	<variable id="measureFunction">
+		<default>current</default>
+		<reference id="smu@.measure.function"/>
+	</variable>
+	<variable id="measureRange">
+		<depends ref="measureFunction">
+			<case value="voltage">
+				<default>AUTO</default>
+				<reference id="smu@.measure.autorange" useall="false" value="1">AUTO</reference>
+				<reference id="smu@.measure.rangev"/>
+			</case>
+			<case value="voltage:fixed">
+				<default>1 V</default>
+				<reference id="smu@.measure.rangev"/>
+			</case>
+			<case value="voltage:pulse">
+				<default>1 V</default>
+				<reference id="smu@.measure.rangev"/>
+			</case>
+			<case value="voltage:highc">
+				<!--
+				Although voltage autorange is suppored in highc mode, we ommit it to avoid
+				confusion since there is an "Autoscale enable" button in the sweep interface
+				that is mutually exclusive with highc
+				<default>AUTO</default>
+				<reference id="smu@.measure.autorange" useall="false" value="1">AUTO</reference>
+				-->
+				<default>1 V</default>
+				<reference id="smu@.measure.rangev"/>
+			</case>
+			<case value="current">
+				<default>AUTO</default>
+				<reference id="smu@.measure.autorange" useall="false" value="1">AUTO</reference>
+				<reference id="smu@.measure.rangei"/>
+			</case>
+			<case value="current:fixed">
+				<default>100 mA</default>
+				<reference id="smu@.measure.rangei"/>
+			</case>
+			<case value="current:pulse">
+				<default>100 mA</default>
+				<reference id="smu@.measure.rangei:pulse"/>
+			</case>
+			<case value="current:highc">
+				<default>follow limiti</default>
+				<reference id="smu@.measure.rangei:highc"/>
+			</case>
+			<case value="resistance">
+				<default>AUTO</default>
+				<reference id="smu@.measure.autorange" useall="false" value="1">AUTO</reference>
+				<reference id="smu@.measure.ranger"/>
+			</case>
+			<case value="resistance:fixed">
+				<default>1 MOhm</default>
+				<reference id="smu@.measure.ranger"/>
+			</case>
+			<case value="resistance:pulse">
+				<default>1 MOhm</default>
+				<reference id="smu@.measure.ranger"/>
+			</case>
+			<case value="resistance:highc">
+				<default>1 MOhm</default>
+				<reference id="smu@.measure.ranger"/>
+			</case>
+			<case value="current,voltage(current)">
+				<default>AUTO</default>
+				<reference id="smu@.measure.autorange" useall="false" value="1">AUTO</reference>
+				<reference id="smu@.measure.rangeiv(current)"/>
+			</case>
+			<case value="current,voltage(voltage)">
+				<default>AUTO</default>
+				<reference id="smu@.measure.autorange" useall="false" value="1">AUTO</reference>
+				<reference id="smu@.measure.rangeiv(voltage)"/>
+			</case>
+			<case value="current,voltage(current):fixed">
+				<default>1 V</default>
+				<reference id="smu@.measure.rangeiv(current)"/>
+			</case>
+			<case value="current,voltage(voltage):fixed">
+				<default>10 mA</default>
+				<reference id="smu@.measure.rangeiv(voltage)"/>
+			</case>
+			<case value="current,voltage(current):pulse">
+				<default>1 V</default>
+				<reference id="smu@.measure.rangeiv(current)"/>
+			</case>
+			<case value="current,voltage(voltage):pulse">
+				<default>10 mA</default>
+				<reference id="smu@.measure.rangeiv(voltage):pulse"/>
+			</case>
+			<case value="current,voltage(current):highc">
+				<default>1 V</default>
+				<reference id="smu@.measure.rangeiv(current)"/>
+			</case>
+			<case value="current,voltage(voltage):highc">
+				<default>10 mA</default>
+				<reference id="smu@.measure.rangeiv(voltage):highc"/>
+			</case>
+		</depends>
+	</variable>
+	<variable id="sourceValue">
+		<depends ref="sourceFunction">
+			<case value="voltage">
+				<default>0</default>
+				<reference id="smu@.source.levelv"/>
+			</case>
+			<case value="current">
+				<default>0</default>
+				<reference id="smu@.source.leveli"/>
+			</case>
+		</depends>
+	</variable>
+	<variable id="sweepStyle">
+		<default>LIN</default>
+		<reference id="smu@.sweep.style"/>
+	</variable>
+	<variable id="sensemode">
+		<default>Two-Wire</default>
+		<reference id="smu@.sensemode"/>
+	</variable>
+	<variable id="sourcemode">
+		<depends ref="allowHighC">
+			<case value="0">
+				<default>Normal</default>
+				<reference id="smu@.sourcemode:0"/>
+			</case>
+			<case value="1">
+				<default>Normal</default>
+				<reference id="smu@.sourcemode:1"/>
+			</case>
+		</depends>
+	</variable>
 </variables>

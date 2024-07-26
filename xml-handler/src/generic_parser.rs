@@ -3,14 +3,16 @@ use quick_xml::{events::Event, name::QName};
 
 use std::{fs::File, io::Read};
 
-use crate::snippet::{self, Snippet};
-use crate::substitute::{self, Substitute};
+use crate::snippet::Snippet;
+use crate::substitute::Substitute;
+use crate::variable::{Variable, Variables};
 
 #[derive(Debug)]
 struct Group {
     id: String,
     type_: String,
     children: Vec<IncludeResult>,
+    variable_List: Vec<Variable>,
 }
 
 #[derive(Debug)]
@@ -51,7 +53,7 @@ pub fn parse_xml() -> quick_xml::Result<()> {
         }
     }
 
-    println!("{:#?}", groups);
+    println!("{:#?}", groups[0].children);
 
     Ok(())
 }
@@ -62,6 +64,7 @@ fn parse_group<R: std::io::BufRead>(
 ) -> quick_xml::Result<Group> {
     let mut buf: Vec<u8> = Vec::new();
     let mut children: Vec<IncludeResult> = Vec::new();
+    let mut variable_List: Vec<Variable> = Vec::new();
 
     let mut id = String::new();
     let mut type_ = String::new();
@@ -88,11 +91,14 @@ fn parse_group<R: std::io::BufRead>(
                 println!("inside include of group");
                 let res = parse_include(e.attributes());
                 match res {
-                    Ok(IncludeResult::Snippet(snippet)) => {
+                    Ok(ExternalFileResult::Snippet(snippet)) => {
                         //ToDo!
                     }
-                    Ok(IncludeResult::Composite(composite)) => {
+                    Ok(ExternalFileResult::Composite(composite)) => {
                         children.push(IncludeResult::Composite(composite));
+                    }
+                    Ok(ExternalFileResult::Variables(vars)) => {
+                        variable_List = vars.variable_array
                     }
                     _ => {}
                 }
@@ -102,6 +108,7 @@ fn parse_group<R: std::io::BufRead>(
                     id,
                     type_,
                     children,
+                    variable_List,
                 });
             }
 
@@ -141,12 +148,15 @@ fn parse_composite<R: std::io::BufRead>(
             Ok(Event::Empty(e)) if e.name().as_ref() == b"include" => {
                 let res = parse_include(e.attributes())?;
                 match res {
-                    IncludeResult::Snippet(snippet) => {
+                    ExternalFileResult::Snippet(snippet) => {
                         sub_children.push(IncludeResult::Snippet(snippet));
                     }
-                    IncludeResult::Composite(composite) => {
+                    ExternalFileResult::Composite(composite) => {
                         sub_children.push(IncludeResult::Composite(composite));
                     }
+                    ExternalFileResult::Variables(_) => {
+                        //ToDo!
+                    },
                 }
             }
             Ok(Event::Start(e)) if e.name().as_ref() == b"snippet" => {
@@ -173,20 +183,20 @@ fn parse_composite<R: std::io::BufRead>(
 
 fn parse_include(
     attributes: quick_xml::events::attributes::Attributes,
-) -> quick_xml::Result<IncludeResult> {
-    let mut file_Path = String::new();
+) -> quick_xml::Result<ExternalFileResult> {
+    let mut file_path = String::new();
     let mut snippet: Option<Snippet> = None;
     let mut composite: Option<Composite> = None;
 
     for attr in attributes {
         let attr = attr?;
         match attr.key {
-            QName(b"path") => file_Path = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
+            QName(b"path") => file_path = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
             _ => {}
         }
     }
-    println!("file_Path: {}", file_Path);
-    let mut file = File::open(file_Path).unwrap();
+    println!("file_Path: {}", file_path);
+    let mut file = File::open(file_path).unwrap();
     let mut buff = String::new();
     file.read_to_string(&mut buff).unwrap();
 
@@ -202,11 +212,15 @@ fn parse_include(
             }
             Ok(Event::Start(e)) if e.name().as_ref() == b"snippet" => {
                 snippet = Some(Snippet::parse_snippet(&mut reader, e.attributes())?);
-                return Ok(IncludeResult::Snippet(snippet.unwrap()));
+                return Ok(ExternalFileResult::Snippet(snippet.unwrap()));
             }
             Ok(Event::Start(e)) if e.name().as_ref() == b"composite" => {
                 composite = Some(parse_composite(&mut reader, e.attributes())?);
-                return Ok(IncludeResult::Composite(composite.unwrap()))
+                return Ok(ExternalFileResult::Composite(composite.unwrap()))
+            }
+            Ok(Event::Start(e)) if e.name().as_ref() == b"variables" => {
+                let variables = Variables::parse_variables(&mut reader, e.attributes())?;
+                return Ok(ExternalFileResult::Variables(variables));
             }
             _ => (),
         }
@@ -214,7 +228,18 @@ fn parse_include(
 }
 
 #[derive(Debug)]
+enum ExternalFileResult {
+    Snippet(Snippet),
+    Composite(Composite),
+    Variables(Variables),
+}
+
+#[derive(Debug)]
 enum IncludeResult {
     Snippet(Snippet),
     Composite(Composite),
 }
+
+
+
+

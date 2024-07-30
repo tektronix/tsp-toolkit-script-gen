@@ -12,7 +12,7 @@ pub struct Snippet {
 }
 
 impl Snippet {
-    // Function to create a new instance of Substitute
+    /// Function to create a new instance of [`Snippet`]
     fn new(
         name: String,
         repeat: String,

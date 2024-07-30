@@ -28,9 +28,9 @@ impl Reference {
         attributes: quick_xml::events::attributes::Attributes,
     ) -> quick_xml::Result<Reference> {
         let mut id = String::new();
-        let mut default = String::new();
-        let mut useall = String::new();
-        let mut value = String::new();
+        let default = String::new();
+        let useall = String::new();
+        let value = String::new();
 
         for attr in attributes {
             let attr = attr?;

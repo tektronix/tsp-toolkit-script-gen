@@ -1,6 +1,7 @@
 use quick_xml::reader::Reader;
 use quick_xml::{events::Event, name::QName};
 
+use std::path::Path;
 use std::{fs::File, io::Read};
 
 use crate::snippet::Snippet;
@@ -25,7 +26,8 @@ struct Composite {
 }
 
 pub fn parse_xml() -> quick_xml::Result<()> {
-    let mut file = File::open("xml-handler\\src\\resources\\DefaultFunctionMetaData.xml").unwrap();
+    let path = Path::new("xml-handler/src/resources/DefaultFunctionMetaData.xml");
+    let mut file = File::open(path).unwrap();
     let mut buff = String::new();
     file.read_to_string(&mut buff).unwrap();
 
@@ -53,7 +55,7 @@ pub fn parse_xml() -> quick_xml::Result<()> {
         }
     }
 
-    println!("{:#?}", groups[0].children);
+    println!("{:#?}", groups);
 
     Ok(())
 }
@@ -184,19 +186,22 @@ fn parse_composite<R: std::io::BufRead>(
 fn parse_include(
     attributes: quick_xml::events::attributes::Attributes,
 ) -> quick_xml::Result<ExternalFileResult> {
-    let mut file_path = String::new();
+    let mut file_attr = String::new();
     let mut snippet: Option<Snippet> = None;
     let mut composite: Option<Composite> = None;
 
     for attr in attributes {
         let attr = attr?;
         match attr.key {
-            QName(b"path") => file_path = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
+            QName(b"path") => file_attr = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
             _ => {}
         }
     }
-    println!("file_Path: {}", file_path);
-    let mut file = File::open(file_path).unwrap();
+    println!("file_Path: {}", file_attr);
+
+    let path = Path::new(file_attr.as_str());
+    let mut file = File::open(path).unwrap();
+
     let mut buff = String::new();
     file.read_to_string(&mut buff).unwrap();
 

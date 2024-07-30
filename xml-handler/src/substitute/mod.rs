@@ -7,7 +7,7 @@ pub struct Substitute {
 }
 
 impl Substitute {
-    // Function to create a new instance of Substitute
+    /// Function to create a new instance of [`Substitute`]
     fn new(name: String, value: String) -> Self {
         Substitute { name, value }
     }

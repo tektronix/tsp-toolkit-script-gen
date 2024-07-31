@@ -1,0 +1,193 @@
+<snippet>
+    -- The local functions are scoped at the project level, so that we can keep
+    -- track of the reading buffers throughout the test.
+    local systemNodes = {}
+    local systemSmus = {}
+    local systemSmuReadingBufferIndexes = {}
+    local appendMode = %APPEND-MODE%
+
+    local gOverrunDetected = false
+    --==========================================================================
+    -- This function tests for overruns in any of the system smus' trigger models.
+    -- It returns an error to the application that will be displayed in a
+    -- dialog box if an overrun occurs.
+    --==========================================================================
+    local _Overruncheck = function()
+        --==========================================================================
+        -- This function test the results of the value in the smu's trigger overrun
+        -- status register. -- It returns an error if an overrun occurs.
+        --
+        -- parameter   overrun     A bit pattern that contains the smu trigger overrun
+        --                         status register result
+        --==========================================================================
+        local TestOverrunBits = function(overrun, selNode, whichSmu)
+            local whichNode = [[localnode.]]
+            if (localnode.tsplink ~= nil) then
+                if (selNode.tsplink.node ~= localnode.tsplink.node) then
+                    whichNode = [[node[]] .. selNode.tsplink.node .. [[].]]
+                end
+            end
+            whichNode = whichNode .. whichSmu .. [[ (]] .. selNode.model .. [[)]]
+            if (bit.test(overrun, 2)) then
+                gOverrunDetected = true
+                return("arm overrun on " .. whichNode .. "{eol}")
+            elseif (bit.test(overrun, 3)) then
+                gOverrunDetected = true
+                return("source overrun on " .. whichNode .. "{eol}")
+            elseif (bit.test(overrun, 4)) then
+                gOverrunDetected = true
+                return("measure overrun on " .. whichNode .. "{eol}")
+            elseif (bit.test(overrun, 5)) then
+                gOverrunDetected = true
+                return("end pulse overrun on " .. whichNode .. "{eol}")
+            else
+                return("")
+            end
+        end
+
+        -- Report an overrun error only once.
+        if(gOverrunDetected == false) then
+            local allSmusInOverrun = [[]]
+
+            for i, selNode in ipairs(systemNodes) do
+                for j, selSmu in ipairs(systemSmus[i]) do
+                    if(j == 1) then
+                        local overrun = selNode.status.operation.instrument.smua.trigger_overrun.event
+                        if (overrun > 0) then
+                            allSmusInOverrun = allSmusInOverrun .. TestOverrunBits(overrun, selNode, [[smua]])
+                        end
+                    elseif(j == 2) then
+                        local overrun = selNode.status.operation.instrument.smub.trigger_overrun.event
+                        if (overrun > 0) then
+                            allSmusInOverrun = allSmusInOverrun .. TestOverrunBits(overrun, selNode, [[smub]])
+                        end
+                    end
+                end
+            end
+
+            if (gOverrunDetected == true) then
+                print("[{error}]Script stopped due to:{eol}" .. allSmusInOverrun)
+            end
+        end
+    end
+
+    local gComplianceDetected = false
+    --==========================================================================
+    -- Checks smus for voltage or current compliance.
+    -- If a compliance event occurs, the message dialog box is presented to the
+    -- user.
+    --==========================================================================
+    local _ComplianceCheck = function()
+        -- Report a compliance error only once.
+        if(gComplianceDetected == false) then
+            local allSmusInCompliance = [[]]
+
+            for i, selNode in ipairs(systemNodes) do
+                for j, selSmu in ipairs(systemSmus[i]) do
+                    local compDetect = selNode.status.measurement.instrument.event
+                    if(compDetect > 0) then
+                        -- Compose and show error message
+                        local whichNode = [[localnode.]]
+                        if (localnode.tsplink ~= nill) then
+                            if (selNode.tsplink.node ~= localnode.tsplink.node) then
+                                whichNode = [[node[]] .. selNode.tsplink.node .. [[].]]
+                            end
+                        end
+                        local whichSmu = [[]]
+                        if(compDetect == 2) then
+                            whichSmu = whichNode .. [[smua]]
+                        elseif (compDetect == 4) then
+                            whichSmu = whichNode .. [[smub]]
+                        elseif (compDetect == 6) then
+                            whichSmu = whichNode .. [[smua and ]] .. whichNode .. [[smub]]
+                        end
+                        whichSmu = whichSmu .. [[ (]] .. selNode.model .. [[){eol}]]
+                        allSmusInCompliance = allSmusInCompliance .. whichSmu
+
+                        -- Set gComplianceDetected so we don't report the error again.
+                        gComplianceDetected = true
+                    end
+                end
+            end
+
+            if (gComplianceDetected == true) then
+                print("[{info}]Compliance detected on:{eol}" .. allSmusInCompliance ..
+                "{eol}Click the Advanced button and check the Source Limit setting.")
+            end
+        end
+    end
+
+    local gTestAborted = false
+    --==========================================================================
+    -- This function waits up to a specified period for the sweeps to complete.
+    -- If the delay parameter is -1, then the timeout is infinite. It returns true
+    -- if all sweeping actions are complete. Otherwise, the return value is false.
+    -- Note: If gTestAborted is true, this function returns false immediately.
+    --
+    -- parameter  interval     Maximum time to wait (in seconds).
+    --==========================================================================
+    local _WaitForComplete = function(interval)
+        local pollInterval = 0.1
+
+        --==========================================================================
+        -- Checks the system smus for any that are still sweeping.
+        --==========================================================================
+        local IsSweepingComplete = function()
+            for i, selNode in ipairs(systemNodes) do
+                for j, selSmu in ipairs(systemSmus[i]) do
+                    if (j == 1) then
+                        local statcond = selNode.status.operation.instrument.smua.condition
+                        if (bit.test(statcond,4)) then
+                            return false
+                        end
+                    elseif (j == 2) then
+                        local statcond = selNode.status.operation.instrument.smub.condition
+                        if (bit.test(statcond,4)) then
+                            return false
+                        end
+                    end
+                end
+            end
+
+            return true
+        end
+
+        local notimeout = false
+        if (interval &lt; 0) then
+            notimeout = true
+            interval = 1
+        end
+
+        while(interval &gt; 0) do
+            -- Check the abort flag
+            if (gTestAborted == true) then
+                return false
+            end
+
+            -- Check for errors
+            if (errorqueue.count > 0) then
+                return false
+            end
+
+            -- Check for overruns and compliance
+            _Overruncheck()
+            _ComplianceCheck()
+
+            if (IsSweepingComplete() == true) then
+                return true
+            end
+
+            delay(pollInterval)
+
+            if (notimeout == false) then
+                interval = interval - pollInterval
+            end
+        end
+
+        if (IsSweepingComplete() == true) then
+            return true
+        end
+
+        return false
+    end
+</snippet>

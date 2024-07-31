@@ -1,0 +1,23 @@
+[workspace]
+members = ["kic-script-gen", "xml-handler"]
+resolver = "2"
+
+[workspace.package]
+#TODO
+
+[workspace.dependencies]
+quick-xml = "0.36.0"
+xml-handler = {path = "xml-handler"}
+
+[workspace.lints.rust]
+warnings = "deny"
+
+[workspace.lints.clippy]
+pedantic = { level = "deny", priority = -1 }
+nursery = { level = "deny", priority = -1 }
+undocumented_unsafe_blocks = "deny"
+arithmetic_side_effects = "deny"
+
+[workspace.lints.rustdoc]
+all = "warn"
+missing_doc_code_examples = "warn"

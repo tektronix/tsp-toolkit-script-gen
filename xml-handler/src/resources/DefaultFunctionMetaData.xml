@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<data>
+    <group id="SWEEP" type="Sweep">
+		<!-- the next variables define constraints that are used for all devices.  this is usually
+		     because the GUI is using a single control and applying the value to all devices -->
+		<include path="xml-handler/src/resources/sweep/DefaultLimits.xml"/>
+		<!-- The ChunkModel (i.e. the script template) -->
+		<include path="xml-handler/src/resources/sweep/DefaultSweepChunk.xml"/>
+	</group>
+
+	<group id="USER" type="User">
+		<!-- no chunk!  added programatically -->
+	</group>
+
+	<group id="REPORT" type="DataReport">
+		<!-- The ChunkModel (i.e. the script template) -->
+		<composite name="DataReport">
+			<substitute name="READING-BUFFERS">%READING-BUFFERS%</substitute>
+			<substitute name="READING-BUFFER-NAMES">%READING-BUFFER-NAMES%</substitute>
+			<substitute name="READING-BUFFER-SMU-NAMES">%READING-BUFFER-SMU-NAMES%</substitute>
+			<substitute name="WAIT-INTERVAL">%WAIT-INTERVAL%</substitute>
+			<substitute name="MAX-READINGS-TO-RETURN">%MAX-READINGS-TO-RETURN%</substitute>
+
+			<substitute name="TAG-DATA-REPORT">%TAG-DATA-REPORT%</substitute>
+			<substitute name="TAG-SWEEP-START">%TAG-SWEEP-START%</substitute>
+			<substitute name="TAG-START">%TAG-START%</substitute>
+			<substitute name="TAG-NAME">%TAG-NAME%</substitute>
+			<substitute name="TAG-EXPECTED-COUNT">%TAG-EXPECTED-COUNT%</substitute>
+			<substitute name="TAG-PTS-IN-BUFF">%TAG-PTS-IN-BUFF%</substitute>
+			<substitute name="TAG-PTS-RETURNED">%TAG-PTS-RETURNED%</substitute>
+			<substitute name="TAG-BASE-TIME-STAMP">%TAG-BASE-TIME-STAMP%</substitute>
+			<substitute name="TAG-READINGS">%TAG-READINGS%</substitute>
+			<substitute name="TAG-TIMESTAMPS">%TAG-TIMESTAMPS%</substitute>
+			<substitute name="TAG-SRCVALS">%TAG-SRCVALS%</substitute>
+			<substitute name="TAG-END">%TAG-END%</substitute>
+			<substitute name="TAG-COMPLETE">%TAG-COMPLETE%</substitute>
+			
+			<include path="xml-handler/src/resources/DataReport.xml"/>
+		</composite>
+	</group>
+
+    <group id="INITIALIZE" type="Initialize">
+		<!-- The ChunkModel (i.e. the script template) -->
+
+		<composite name="Initialize">
+			<substitute name="MAX-NODES">%MAX-NODES%</substitute>
+			<substitute name="PRODUCT-SETUP">%PRODUCT-SETUP%</substitute>
+			<substitute name="APPEND-MODE">%APPEND-MODE%</substitute>
+			<substitute name="INCLUDE-TIMESTAMPS">%INCLUDE-TIMESTAMPS%</substitute>
+			<substitute name="INCLUDE-SRCVALS">%INCLUDE-SRCVALS%</substitute>
+			<include path="xml-handler/src/resources/Initialize.xml"/>
+		</composite>
+
+		<!-- type 'aux' goes into FunctionMetadata.auxChunkModel -->
+		<composite name="hidden" type="aux">
+			<substitute name="APPEND-MODE">%APPEND-MODE%</substitute>
+			<include path="xml-handler/src/resources/Support.xml"/>
+		</composite>
+
+	</group>
+
+    <group id="FINALIZE" type="Finalize">
+		<!-- The ChunkModel (i.e. the script template) -->
+		<composite name="Finalize">
+			<include path="xml-Handler/src/resources/Finalize.xml"/>
+		</composite>
+	</group>
+</data>

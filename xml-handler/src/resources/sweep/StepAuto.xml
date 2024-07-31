@@ -1,0 +1,292 @@
+<snippet>
+	-- This function runs a complex sweep with one stepping smu and any number of sweeping smus.
+	-- The script supports sweeps with autorange on, but pulse mode is not supported.
+	-- This version syncs the measure and endpulse events.
+	local testSmus = {
+						{%BIAS-SMUS%},  -- Bias
+						{{%STEP-MASTER%}},  -- Step
+						{{%SWEEP-MASTER%},%SWEEP-SLAVE-SMUS%},  -- Sweep
+					 }
+
+	local testNodes = {
+						{%BIAS-NODES%},  -- Bias
+						{%MASTER-NODE%},  -- Step
+						{%MASTER-NODE%,%SWEEP-SLAVE-NODES%}  -- Sweep
+					  }
+
+	local timePoint = %SWEEP-TIME-PER-POINT%
+	local enforceStepWith = false
+
+	local numberOfSteps  = %STEP-COUNT%
+	local numberOfSweeps = %SWEEP-POINTS%
+
+	local stepToSweepDelay = %STEP-TO-SWEEP-DELAY%
+
+	local nplc = %NPLC%
+	local lineFrequency = %LINE-FREQUENCY%
+
+	local masterSweepSmu = testSmus[sweepIndex][1][1]
+	local masterStepSmu = testSmus[stepIndex][1][1]
+	local masterNode = testNodes[stepIndex][1]
+	local numExtSweepNodes = table.getn(testNodes[sweepIndex]) - 1
+
+	local t2Timer = masterNode.trigger.timer[2]    -- t2Timer is for step-to-sweep delay
+	local startSweepStimulus = masterStepSmu.trigger.SOURCE_COMPLETE_EVENT_ID
+
+	--==========================================================================
+	-- This function checks for errors or conflicts in the test settings (timing, ranges, etc.)
+	--==========================================================================
+	local CheckSettings = function()
+		if((masterStepSmu == nil) or (masterNode == nil)) then
+			local errorMsg =  [[Must have at least one steping smu.]]
+			print(errorTag .. errorMsg)
+			error(errorMsg)
+		end
+
+		if((numExtSweepNodes &lt;= 0) and (masterSweepSmu == nil)) then
+			local errorMsg =  [[Must have at least one sweeping smu.]]
+			print(errorTag .. errorMsg)
+			error(errorMsg)
+		end
+	end
+
+	--==========================================================================
+	-- This function configures the trigger line interaction between the smus.
+	--==========================================================================
+	local ConfigureTriggerLines = function()
+		--==========================================================================
+		-- This function configures the step-to-sweep delay timer.
+		--==========================================================================
+		local ConfigureStepToSweepDelayTimer = function()
+			if (stepToSweepDelay &gt; 0) then
+				t2Timer.stimulus = masterStepSmu.trigger.SOURCE_COMPLETE_EVENT_ID
+				t2Timer.passthrough = false
+				t2Timer.delay = stepToSweepDelay
+				t2Timer.count = 1
+
+				startSweepStimulus = t2Timer.EVENT_ID
+			end
+		end
+
+		--==========================================================================
+		-- This function configures the timers that are used in the test.
+		-- The timer used in this test enforces a minimum width on the sweeping smus.
+		--==========================================================================
+		local ConfigureSweepTimer = function(tTimer, stimulusEventId)
+			tTimer.count = 1
+			tTimer.stimulus = stimulusEventId
+			tTimer.passthrough = false
+			tTimer.delay = timePoint
+		end
+
+		--==========================================================================
+		-- This function configures the stepping smu.
+		--==========================================================================
+		local ConfigureStep = function()
+			-- Configure trigger model stimulus
+			masterStepSmu.trigger.arm.stimulus = masterNode.trigger.EVENT_ID
+			masterStepSmu.trigger.endpulse.stimulus = 0
+			masterStepSmu.trigger.measure.stimulus = 0
+			masterStepSmu.trigger.source.stimulus = 0
+
+			-- Configure trigger endpulse stimulus.
+			if (masterSweepSmu ~= nil) then
+				local masterStepEndPulseBlender = masterNode.trigger.blender[1]
+
+				masterStepEndPulseBlender.orenable = false
+				masterStepEndPulseBlender.stimulus[1] = masterSweepSmu.trigger.SWEEP_COMPLETE_EVENT_ID
+
+				-- If we have sweep smus on remote nodes, prepare a tsp trigger line.
+				if (numExtSweepNodes > 0) then
+					local tspl1 = masterNode.tsplink.trigger[1]
+
+					tspl1.mode = tsplink.TRIG_SYNCHRONOUSM
+					tspl1.pulsewidth = 1e-6
+					tspl1.stimulus = startSweepStimulus
+
+					masterStepEndPulseBlender.stimulus[2] = tspl1.EVENT_ID
+				end
+
+				masterStepSmu.trigger.endpulse.stimulus = masterStepEndPulseBlender.EVENT_ID
+
+			elseif (numExtSweepNodes > 0) then
+				local tspl1 = masterNode.tsplink.trigger[1]
+
+				tspl1.mode = tsplink.TRIG_SYNCHRONOUSM
+				tspl1.pulsewidth = 1e-6
+				tspl1.stimulus = startSweepStimulus
+
+				masterStepSmu.trigger.endpulse.stimulus = tspl1.EVENT_ID
+			else
+				local errorMsg = [[Must have at least one sweeping smu.]]
+				print(errorTag .. errorMsg)
+				error(errorMsg)
+			end
+
+			-- Finish configuring the master stepping smu.
+			masterStepSmu.trigger.arm.count = 1
+			masterStepSmu.trigger.count = numberOfSteps
+
+			masterStepSmu.trigger.measure.action = masterStepSmu.ENABLE
+			masterStepSmu.trigger.source.action = masterStepSmu.ENABLE
+			masterStepSmu.trigger.endpulse.action = masterStepSmu.SOURCE_HOLD
+		end
+
+		--==========================================================================
+		-- This function configures the sweeping smus.
+		--==========================================================================
+		local ConfigureSweep = function()
+			--==========================================================================
+			-- Configures a particular smu for sweeping.
+			--
+			-- parameter selNode                    Node to which the smu belongs.
+			-- parameter selSmu                     Smu to configure.
+			-- parameter armStimulusEventId         Arm stimulus event.
+			--==========================================================================
+			local ConfigureSweepSmu = function(selNode, selSmu, armStimulusEventId)
+				local measBlender = selNode.trigger.blender[2]
+				local endpulseBlender = selNode.trigger.blender[3]
+
+				selSmu.trigger.arm.stimulus = armStimulusEventId
+				selSmu.trigger.source.stimulus = 0
+				selSmu.trigger.measure.stimulus = measBlender.EVENT_ID
+				selSmu.trigger.endpulse.stimulus = endpulseBlender.EVENT_ID
+
+				selSmu.trigger.arm.count = numberOfSteps
+				selSmu.trigger.count = numberOfSweeps
+
+				selSmu.trigger.endpulse.action = selSmu.SOURCE_HOLD
+
+				selSmu.trigger.measure.action = selSmu.ENABLE
+				selSmu.trigger.source.action = selSmu.ENABLE
+			end
+
+			local masterSweepMeasBlender = masterNode.trigger.blender[2]
+			local masterSweepMeasBlenderIndex = 1
+			local masterSweepEndPulseBlender = masterNode.trigger.blender[3]
+			local masterSweepEndPulseBlenderIndex = 1
+
+			masterSweepMeasBlender.orenable = false
+			masterSweepEndPulseBlender.orenable = false
+
+			-- Configure sweeping smu on the same node as the stepping smu.
+			if (masterSweepSmu ~= nil) then
+				masterSweepMeasBlender.stimulus[masterSweepMeasBlenderIndex] = masterSweepSmu.trigger.SOURCE_COMPLETE_EVENT_ID
+				masterSweepMeasBlenderIndex = masterSweepMeasBlenderIndex + 1
+
+				if (enforceStepWith == true) then
+					local tTimer = masterNode.trigger.timer[1]
+
+					ConfigureSweepTimer(tTimer, masterSweepMeasBlender.EVENT_ID)
+					masterSweepEndPulseBlender.stimulus[masterSweepEndPulseBlenderIndex] = tTimer.EVENT_ID
+				else
+					masterSweepEndPulseBlender.stimulus[masterSweepEndPulseBlenderIndex] = masterSweepMeasBlender.EVENT_ID
+				end
+				masterSweepEndPulseBlenderIndex = masterSweepEndPulseBlenderIndex + 1
+
+				ConfigureSweepSmu(masterNode, masterSweepSmu, startSweepStimulus)
+
+				if (numExtSweepNodes > 0) then
+
+					local tspl2 =  masterNode.tsplink.trigger[2]
+					local tspl3 =  masterNode.tsplink.trigger[3]
+
+					tspl2.mode = tsplink.TRIG_SYNCHRONOUSM
+					tspl2.pulsewidth = 1e-6
+					tspl3.mode = tsplink.TRIG_SYNCHRONOUSM
+					tspl3.pulsewidth = 1e-6
+					tspl2.stimulus = masterSweepSmu.trigger.SOURCE_COMPLETE_EVENT_ID
+					tspl3.stimulus = masterSweepSmu.trigger.MEASURE_COMPLETE_EVENT_ID
+
+					masterSweepMeasBlender.stimulus[masterSweepMeasBlenderIndex] = tspl2.EVENT_ID
+					masterSweepEndPulseBlender.stimulus[masterSweepEndPulseBlenderIndex] = tspl3.EVENT_ID
+				end
+
+			end
+
+			-- Configure sweeping smus on any other nodes in the setup.
+			if (numExtSweepNodes > 0) then
+				local endPos = numExtSweepNodes + 1
+				for i=2, endPos do
+					local selNode = testNodes[sweepIndex][i]
+					local selArmBlender = selNode.trigger.blender[1]
+					local selArmBlenderIndex = 1
+					local selMeasBlender = selNode.trigger.blender[2]
+					local selMeasBlenderIndex = 1
+					local selEndPulseBlender = selNode.trigger.blender[3]
+					local selEndPulseBlenderIndex = 1
+
+					selArmBlender.orenable = false
+					selMeasBlender.orenable = false
+					selEndPulseBlender.orenable = false
+
+					local tspl1 = selNode.tsplink.trigger[1]
+					tspl1.mode = tsplink.TRIG_SYNCHRONOUSA
+					tspl1.pulsewidth = 1e-6
+					tspl1.stimulus = selArmBlender.EVENT_ID
+
+					local tspl2 = nil
+					local tspl3 = nil
+
+					if (masterSweepSmu ~= nil) then
+						tspl2 = selNode.tsplink.trigger[2]
+						tspl2.mode = tsplink.TRIG_SYNCHRONOUSA
+						tspl2.pulsewidth = 1e-6
+						tspl2.stimulus = selMeasBlender.EVENT_ID
+
+						tspl3 = selNode.tsplink.trigger[3]
+						tspl3.mode = tsplink.TRIG_SYNCHRONOUSA
+						tspl3.pulsewidth = 1e-6
+						tspl3.stimulus = selEndPulseBlender.EVENT_ID
+
+						selMeasBlender.stimulus[selMeasBlenderIndex] = tspl2.EVENT_ID
+						selMeasBlenderIndex = selMeasBlenderIndex + 1
+
+						selEndPulseBlender.stimulus[selEndPulseBlenderIndex] = tspl3.EVENT_ID
+						selEndPulseBlenderIndex = selEndPulseBlenderIndex + 1
+					end
+
+					if (enforceStepWith == true) then
+						local tTimer = selNode.trigger.timer[1]
+
+						ConfigureSweepTimer(tTimer, selMeasBlender.EVENT_ID)
+						selEndPulseBlender.stimulus[selEndPulseBlenderIndex] = tTimer.EVENT_ID
+						selEndPulseBlenderIndex = selEndPulseBlenderIndex + 1
+					else
+						selEndPulseBlender.stimulus[selEndPulseBlenderIndex] = selMeasBlender.EVENT_ID
+						selEndPulseBlenderIndex = selEndPulseBlenderIndex + 1
+					end
+
+					local sweepArray = testSmus[sweepIndex]
+					local numSmus = table.getn(sweepArray[i])
+
+					for j=1, numSmus do
+						local extSmu = sweepArray[i][j]
+
+						selArmBlender.stimulus[j] = extSmu.trigger.SWEEP_COMPLETE_EVENT_ID
+
+						selMeasBlender.stimulus[selMeasBlenderIndex] = extSmu.trigger.SOURCE_COMPLETE_EVENT_ID
+						selMeasBlenderIndex = selMeasBlenderIndex + 1
+
+						selEndPulseBlender.stimulus[selEndPulseBlenderIndex] = extSmu.trigger.MEASURE_COMPLETE_EVENT_ID
+						selEndPulseBlenderIndex = selEndPulseBlenderIndex + 1
+
+						ConfigureSweepSmu(selNode, extSmu, tspl1.EVENT_ID )
+					end
+				end
+			end
+		end
+
+		-- Configure timers, step and sweep trigger lines.
+		ConfigureStepToSweepDelayTimer()
+		ConfigureSweep()
+		ConfigureStep()
+	end
+
+	--==========================================================================
+	-- This function kicks off the sweep.
+	--==========================================================================
+	local StartSweep = function()
+		masterStepSmu.trigger.arm.set()
+	end
+</snippet>

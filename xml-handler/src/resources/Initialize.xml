@@ -1,0 +1,162 @@
+<snippet>
+	local maxNodes = %MAX-NODES%   -- Maximum possible nodes in TSP link system.
+
+	local projectSetup = %PRODUCT-SETUP% -- Instrument configuration for the project.
+	local currentSetup = {} -- Current instrument configuration.
+
+	local errorTag = "[{error}]"
+	local errorMessage = {[[Instrument in project configuration not found.]], [[Instrument configuration at does not match.]]}
+    local errorNo = 0
+
+	--==========================================================================
+	-- Configures the status model to detect voltage or current compliance.
+	--==========================================================================
+	local ConfigStatusModel = function()
+		for i, selNode in ipairs(systemNodes) do
+			selNode.status.reset()
+			for j, selSmu in ipairs(systemSmus[i]) do
+				-- The selSmu.source.compliance call will force an update
+				-- the condition register of the measurement.instrument.smuX to
+				-- update
+				local dum = selSmu.source.compliance
+				if(j == 1) then
+					-- Clear the measurement.instrument.smua event register by reading its value
+					dum = selNode.status.measurement.instrument.smua.event
+					-- Now configure the status model to detect voltage or current compliance
+					selNode.status.measurement.instrument.smua.enable = 3
+					selNode.status.measurement.instrument.smua.ptr = 3
+					selNode.status.measurement.instrument.enable = 6
+					selNode.status.measurement.instrument.ptr = 6
+				elseif(j == 2) then
+					-- Clear the measurement.instrument.smub event register by reading its value
+					dum = selNode.status.measurement.instrument.smub.event
+					-- Now configure the status model to detect voltage or current compliance
+					selNode.status.measurement.instrument.smub.enable = 3
+					selNode.status.measurement.instrument.smub.ptr = 3
+				end
+			end
+		end
+	end
+
+	--==========================================================================
+	-- Determines the current system configuration.
+	--==========================================================================
+    local GetSetup = function ()
+        local masterNode = 1
+		if(localnode.tsplink ~= nil) then
+			masterNode = tsplink.node
+		end
+
+		systemSmus = {}
+		systemNodes = {}
+		systemNodes[1] = node[masterNode]
+
+        currentSetup[1] = {}
+        currentSetup[1][1] = node[masterNode]
+        currentSetup[1][2] = node[masterNode].model
+        currentSetup[1][3] = node[masterNode].revision
+
+		systemSmus[1] = {}
+		systemSmus[1][1] = node[masterNode].smua
+
+		if(node[masterNode].smub ~= nil) then
+			systemSmus[1][2] = node[masterNode].smub
+		end
+
+		if(localnode.tsplink ~= nil) then
+			local j = 2
+			for i = 1, maxNodes do
+				if((tsplink.node ~= i) and (node[i] ~= nil)) then
+					systemNodes[j] = node[i]
+					currentSetup[j] = {}
+					currentSetup[j][1] = node[i]
+					currentSetup[j][2] = node[i].model
+					currentSetup[j][3] = node[i].revision
+
+					systemSmus[j] = {}
+					systemSmus[j][1] = node[i].smua
+
+					if(node[i].smub ~= nil) then
+						systemSmus[j][2] = node[i].smub
+					end
+					j = j +1
+				end
+			end
+		end
+    end
+
+    GetSetup()
+
+	-- Check the project setup versus the configuration setup.
+	-- If there is a difference, report an error.
+    local numpInstruments = table.getn(projectSetup)
+    local numcInstruments = table.getn(currentSetup)
+
+    for i=1, numpInstruments do
+       	local pfields = table.getn(projectSetup[i])
+
+        errorNo = 1
+        for j=1,numcInstruments do
+            -- Compare nodes.
+            if(projectSetup[i][1] ==  currentSetup[j][1]) then
+            	errorNo = 0
+
+		        for k=2, pfields do
+		            if(projectSetup[i][k] ~= currentSetup[j][k]) then
+		            	errorNo = 2
+		            end
+		        end
+		        break
+            end
+	 	end
+
+	 	if (errorNo > 0) then
+	 		break
+	 	end
+    end
+
+    if (errorNo > 0) then
+        error(errorMessage[errorNo])
+		print(errorTag .. errorMessage[errorNo])
+    end
+
+	--==========================================================================
+	-- Initializes all system readings buffers by clearing and setting them to
+	-- append mode. An array, sysSmuReadingBufferIndexes, is used to keep track of the
+	-- data stored to each of the reading buffers.
+	--==========================================================================
+	local InitalizeReadingBuffers = function()
+		systemSmuReadingBufferIndexes = {}
+		for i, selNode in ipairs(systemSmus) do
+			systemSmuReadingBufferIndexes[i] = {}
+
+			for j, selSmu in ipairs(selNode) do
+				-- Create an array for the smu.
+				systemSmuReadingBufferIndexes[i][j] = {}
+
+				local snvBuffers =  {selSmu.nvbuffer1, selSmu.nvbuffer2}
+				for k, selBuffer in ipairs(snvBuffers) do
+					-- Create an array for nvbuffers 1 and 2.
+					systemSmuReadingBufferIndexes[i][j][k] = {}
+
+					local sysSmuReadingBufferIndexes = systemSmuReadingBufferIndexes[i][j][k]
+					sysSmuReadingBufferIndexes["start"] = 0
+					sysSmuReadingBufferIndexes["stop"] = 0
+
+					selBuffer.clear()
+	                selBuffer.appendmode = %APPEND-MODE%
+					selBuffer.collecttimestamps = %INCLUDE-TIMESTAMPS%
+					selBuffer.collectsourcevalues = %INCLUDE-SRCVALS%
+					selBuffer.timestampresolution = 1e-6
+					if (selBuffer.fillmode ~= nil) then
+	                	selBuffer.fillmode = selSmu.FILL_ONCE
+					end
+				end
+
+			end
+		end
+	end
+           	
+	InitalizeReadingBuffers()
+	ConfigStatusModel()
+</snippet>

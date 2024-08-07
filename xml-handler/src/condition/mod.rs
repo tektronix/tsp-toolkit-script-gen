@@ -9,11 +9,7 @@ pub struct Condition {
 
 impl Condition {
     fn new(name: String, op: String, value: String) -> Self {
-        Condition {
-            name,
-            op,
-            value,
-        }
+        Condition { name, op, value }
     }
 
     pub fn parse_condition<R: std::io::BufRead>(

@@ -117,7 +117,9 @@ impl Variable {
                 Ok(Event::Start(e)) if e.name().as_ref() == b"depends" => {
                     depends_array.push(Depend::parse_depend(reader, e.attributes())?);
                 }
-                Ok(Event::End(e)) if e.name().as_ref() == b"case" || e.name().as_ref() == b"variable" => {
+                Ok(Event::End(e))
+                    if e.name().as_ref() == b"case" || e.name().as_ref() == b"variable" =>
+                {
                     return Ok(Variable::new(
                         id,
                         default,

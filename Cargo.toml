@@ -6,7 +6,9 @@ resolver = "2"
 #TODO
 
 [workspace.dependencies]
+anyhow = "1.0.81"
 quick-xml = "0.36.0"
+thiserror = "1.0.58"
 xml-handler = {path = "xml-handler"}
 
 [workspace.lints.rust]

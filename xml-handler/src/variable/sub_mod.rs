@@ -1,3 +1,4 @@
+use crate::error::Result;
 use quick_xml::{events::Event, name::QName, Reader};
 
 #[derive(Debug)]
@@ -26,7 +27,7 @@ impl Reference {
 
     pub fn parse_reference_attr_only(
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> quick_xml::Result<Reference> {
+    ) -> Result<Reference> {
         let mut id = String::new();
         let default = String::new();
         let useall = String::new();
@@ -46,7 +47,7 @@ impl Reference {
     pub fn parse_reference<R: std::io::BufRead>(
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> quick_xml::Result<Reference> {
+    ) -> Result<Reference> {
         let mut buf: Vec<u8> = Vec::new();
 
         let mut id = String::new();
@@ -88,7 +89,7 @@ impl Constraint {
     pub fn parse_constraint<R: std::io::BufRead>(
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> quick_xml::Result<Constraint> {
+    ) -> Result<Constraint> {
         let mut buf: Vec<u8> = Vec::new();
 
         let mut min: f64 = 0.0;

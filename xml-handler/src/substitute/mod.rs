@@ -1,3 +1,4 @@
+use crate::error::Result;
 use quick_xml::{events::Event, name::QName, Reader};
 
 #[derive(Debug)]
@@ -15,7 +16,7 @@ impl Substitute {
     pub fn parse_substitute<R: std::io::BufRead>(
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> quick_xml::Result<Substitute> {
+    ) -> Result<Substitute> {
         let mut name = String::new();
         let mut value = String::new();
         let mut buf: Vec<u8> = Vec::new();

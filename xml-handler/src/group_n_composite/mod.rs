@@ -4,6 +4,7 @@ use std::{fs::File, io::Read};
 use quick_xml::{events::Event, name::QName, Reader};
 
 use crate::{
+    error::{Result, XMLHandlerError},
     snippet::Snippet,
     substitute::Substitute,
     variable::{Variable, Variables},
@@ -35,7 +36,7 @@ impl Group {
     pub fn parse_group<R: std::io::BufRead>(
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> quick_xml::Result<Group> {
+    ) -> Result<Group> {
         let mut buf: Vec<u8> = Vec::new();
         let mut children: Vec<IncludeResult> = Vec::new();
         let mut variable_list: Vec<Variable> = Vec::new();
@@ -62,7 +63,6 @@ impl Group {
                     children.push(IncludeResult::Composite(res));
                 }
                 Ok(Event::Empty(e)) if e.name().as_ref() == b"include" => {
-                    println!("inside include of group");
                     let res = parse_include(e.attributes());
                     match res {
                         Ok(ExternalFileResult::Snippet(snippet)) => {
@@ -114,7 +114,7 @@ impl Composite {
     fn parse_composite<R: std::io::BufRead>(
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> quick_xml::Result<Composite> {
+    ) -> Result<Composite> {
         let mut buf: Vec<u8> = Vec::new();
         let mut substitutions: Vec<Substitute> = Vec::new();
         let mut sub_children: Vec<IncludeResult> = Vec::new();
@@ -173,7 +173,7 @@ impl Composite {
 
 fn parse_include(
     attributes: quick_xml::events::attributes::Attributes,
-) -> quick_xml::Result<ExternalFileResult> {
+) -> Result<ExternalFileResult> {
     let mut file_attr = String::new();
     let mut snippet: Option<Snippet> = None;
     let mut composite: Option<Composite> = None;
@@ -185,38 +185,44 @@ fn parse_include(
             _ => {}
         }
     }
-    println!("file_Path: {}", file_attr);
 
     let path = Path::new(file_attr.as_str());
-    let mut file = File::open(path).unwrap();
+    if let Ok(mut _file) = File::open(path) {
+        let mut buff = String::new();
+        _file.read_to_string(&mut buff).unwrap();
 
-    let mut buff = String::new();
-    file.read_to_string(&mut buff).unwrap();
+        let mut reader = Reader::from_str(&buff);
+        reader.config_mut().trim_text(true);
 
-    let mut reader = Reader::from_str(&buff);
-    reader.config_mut().trim_text(true);
+        let mut buf: Vec<u8> = Vec::new();
 
-    let mut buf: Vec<u8> = Vec::new();
-
-    loop {
-        match reader.read_event_into(&mut buf) {
-            Err(e) => {
-                println!("Error at position {}: {:?}", reader.error_position(), e)
+        loop {
+            match reader.read_event_into(&mut buf) {
+                Err(e) => {
+                    println!("Error at position {}: {:?}", reader.error_position(), e)
+                }
+                Ok(Event::Start(e)) if e.name().as_ref() == b"snippet" => {
+                    snippet = Some(Snippet::parse_snippet(&mut reader, e.attributes())?);
+                    return Ok(ExternalFileResult::Snippet(snippet.unwrap()));
+                }
+                Ok(Event::Start(e)) if e.name().as_ref() == b"composite" => {
+                    composite = Some(Composite::parse_composite(&mut reader, e.attributes())?);
+                    return Ok(ExternalFileResult::Composite(composite.unwrap()));
+                }
+                Ok(Event::Start(e)) if e.name().as_ref() == b"variables" => {
+                    let variables = Variables::parse_variables(&mut reader, e.attributes())?;
+                    return Ok(ExternalFileResult::Variables(variables));
+                }
+                _ => (),
             }
-            Ok(Event::Start(e)) if e.name().as_ref() == b"snippet" => {
-                snippet = Some(Snippet::parse_snippet(&mut reader, e.attributes())?);
-                return Ok(ExternalFileResult::Snippet(snippet.unwrap()));
-            }
-            Ok(Event::Start(e)) if e.name().as_ref() == b"composite" => {
-                composite = Some(Composite::parse_composite(&mut reader, e.attributes())?);
-                return Ok(ExternalFileResult::Composite(composite.unwrap()));
-            }
-            Ok(Event::Start(e)) if e.name().as_ref() == b"variables" => {
-                let variables = Variables::parse_variables(&mut reader, e.attributes())?;
-                return Ok(ExternalFileResult::Variables(variables));
-            }
-            _ => (),
         }
+    } else {
+        return Err(XMLHandlerError::IOError {
+            source: std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "Error: Could not locate file".to_string(),
+            ),
+        });
     }
 }
 

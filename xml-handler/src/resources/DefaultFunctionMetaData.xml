@@ -4,9 +4,9 @@
     <group id="SWEEP" type="Sweep">
 		<!-- the next variables define constraints that are used for all devices.  this is usually
 		     because the GUI is using a single control and applying the value to all devices -->
-		<include path="xml-handler/src/resources/sweep/DefaultLimits.xml"/>
+		<!-- <include path="xml-handler/src/resources/sweep/DefaultLimits.xml"/> -->
 		<!-- The ChunkModel (i.e. the script template) -->
-		<include path="xml-handler/src/resources/sweep/DefaultSweepChunk.xml"/>
+		<!-- <include path="xml-handler/src/resources/sweep/DefaultSweepChunk.xml"/> -->
 	</group>
 
 	<group id="USER" type="User">
@@ -36,7 +36,7 @@
 			<substitute name="TAG-END">%TAG-END%</substitute>
 			<substitute name="TAG-COMPLETE">%TAG-COMPLETE%</substitute>
 			
-			<include path="xml-handler/src/resources/DataReport.xml"/>
+			<!-- <include path="xml-handler/src/resources/DataReport.xml"/> -->
 		</composite>
 	</group>
 
@@ -63,7 +63,7 @@
     <group id="FINALIZE" type="Finalize">
 		<!-- The ChunkModel (i.e. the script template) -->
 		<composite name="Finalize">
-			<include path="xml-Handler/src/resources/Finalize.xml"/>
+			<!-- <include path="xml-Handler/src/resources/Finalize.xml"/> -->
 		</composite>
 	</group>
 </data>

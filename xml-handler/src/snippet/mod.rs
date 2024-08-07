@@ -1,6 +1,6 @@
 use quick_xml::{events::Event, name::QName, Reader};
 
-use crate::{condition::Condition, substitute::Substitute};
+use crate::{condition::Condition, error::Result, substitute::Substitute};
 
 #[derive(Debug)]
 pub struct Snippet {
@@ -32,7 +32,7 @@ impl Snippet {
     pub fn parse_snippet<R: std::io::BufRead>(
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> quick_xml::Result<Snippet> {
+    ) -> Result<Snippet> {
         let mut buf: Vec<u8> = Vec::new();
 
         let mut name = String::new();
@@ -61,11 +61,9 @@ impl Snippet {
                     }
                 }
                 Ok(Event::Start(e)) if e.name().as_ref() == b"substitute" => {
-                    //substitutes.push(parse_substitute(reader, e.attributes())?);
                     substitutions.push(Substitute::parse_substitute(reader, e.attributes())?);
                 }
                 Ok(Event::Start(e)) if e.name().as_ref() == b"condition" => {
-                    //substitutes.push(parse_substitute(reader, e.attributes())?);
                     conditions.push(Condition::parse_condition(reader, e.attributes())?);
                 }
                 Ok(Event::End(e)) if e.name().as_ref() == b"snippet" => {

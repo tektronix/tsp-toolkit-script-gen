@@ -1,6 +1,7 @@
 use quick_xml::{events::Event, name::QName, Reader};
 mod sub_mod;
 
+use crate::error::Result;
 pub use sub_mod::{Constraint, Reference};
 
 #[derive(Debug)]
@@ -32,7 +33,7 @@ impl Variables {
     pub fn parse_variables<R: std::io::BufRead>(
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> quick_xml::Result<Variables> {
+    ) -> Result<Variables> {
         let mut buf: Vec<u8> = Vec::new();
 
         let mut variables: Vec<Variable> = Vec::new();
@@ -73,7 +74,7 @@ impl Variable {
     pub fn parse_variable<R: std::io::BufRead>(
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> quick_xml::Result<Variable> {
+    ) -> Result<Variable> {
         let mut buf: Vec<u8> = Vec::new();
 
         let mut id = String::new();
@@ -143,7 +144,7 @@ impl Depend {
     fn parse_depend<R: std::io::BufRead>(
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> quick_xml::Result<Depend> {
+    ) -> Result<Depend> {
         let mut buf: Vec<u8> = Vec::new();
 
         let mut re_f = String::new();

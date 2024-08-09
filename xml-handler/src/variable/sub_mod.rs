@@ -59,8 +59,10 @@ impl Reference {
             let attr = attr?;
             match attr.key {
                 QName(b"id") => id = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
-                QName(b"useall") => useall = String::from_utf8(attr.value.into_owned()).unwrap(),
-                QName(b"value") => value = String::from_utf8(attr.value.into_owned()).unwrap(),
+                QName(b"useall") => {
+                    useall = String::from_utf8_lossy(attr.value.as_ref()).to_string()
+                }
+                QName(b"value") => value = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
                 _ => {}
             }
         }

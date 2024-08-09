@@ -1,3 +1,5 @@
+use std::{fs::File, io::Write};
+
 use quick_xml::{events::Event, name::QName, Reader};
 
 use crate::{condition::Condition, error::Result, substitute::Substitute};
@@ -45,7 +47,9 @@ impl Snippet {
             let attr = attr?;
             match attr.key {
                 QName(b"name") => name = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
-                QName(b"repeat") => repeat = String::from_utf8(attr.value.into_owned()).unwrap(),
+                QName(b"repeat") => {
+                    repeat = String::from_utf8_lossy(attr.value.as_ref()).to_string()
+                }
                 _ => {}
             }
         }
@@ -54,10 +58,13 @@ impl Snippet {
             match reader.read_event_into(&mut buf) {
                 Ok(Event::Text(e)) => {
                     // Capture the text content inside the <snippet> tag
-                    code_snippet.push_str(&e.unescape().unwrap());
                     match e.unescape() {
-                        Ok(text) => code_snippet = text.to_string(),
-                        Err(_) => {}
+                        Ok(text) => {
+                            code_snippet.push_str(&text);
+                            // let mut file = File::create("C:\\Trebuchet\\Snippet.txt")?;
+                            // file.write_all(code_snippet.as_bytes())?;
+                        },
+                        Err(e) => eprintln!("Error decoding text: {}", e),
                     }
                 }
                 Ok(Event::Start(e)) if e.name().as_ref() == b"substitute" => {

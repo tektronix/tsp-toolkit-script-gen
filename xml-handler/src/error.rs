@@ -18,6 +18,13 @@ pub enum XMLHandlerError {
         #[from]
         source: attributes::AttrError,
     },
+
+    /// An error occurred when parsing XML file path attribute
+    #[error("XML file path attribute error: {name}")]
+    ResourceNotFoundError {
+        /// The name of the resource that was not found
+        name: String,
+    },
 }
 
 pub type Result<T> = std::result::Result<T, XMLHandlerError>;

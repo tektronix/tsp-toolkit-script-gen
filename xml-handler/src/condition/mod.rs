@@ -26,7 +26,7 @@ impl Condition {
             let attr = attr?;
             match attr.key {
                 QName(b"name") => name = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
-                QName(b"op") => op = String::from_utf8(attr.value.into_owned()).unwrap(),
+                QName(b"op") => op = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
                 _ => {}
             }
         }

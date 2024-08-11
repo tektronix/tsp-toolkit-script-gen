@@ -1,16 +1,14 @@
-use std::{fs::File, io::Write};
-
 use quick_xml::{events::Event, name::QName, Reader};
 
 use crate::{condition::Condition, error::Result, substitute::Substitute};
 
 #[derive(Debug)]
 pub struct Snippet {
-    name: String,
-    repeat: String,
-    code_snippet: String,
-    substitutions: Vec<Substitute>,
-    conditions: Vec<Condition>,
+    pub name: String,
+    pub repeat: String,
+    pub code_snippet: String,
+    pub substitutions: Vec<Substitute>,
+    pub conditions: Vec<Condition>,
 }
 
 impl Snippet {
@@ -35,13 +33,14 @@ impl Snippet {
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
     ) -> Result<Snippet> {
-        let mut buf: Vec<u8> = Vec::new();
-
         let mut name = String::new();
         let mut repeat = String::new();
+
         let mut code_snippet = String::new();
         let mut substitutions: Vec<Substitute> = Vec::new();
         let mut conditions: Vec<Condition> = Vec::new();
+
+        let mut buf: Vec<u8> = Vec::new();
 
         for attr in attributes {
             let attr = attr?;

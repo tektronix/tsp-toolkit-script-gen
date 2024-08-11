@@ -34,9 +34,9 @@ impl Variables {
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
     ) -> Result<Variables> {
-        let mut buf: Vec<u8> = Vec::new();
-
         let mut variables: Vec<Variable> = Vec::new();
+
+        let mut buf: Vec<u8> = Vec::new();
 
         loop {
             match reader.read_event_into(&mut buf) {
@@ -75,14 +75,15 @@ impl Variable {
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
     ) -> Result<Variable> {
-        let mut buf: Vec<u8> = Vec::new();
-
         let mut id = String::new();
         let mut default = String::new();
         let mut value_attr = String::new();
+
         let mut ref_array: Vec<Reference> = Vec::new();
         let mut depends_array: Vec<Depend> = Vec::new();
         let mut constraint: Option<Constraint> = None;
+
+        let mut buf: Vec<u8> = Vec::new();
 
         for attr in attributes {
             let attr = attr?;
@@ -145,10 +146,10 @@ impl Depend {
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
     ) -> Result<Depend> {
-        let mut buf: Vec<u8> = Vec::new();
-
         let mut re_f = String::new();
         let mut _variables: Vec<Variable> = Vec::new();
+
+        let mut buf: Vec<u8> = Vec::new();
 
         for attr in attributes {
             let attr = attr?;
@@ -171,5 +172,42 @@ impl Depend {
                 _ => (),
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Non-testable helper function
+    fn parse_variable_from_xml(xml: &str) -> Result<Variables> {
+        let mut reader = Reader::from_str(xml);
+        let mut buf = Vec::new();
+        let mut variables: Vec<Variable> = Vec::new();
+
+        loop {
+            match reader.read_event_into(&mut buf) {
+                Ok(Event::Start(e)) if e.name().as_ref() == b"variable" => {
+                    variables.push(Variable::parse_variable(&mut reader, e.attributes())?);
+                }
+                Ok(Event::End(e)) if e.name().as_ref() == b"variables" => {
+                    return Ok(Variables::new(variables));
+                }
+                _ => (),
+            }
+        }
+    }
+
+    #[test]
+    fn test_variable_with_valid_attributes() {
+        let xml = r#"<variables>
+            <variable id="var1">
+                <default>1</default>
+                <constraints>
+                    <min>1</min>
+			        <max>100</max>
+                </constraints>
+            </variable> </variables>"#;
+
     }
 }

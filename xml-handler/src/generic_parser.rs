@@ -1,13 +1,7 @@
 use quick_xml::events::Event;
 use quick_xml::reader::Reader;
 
-use std::path::Path;
-use std::{
-    fs::File,
-    io::{Error, Read},
-};
-
-use crate::error::{Result, XMLHandlerError};
+use crate::error::Result;
 use crate::group_n_composite::Group;
 use crate::resources::DEFAULT_FUNC_METADATA;
 

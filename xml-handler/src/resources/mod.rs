@@ -9,6 +9,13 @@ lazy_static! {
         m.insert("INITIALIZE_XML", &INITIALIZE_XML);
         m.insert("SUPPORT_XML", &SUPPORT_XML);
         m.insert("DEFAULT_LIMITS_XML", &DEFAULT_LIMITS_XML);
+        m.insert("DEFAULT_SWEEP_CHUNK_XML", &DEFAULT_SWEEP_CHUNK_XML);
+        m.insert("DATA_REPORT_XML", &DATA_REPORT_XML);
+        m.insert("FINALIZE_XML", &FINALIZE_XML);
+        m.insert("NO_STEP_AUTO_XML", &NO_STEP_AUTO_XML);
+        m.insert("STEP_AUTO_XML", &STEP_AUTO_XML);
+        m.insert("NO_STEP_FIXED_XML", &NO_STEP_FIXED_XML);
+        m.insert("STEP_FIXED_XML", &STEP_FIXED_XML);
         m
     };
 }
@@ -28,8 +35,36 @@ pub const SUPPORT_XML: Resource = Resource {
     source: include_str!("./Support.xml"),
 };
 
+pub const DATA_REPORT_XML: Resource = Resource {
+    source: include_str!("./DataReport.xml"),
+};
+
+pub const FINALIZE_XML: Resource = Resource {
+    source: include_str!("./Finalize.xml"),
+};
+
 pub const DEFAULT_LIMITS_XML: Resource = Resource {
     source: include_str!("./sweep/DefaultLimits.xml"),
+};
+
+pub const DEFAULT_SWEEP_CHUNK_XML: Resource = Resource {
+    source: include_str!("./sweep/DefaultSweepChunk.xml"),
+};
+
+pub const NO_STEP_AUTO_XML: Resource = Resource {
+    source: include_str!("./sweep/NoStepAuto.xml"),
+};
+
+pub const STEP_AUTO_XML: Resource = Resource {
+    source: include_str!("./sweep/StepAuto.xml"),
+};
+
+pub const NO_STEP_FIXED_XML: Resource = Resource {
+    source: include_str!("./sweep/NoStepFixed.xml"),
+};
+
+pub const STEP_FIXED_XML: Resource = Resource {
+    source: include_str!("./sweep/StepFixed.xml"),
 };
 
 /// A resource that can be used as-is

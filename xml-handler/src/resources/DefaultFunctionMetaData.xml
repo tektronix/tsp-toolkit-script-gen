@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <data>
-    <group id="SWEEP" type="Sweep">
+	<group id="SWEEP" type="Sweep">
 		<!-- the next variables define constraints that are used for all devices.  this is usually
 		     because the GUI is using a single control and applying the value to all devices -->
 		<include path="DEFAULT_LIMITS_XML"/>
 		<!-- The ChunkModel (i.e. the script template) -->
-		<!-- <include path="xml-handler/src/resources/sweep/DefaultSweepChunk.xml"/> -->
+		<include path="DEFAULT_SWEEP_CHUNK_XML"/>
 	</group>
 
 	<group id="USER" type="User">
@@ -35,12 +35,12 @@
 			<substitute name="TAG-SRCVALS">%TAG-SRCVALS%</substitute>
 			<substitute name="TAG-END">%TAG-END%</substitute>
 			<substitute name="TAG-COMPLETE">%TAG-COMPLETE%</substitute>
-			
-			<!-- <include path="xml-handler/src/resources/DataReport.xml"/> -->
+
+			<include path="DATA_REPORT_XML"/>
 		</composite>
 	</group>
 
-    <group id="INITIALIZE" type="Initialize">
+	<group id="INITIALIZE" type="Initialize">
 		<!-- The ChunkModel (i.e. the script template) -->
 
 		<composite name="Initialize">
@@ -60,10 +60,10 @@
 
 	</group>
 
-    <group id="FINALIZE" type="Finalize">
+	<group id="FINALIZE" type="Finalize">
 		<!-- The ChunkModel (i.e. the script template) -->
 		<composite name="Finalize">
-			<!-- <include path="xml-Handler/src/resources/Finalize.xml"/> -->
+			<include path="FINALIZE_XML"/>
 		</composite>
 	</group>
 </data>

@@ -1,6 +1,3 @@
-use std::path::Path;
-use std::{fs::File, io::Read};
-
 use quick_xml::{events::Event, name::QName, Reader};
 
 use crate::resources::Resource;
@@ -38,12 +35,13 @@ impl Group {
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
     ) -> Result<Group> {
-        let mut buf: Vec<u8> = Vec::new();
+        let mut id = String::new();
+        let mut type_ = String::new();
+
         let mut children: Vec<IncludeResult> = Vec::new();
         let mut variable_list: Vec<Variable> = Vec::new();
 
-        let mut id = String::new();
-        let mut type_ = String::new();
+        let mut buf: Vec<u8> = Vec::new();
 
         for attr in attributes {
             let attr = attr?;
@@ -116,12 +114,13 @@ impl Composite {
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
     ) -> Result<Composite> {
-        let mut buf: Vec<u8> = Vec::new();
+        let mut name = String::new();
+        let mut type_: Option<String> = None;
+
         let mut substitutions: Vec<Substitute> = Vec::new();
         let mut sub_children: Vec<IncludeResult> = Vec::new();
 
-        let mut name = String::new();
-        let mut type_: Option<String> = None;
+        let mut buf: Vec<u8> = Vec::new();
 
         for attr in attributes {
             let attr = attr?;
@@ -223,7 +222,7 @@ fn parse_include(
             Err(XMLHandlerError::ResourceNotFoundError {
                 name: file_attr.to_string(),
             })
-        },
+        }
     }
 }
 
@@ -242,8 +241,6 @@ enum IncludeResult {
 
 #[cfg(test)]
 mod tests {
-    use std::ops::Deref;
-
     use super::*;
 
     // Non-testable helper function
@@ -288,13 +285,113 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_group_with_invalid_attributes() {
+    fn test_parse_group_with_missing_attributes() {
         let xml = r#"<group id="test_group"></group>"#;
 
         match parse_groups_from_xml(xml) {
             Ok(groups) => {
                 assert_eq!(groups[0].id, "test_group");
                 assert_eq!(groups[0].type_, "");
+            }
+            Err(e) => eprintln!("Error parsing group: {}", e),
+        }
+    }
+
+    #[test]
+    fn test_parse_composite_with_valid_attributes() {
+        let xml = r#"<group id="test_group" type="example_type">
+                            <composite name="test_composite" type="example_type">
+                            </composite>
+                        </group>"#;
+
+        match parse_groups_from_xml(xml) {
+            Ok(groups) => {
+                println!("{:?}", groups);
+                assert_eq!(groups[0].children.len(), 1);
+                if let IncludeResult::Composite(composite) = &groups[0].children[0] {
+                    assert_eq!(composite.name, "test_composite");
+                    assert_eq!(composite.type_.as_deref(), Some("example_type"));
+                } else {
+                    // Fail the test if the first child is not a composite
+                    assert!(false);
+                }
+            }
+            Err(e) => eprintln!("Error parsing group: {}", e),
+        }
+    }
+
+    #[test]
+    fn test_parse_composite_with_substitutions() {
+        let xml = r#"<group id="test_group" type="example_type"> 
+                                <composite name="test_composite" type="example_type">
+                                    <substitute name="test_substitute1">test_value1</substitute>
+                                    <substitute name="test_substitute2">test_value2</substitute>
+                                </composite>
+                        </group>"#;
+
+        match parse_groups_from_xml(xml) {
+            Ok(groups) => {
+                println!("{:?}", groups);
+                assert_eq!(groups[0].children.len(), 1);
+                if let IncludeResult::Composite(composite) = &groups[0].children[0] {
+                    assert_eq!(composite.name, "test_composite");
+                    assert_eq!(composite.type_.as_deref(), Some("example_type"));
+                    assert_eq!(composite.substitutions.len(), 2);
+                    for (i, sub) in composite.substitutions.iter().enumerate() {
+                        assert_eq!(sub.name, format!("test_substitute{}", i + 1));
+                        assert_eq!(sub.value, format!("test_value{}", i + 1));
+                    }
+                } else {
+                    // Fail the test if the first child is not a composite
+                    assert!(false);
+                }
+            }
+            Err(e) => eprintln!("Error parsing group: {}", e),
+        }
+    }
+
+    #[test]
+    fn test_parse_composite_with_snippet() {
+        let xml = r#"<group id="test_group" type="example_type">
+                                <composite>
+                                        <snippet>
+                                            <condition name="CONDITION_1">VALUE_1</condition>
+                                            sample code for snippet - 1
+                                        </snippet>
+                                        <snippet>
+                                            <condition name="CONDITION_2">VALUE_2</condition>
+                                            sample code for snippet - 2
+                                        </snippet>
+                                </composite>
+                        </group>"#;
+
+        match parse_groups_from_xml(xml) {
+            Ok(groups) => {
+                println!("{:?}", groups);
+                assert_eq!(groups[0].children.len(), 1);
+                if let IncludeResult::Composite(composite) = &groups[0].children[0] {
+                    assert_eq!(composite.name, "");
+                    assert_eq!(composite.type_.as_deref(), None);
+                    assert_eq!(composite.sub_children.len(), 2);
+                    
+                    for (i, child) in composite.sub_children.iter().enumerate() {
+                        if let IncludeResult::Snippet(snippet) = child {
+                            assert_eq!(snippet.name, "");
+                            assert_eq!(snippet.repeat, "");
+                            //TODO: Check if indentation causes any issue during actual value substitution and script generation
+                            assert!(snippet.code_snippet.contains(&format!("sample code for snippet - {}", i + 1)));
+                            assert_eq!(snippet.conditions.len(), 1);
+                            assert_eq!(snippet.conditions[0].name, format!("CONDITION_{}", i + 1));
+                            assert_eq!(snippet.conditions[0].value, format!("VALUE_{}", i + 1));
+                        } else {
+                            // Fail the test if the first child is not a snippet
+                            assert!(false);
+                        }
+                    }
+                } else {
+                    // Fail the test if the first child is not a composite
+                    assert!(false);
+                }
             }
             Err(e) => eprintln!("Error parsing group: {}", e),
         }

@@ -3,9 +3,9 @@ use quick_xml::{events::Event, name::QName, Reader};
 
 #[derive(Debug)]
 pub struct Condition {
-    name: String,
+    pub name: String,
     op: String,
-    value: String,
+    pub value: String,
 }
 
 impl Condition {
@@ -20,6 +20,7 @@ impl Condition {
         let mut name = String::new();
         let mut op = String::new();
         let mut value = String::new();
+
         let mut buf: Vec<u8> = Vec::new();
 
         for attr in attributes {
@@ -42,6 +43,6 @@ impl Condition {
             _ => (),
         }
 
-        Ok(Condition::new(name, value, op))
+        Ok(Condition::new(name, op, value))
     }
 }

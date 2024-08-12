@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <data>
-	<groups id="SWEEP" type="Sweep">
+	<group id="SWEEP" type="Sweep">
 		<!-- the next variables define constraints that are used for all devices.  this is usually
 		     because the GUI is using a single control and applying the value to all devices -->
 		<include path="DEFAULT_LIMITS_XML"/>

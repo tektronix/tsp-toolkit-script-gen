@@ -1,6 +1,10 @@
 use quick_xml::{events::Event, name::QName, Reader};
 
-use crate::{condition::Condition, error::{Result, XMLHandlerError}, substitute::Substitute};
+use crate::{
+    condition::Condition,
+    error::{Result, XMLHandlerError},
+    substitute::Substitute,
+};
 
 #[derive(Debug)]
 pub struct Snippet {
@@ -67,7 +71,10 @@ impl Snippet {
                             // let mut file = File::create("C:\\Trebuchet\\Snippet.txt")?;
                             // file.write_all(code_snippet.as_bytes())?;
                         }
-                        Err(e) => eprintln!("Error decoding text: {}", e),
+                        Err(e) => {
+                            eprintln!("Error decoding text: {}", e);
+                            return Err(XMLHandlerError::ParseError { source: e });
+                        }
                     }
                 }
                 Ok(Event::Start(e)) if e.name().as_ref() == b"substitute" => {

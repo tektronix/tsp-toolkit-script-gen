@@ -109,8 +109,19 @@ impl Variable {
                 Ok(Event::Start(e)) if e.name().as_ref() == b"default" => {
                     // Read text content of <default> tag
                     match reader.read_event_into(&mut buf) {
+                        Err(e) => {
+                            eprintln!("Error at position {}: {:?}", reader.error_position(), e);
+                            return Err(XMLHandlerError::ParseError { source: e });
+                        }
                         Ok(Event::Text(e)) => {
-                            default = e.unescape().unwrap().to_string();
+                            //default = e.unescape().unwrap().to_string();
+                            match e.unescape() {
+                                Ok(text) => default = text.to_string(),
+                                Err(e) => {
+                                    eprintln!("Error reading default value: {:?}", e);
+                                    return Err(XMLHandlerError::ParseError { source: e });
+                                }
+                            }
                         }
                         _ => {}
                     }
@@ -201,6 +212,10 @@ mod tests {
 
         loop {
             match reader.read_event_into(&mut buf) {
+                Err(e) => {
+                    eprintln!("Error at position {}: {:?}", reader.buffer_position(), e);
+                    return Err(XMLHandlerError::ParseError { source: e });
+                }
                 Ok(Event::Start(e)) if e.name().as_ref() == b"variable" => {
                     variables.push(Variable::parse_variable(&mut reader, e.attributes())?);
                 }
@@ -209,6 +224,27 @@ mod tests {
                 }
                 _ => (),
             }
+        }
+    }
+
+    #[test]
+    fn test_variable_with_error() {
+        let invalid_xml = r#"<variables>
+                                <variable id="var1">
+                                    <default>&1</default>
+                                    <constraints>
+                                        <min>1</min>
+                                        <max>100</max>
+                                    </constraints>
+                            </variable> 
+                        </variables>"#;
+
+        let result = parse_variable_from_xml(invalid_xml);
+        assert!(result.is_err(), "Expected an error, but got Ok");
+
+        // Optionally, you can also check the error message
+        if let Err(e) = result {
+            assert_eq!(e.to_string(), "XML parsing error: Error while escaping character at range 0..2: Cannot find ';' after '&'");
         }
     }
 
@@ -243,16 +279,12 @@ mod tests {
                     None => assert!(false),
                 }
             }
-            Err(e) =>
-            {
-                //panic!("Error: {:?}", e)
-                assert!(false)
-            }
+            Err(e) => assert!(false, "Test failed due to error: {}", e),
         }
     }
 
     #[test]
-    fn test_variables_with_depends_tag() {
+    fn test_variable_with_depends_tag() {
         let xml = r#"<variables>
                                 <variable id="var1">
                                     <depends ref="varFunction">
@@ -293,11 +325,7 @@ mod tests {
                     assert_eq!(reference.id, format!("ref_id_{}", i + 1));
                 }
             }
-            Err(e) =>
-            {
-                //panic!("Error: {:?}", e)
-                assert!(false)
-            }
+            Err(e) => assert!(false, "Test failed due to error: {}", e),
         }
     }
 }

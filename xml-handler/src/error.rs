@@ -32,7 +32,7 @@ pub enum XMLHandlerError {
     UnknownXMLFileError {
         /// The name of the file
         file_name: String,
-    }
+    },
 }
 
 pub type Result<T> = std::result::Result<T, XMLHandlerError>;

@@ -1,4 +1,4 @@
-use crate::error::Result;
+use crate::error::{Result, XMLHandlerError};
 use quick_xml::{events::Event, name::QName, Reader};
 
 #[derive(Debug)]
@@ -33,13 +33,17 @@ impl Condition {
         }
 
         match reader.read_event_into(&mut buf) {
-            Ok(Event::Text(e)) => {
-                // Capture the text content inside the <substitute> tag
-                match e.unescape() {
-                    Ok(text) => value = text.to_string(),
-                    Err(_) => {}
-                }
+            Err(e) => {
+                eprintln!("Error at position {}: {:?}", reader.error_position(), e);
+                return Err(XMLHandlerError::ParseError { source: e });
             }
+            Ok(Event::Text(e)) => match e.unescape() {
+                Ok(text) => value = text.to_string(),
+                Err(e) => {
+                    eprintln!("Error reading condition value: {:?}", e);
+                    return Err(XMLHandlerError::ParseError { source: e });
+                }
+            },
             _ => (),
         }
 

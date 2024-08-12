@@ -40,7 +40,10 @@ impl Substitute {
                 // Capture the text content inside the <substitute> tag
                 match e.unescape() {
                     Ok(text) => value = text.to_string(),
-                    Err(_) => {}
+                    Err(e) => {
+                        eprintln!("Error reading substitute value: {:?}", e);
+                        return Err(XMLHandlerError::ParseError { source: e });
+                    }
                 }
             }
             _ => (),

@@ -73,9 +73,13 @@ impl Reference {
                     eprintln!("Error at position {}: {:?}", reader.error_position(), e);
                     return Err(XMLHandlerError::ParseError { source: e });
                 }
-                Ok(Event::Text(e)) => {
-                    default = e.unescape().unwrap().to_string();
-                }
+                Ok(Event::Text(e)) => match e.unescape() {
+                    Ok(text) => default = text.to_string(),
+                    Err(e) => {
+                        eprintln!("Error reading default reference value: {:?}", e);
+                        return Err(XMLHandlerError::ParseError { source: e });
+                    }
+                },
                 Ok(Event::End(e)) if e.name().as_ref() == b"reference" => {
                     break;
                 }
@@ -110,14 +114,34 @@ impl Constraint {
                 Ok(Event::Start(e)) if e.name().as_ref() == b"min" => {
                     // Read text content of <min> tag
                     match reader.read_event_into(&mut buf) {
-                        Ok(Event::Text(e)) => min = e.unescape().unwrap().parse().unwrap(),
+                        Err(e) => {
+                            eprintln!("Error at position {}: {:?}", reader.error_position(), e);
+                            return Err(XMLHandlerError::ParseError { source: e });
+                        }
+                        Ok(Event::Text(e)) => match e.unescape() {
+                            Ok(text) => min = text.parse().unwrap(),
+                            Err(e) => {
+                                eprintln!("Error reading min constraint value: {:?}", e);
+                                return Err(XMLHandlerError::ParseError { source: e });
+                            }
+                        },
                         _ => {}
                     }
                 }
                 Ok(Event::Start(e)) if e.name().as_ref() == b"max" => {
                     // Read text content of <max> tag
                     match reader.read_event_into(&mut buf) {
-                        Ok(Event::Text(e)) => max = e.unescape().unwrap().parse().unwrap(),
+                        Err(e) => {
+                            eprintln!("Error at position {}: {:?}", reader.error_position(), e);
+                            return Err(XMLHandlerError::ParseError { source: e });
+                        }
+                        Ok(Event::Text(e)) => match e.unescape() {
+                            Ok(text) => max = text.parse().unwrap(),
+                            Err(e) => {
+                                eprintln!("Error reading max constraint value: {:?}", e);
+                                return Err(XMLHandlerError::ParseError { source: e });
+                            }
+                        },
                         _ => {}
                     }
                 }

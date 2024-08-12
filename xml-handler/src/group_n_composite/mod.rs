@@ -257,14 +257,15 @@ mod tests {
                 Ok(Event::Start(e)) => match e.name().as_ref() {
                     b"group" => match Group::parse_group(&mut reader, e.attributes()) {
                         Ok(group) => groups.push(group),
-                        Err(e) => eprintln!("Error parsing group: {}", e),
+                        Err(e) => {
+                            return Err(e);
+                        }
                     },
                     _ => (),
                 },
                 Ok(Event::Eof) => break,
                 Err(e) => {
-                    eprintln!("Error reading XML: {}", e);
-                    break;
+                    return Err(XMLHandlerError::ParseError { source: e });
                 }
                 _ => (),
             }
@@ -276,14 +277,14 @@ mod tests {
 
     #[test]
     fn test_parse_group_with_valid_attributes() {
-        let xml = r#"<group id="test_group" type="example_type"></group>"#;
+        let xml = r#"<group gg= id="test_group" type="example_type"></group>"#;
 
         match parse_groups_from_xml(xml) {
             Ok(groups) => {
                 assert_eq!(groups[0].id, "test_group");
                 assert_eq!(groups[0].type_, "example_type");
             }
-            Err(e) => eprintln!("Error parsing group: {}", e),
+            Err(e) => assert!(false, "Test failed due to error: {}", e),
         }
     }
 
@@ -296,7 +297,22 @@ mod tests {
                 assert_eq!(groups[0].id, "test_group");
                 assert_eq!(groups[0].type_, "");
             }
-            Err(e) => eprintln!("Error parsing group: {}", e),
+            Err(e) => assert!(false, "Test failed due to error: {}", e),
+        }
+    }
+
+    #[test]
+    fn test_parse_groups_from_xml_error() {
+        // Invalid XML input to trigger an error
+        let invalid_xml = r#"<groupA id="test_group" type="example_type"></group>"#;
+
+        // Call the function and assert that it returns an error
+        let result = parse_groups_from_xml(invalid_xml);
+        assert!(result.is_err(), "Expected an error, but got Ok");
+
+        // Optionally, you can also check the error message
+        if let Err(e) = result {
+            assert_eq!(e.to_string(), "XML parsing error: ill-formed document: expected `</groupA>`, but `</group>` was found");
         }
     }
 
@@ -319,7 +335,7 @@ mod tests {
                     assert!(false);
                 }
             }
-            Err(e) => eprintln!("Error parsing group: {}", e),
+            Err(e) => assert!(false, "Test failed due to error: {}", e),
         }
     }
 
@@ -349,7 +365,7 @@ mod tests {
                     assert!(false);
                 }
             }
-            Err(e) => eprintln!("Error parsing group: {}", e),
+            Err(e) => assert!(false, "Test failed due to error: {}", e),
         }
     }
 
@@ -398,7 +414,7 @@ mod tests {
                     assert!(false);
                 }
             }
-            Err(e) => eprintln!("Error parsing group: {}", e),
+            Err(e) => assert!(false, "Test failed due to error: {}", e),
         }
     }
 }

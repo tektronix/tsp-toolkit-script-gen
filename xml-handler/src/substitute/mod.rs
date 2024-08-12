@@ -1,4 +1,4 @@
-use crate::error::Result;
+use crate::error::{Result, XMLHandlerError};
 use quick_xml::{events::Event, name::QName, Reader};
 
 #[derive(Debug)]
@@ -19,7 +19,7 @@ impl Substitute {
     ) -> Result<Substitute> {
         let mut name = String::new();
         let mut value = String::new();
-        
+
         let mut buf: Vec<u8> = Vec::new();
 
         for attr in attributes {
@@ -32,6 +32,10 @@ impl Substitute {
         }
 
         match reader.read_event_into(&mut buf) {
+            Err(e) => {
+                eprintln!("Error at position {}: {:?}", reader.error_position(), e);
+                return Err(XMLHandlerError::ParseError { source: e });
+            }
             Ok(Event::Text(e)) => {
                 // Capture the text content inside the <substitute> tag
                 match e.unescape() {

@@ -19,12 +19,20 @@ pub enum XMLHandlerError {
         source: attributes::AttrError,
     },
 
-    /// An error occurred when parsing XML file path attribute
-    #[error("XML file path attribute error: {name}")]
-    ResourceNotFoundError {
-        /// The name of the resource that was not found
-        name: String,
+    /// An error occurred when parsing XML
+    #[error("XML parsing error: {source}")]
+    ParseError {
+        /// The original error
+        #[from]
+        source: quick_xml::Error,
     },
+
+    /// When the xml file supplied is not recognized
+    #[error("Unknown XML file error: {file_name}")]
+    UnknownXMLFileError {
+        /// The name of the file
+        file_name: String,
+    }
 }
 
 pub type Result<T> = std::result::Result<T, XMLHandlerError>;

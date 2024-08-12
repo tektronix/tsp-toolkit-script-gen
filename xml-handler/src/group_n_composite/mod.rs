@@ -55,7 +55,8 @@ impl Group {
         loop {
             match reader.read_event_into(&mut buf) {
                 Err(e) => {
-                    println!("Error at position {}: {:?}", reader.error_position(), e)
+                    eprintln!("Error at position {}: {:?}", reader.error_position(), e);
+                    return Err(XMLHandlerError::ParseError { source: e });
                 }
                 Ok(Event::Start(e)) if e.name().as_ref() == b"composite" => {
                     let res = Composite::parse_composite(reader, e.attributes())?;
@@ -136,7 +137,8 @@ impl Composite {
         loop {
             match reader.read_event_into(&mut buf) {
                 Err(e) => {
-                    println!("Error at position {}: {:?}", reader.error_position(), e)
+                    eprintln!("Error at position {}: {:?}", reader.error_position(), e);
+                    return Err(XMLHandlerError::ParseError { source: e });
                 }
                 Ok(Event::Start(e)) if e.name().as_ref() == b"substitute" => {
                     substitutions.push(Substitute::parse_substitute(reader, e.attributes())?);
@@ -199,7 +201,8 @@ fn parse_include(
             loop {
                 match reader.read_event_into(&mut buf) {
                     Err(e) => {
-                        println!("Error at position {}: {:?}", reader.error_position(), e)
+                        eprintln!("Error at position {}: {:?}", reader.error_position(), e);
+                        return Err(XMLHandlerError::ParseError { source: e });
                     }
                     Ok(Event::Start(e)) if e.name().as_ref() == b"snippet" => {
                         snippet = Some(Snippet::parse_snippet(&mut reader, e.attributes())?);
@@ -219,9 +222,9 @@ fn parse_include(
         }
         None => {
             //TODO: Handle error
-            Err(XMLHandlerError::ResourceNotFoundError {
-                name: file_attr.to_string(),
-            })
+            return Err(XMLHandlerError::UnknownXMLFileError {
+                file_name: file_attr,
+            });
         }
     }
 }
@@ -373,13 +376,15 @@ mod tests {
                     assert_eq!(composite.name, "");
                     assert_eq!(composite.type_.as_deref(), None);
                     assert_eq!(composite.sub_children.len(), 2);
-                    
+
                     for (i, child) in composite.sub_children.iter().enumerate() {
                         if let IncludeResult::Snippet(snippet) = child {
                             assert_eq!(snippet.name, "");
                             assert_eq!(snippet.repeat, "");
                             //TODO: Check if indentation causes any issue during actual value substitution and script generation
-                            assert!(snippet.code_snippet.contains(&format!("sample code for snippet - {}", i + 1)));
+                            assert!(snippet
+                                .code_snippet
+                                .contains(&format!("sample code for snippet - {}", i + 1)));
                             assert_eq!(snippet.conditions.len(), 1);
                             assert_eq!(snippet.conditions[0].name, format!("CONDITION_{}", i + 1));
                             assert_eq!(snippet.conditions[0].value, format!("VALUE_{}", i + 1));

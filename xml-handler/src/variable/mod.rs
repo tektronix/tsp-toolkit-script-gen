@@ -1,7 +1,7 @@
 use quick_xml::{events::Event, name::QName, Reader};
 mod sub_mod;
 
-use crate::error::Result;
+use crate::error::{Result, XMLHandlerError};
 pub use sub_mod::{Constraint, Reference};
 
 #[derive(Debug)]
@@ -40,6 +40,10 @@ impl Variables {
 
         loop {
             match reader.read_event_into(&mut buf) {
+                Err(e) => {
+                    eprintln!("Error at position {}: {:?}", reader.error_position(), e);
+                    return Err(XMLHandlerError::ParseError { source: e });
+                }
                 Ok(Event::Start(e)) if e.name().as_ref() == b"variable" => {
                     variables.push(Variable::parse_variable(reader, e.attributes())?);
                 }
@@ -98,6 +102,10 @@ impl Variable {
 
         loop {
             match reader.read_event_into(&mut buf) {
+                Err(e) => {
+                    eprintln!("Error at position {}: {:?}", reader.error_position(), e);
+                    return Err(XMLHandlerError::ParseError { source: e });
+                }
                 Ok(Event::Start(e)) if e.name().as_ref() == b"default" => {
                     // Read text content of <default> tag
                     match reader.read_event_into(&mut buf) {
@@ -163,6 +171,10 @@ impl Depend {
 
         loop {
             match reader.read_event_into(&mut buf) {
+                Err(e) => {
+                    eprintln!("Error at position {}: {:?}", reader.error_position(), e);
+                    return Err(XMLHandlerError::ParseError { source: e });
+                }
                 Ok(Event::Start(e)) if e.name().as_ref() == b"case" => {
                     _variables.push(Variable::parse_variable(reader, e.attributes())?);
                 }
@@ -177,6 +189,8 @@ impl Depend {
 
 #[cfg(test)]
 mod tests {
+    use crate::error::XMLHandlerError;
+
     use super::*;
 
     // Non-testable helper function
@@ -201,13 +215,89 @@ mod tests {
     #[test]
     fn test_variable_with_valid_attributes() {
         let xml = r#"<variables>
-            <variable id="var1">
-                <default>1</default>
-                <constraints>
-                    <min>1</min>
-			        <max>100</max>
-                </constraints>
-            </variable> </variables>"#;
+                                <variable id="var1">
+                                    <default>1</default>
+                                    <constraints>
+                                        <min>1</min>
+                                        <max>100</max>
+                                    </constraints>
+                            </variable> 
+                        </variables>"#;
 
+        match parse_variable_from_xml(xml) {
+            Ok(vars) => {
+                assert_eq!(vars.variable_array.len(), 1);
+                assert_eq!(vars.variable_array[0].id, "var1");
+                assert_eq!(vars.variable_array[0].default, "1");
+                assert_eq!(vars.variable_array[0].value_attr, "");
+                assert_eq!(vars.variable_array[0].depends_array.len(), 0);
+                assert_eq!(vars.variable_array[0].ref_array.len(), 0);
+                assert_eq!(vars.variable_array[0].constraint.is_some(), true);
+
+                match vars.variable_array[0].constraint {
+                    Some(ref c) => {
+                        assert_eq!(c.min, 1.0);
+                        assert_eq!(c.max, 100.0);
+                    }
+                    // If constraint is None, then fail the test
+                    None => assert!(false),
+                }
+            }
+            Err(e) =>
+            {
+                //panic!("Error: {:?}", e)
+                assert!(false)
+            }
+        }
+    }
+
+    #[test]
+    fn test_variables_with_depends_tag() {
+        let xml = r#"<variables>
+                                <variable id="var1">
+                                    <depends ref="varFunction">
+                                        <case value="case_1">
+                                            <default>0</default>
+                                            <reference id="ref_id_1"/>
+                                        </case>
+                                        <case value="case_2">
+                                            <default>0</default>
+                                            <reference id="ref_id_2"/>
+                                        </case>
+                                    </depends>
+	                        </variable>
+                        </variables>"#;
+
+        match parse_variable_from_xml(xml) {
+            Ok(vars) => {
+                assert_eq!(vars.variable_array.len(), 1);
+                assert_eq!(vars.variable_array[0].id, "var1");
+                assert_eq!(vars.variable_array[0].default, "");
+                assert_eq!(vars.variable_array[0].value_attr, "");
+                assert_eq!(vars.variable_array[0].depends_array.len(), 1);
+                assert_eq!(vars.variable_array[0].ref_array.len(), 0);
+                assert_eq!(vars.variable_array[0].constraint.is_none(), true);
+
+                let depend = &vars.variable_array[0].depends_array[0];
+                assert_eq!(depend.re_f, "varFunction");
+                assert_eq!(depend._variables.len(), 2);
+
+                for (i, case) in depend._variables.iter().enumerate() {
+                    assert_eq!(case.value_attr, format!("case_{}", i + 1));
+                    assert_eq!(case.default, "0");
+                    assert_eq!(case.depends_array.len(), 0);
+                    assert_eq!(case.ref_array.len(), 1);
+                    assert_eq!(case.constraint.is_none(), true);
+
+                    let reference = &case.ref_array[0];
+                    assert_eq!(reference.id, format!("ref_id_{}", i + 1));
+                }
+            }
+            Err(e) =>
+            {
+                //panic!("Error: {:?}", e)
+                assert!(false)
+            }
+        }
     }
 }

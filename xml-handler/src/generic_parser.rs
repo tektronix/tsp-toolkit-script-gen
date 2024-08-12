@@ -1,7 +1,7 @@
 use quick_xml::events::Event;
 use quick_xml::reader::Reader;
 
-use crate::error::Result;
+use crate::error::{Result, XMLHandlerError};
 use crate::group_n_composite::Group;
 use crate::resources::DEFAULT_FUNC_METADATA;
 
@@ -16,7 +16,8 @@ pub fn parse_xml() -> Result<()> {
     loop {
         match reader.read_event_into(&mut buf) {
             Err(e) => {
-                println!("Error at position {}: {:?}", reader.error_position(), e)
+                eprintln!("Error at position {}: {:?}", reader.error_position(), e);
+                return Err(XMLHandlerError::ParseError { source: e });
             }
             Ok(Event::Eof) => break,
             Ok(Event::Start(e)) => match e.name().as_ref() {

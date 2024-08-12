@@ -1,9 +1,9 @@
-use crate::error::Result;
+use crate::error::{Result, XMLHandlerError};
 use quick_xml::{events::Event, name::QName, Reader};
 
 #[derive(Debug)]
 pub struct Reference {
-    id: String,
+    pub id: String,
     default: String,
     useall: String,
     value: String,
@@ -11,8 +11,8 @@ pub struct Reference {
 
 #[derive(Debug)]
 pub struct Constraint {
-    min: f64,
-    max: f64,
+    pub min: f64,
+    pub max: f64,
 }
 
 impl Reference {
@@ -69,6 +69,10 @@ impl Reference {
 
         loop {
             match reader.read_event_into(&mut buf) {
+                Err(e) => {
+                    eprintln!("Error at position {}: {:?}", reader.error_position(), e);
+                    return Err(XMLHandlerError::ParseError { source: e });
+                }
                 Ok(Event::Text(e)) => {
                     default = e.unescape().unwrap().to_string();
                 }
@@ -99,6 +103,10 @@ impl Constraint {
 
         loop {
             match reader.read_event_into(&mut buf) {
+                Err(e) => {
+                    eprintln!("Error at position {}: {:?}", reader.error_position(), e);
+                    return Err(XMLHandlerError::ParseError { source: e });
+                }
                 Ok(Event::Start(e)) if e.name().as_ref() == b"min" => {
                     // Read text content of <min> tag
                     match reader.read_event_into(&mut buf) {

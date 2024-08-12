@@ -1,6 +1,6 @@
 use quick_xml::{events::Event, name::QName, Reader};
 
-use crate::{condition::Condition, error::Result, substitute::Substitute};
+use crate::{condition::Condition, error::{Result, XMLHandlerError}, substitute::Substitute};
 
 #[derive(Debug)]
 pub struct Snippet {
@@ -55,6 +55,10 @@ impl Snippet {
 
         loop {
             match reader.read_event_into(&mut buf) {
+                Err(e) => {
+                    eprintln!("Error at position {}: {:?}", reader.error_position(), e);
+                    return Err(XMLHandlerError::ParseError { source: e });
+                }
                 Ok(Event::Text(e)) => {
                     // Capture the text content inside the <snippet> tag
                     match e.unescape() {
@@ -62,7 +66,7 @@ impl Snippet {
                             code_snippet.push_str(&text);
                             // let mut file = File::create("C:\\Trebuchet\\Snippet.txt")?;
                             // file.write_all(code_snippet.as_bytes())?;
-                        },
+                        }
                         Err(e) => eprintln!("Error decoding text: {}", e),
                     }
                 }

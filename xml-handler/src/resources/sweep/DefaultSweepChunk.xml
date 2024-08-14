@@ -69,25 +69,25 @@
 			<condition name="AUTORANGE-ENABLED">true</condition>
 			<condition name="STEP-CHANNEL-COUNT" op="eq">0</condition>
 			<snippet>-- "NoStepAuto" configuration (autorange enabled = true,  #step channels = 0):</snippet>
-			<include path="xml-handler/src/resources/sweep/NoStepAuto.xml"/>
+			<include path="NO_STEP_AUTO_XML"/>
 		</composite>
 		<composite>
 			<condition name="AUTORANGE-ENABLED">true</condition>
 			<condition name="STEP-CHANNEL-COUNT" op="gt">0</condition>
 			<snippet>-- "StepAuto" configuration (autorange enabled = true,  #step channels > 0):</snippet>
-			<include path="xml-handler/src/resources/sweep/StepAuto.xml"/>
+			<include path="STEP_AUTO_XML"/>
 		</composite>
 		<composite>
 			<condition name="AUTORANGE-ENABLED">false</condition>
 			<condition name="STEP-CHANNEL-COUNT" op="eq">0</condition>
 			<snippet>-- "NoStepFixed" configuration (autorange enabled = false,  #step channels = 0):</snippet>
-			<include path="xml-handler/src/resources/sweep/NoStepFixed.xml"/>
+			<include path="NO_STEP_FIXED_XML"/>
 		</composite>
 		<composite>
 			<condition name="AUTORANGE-ENABLED">false</condition>
 			<condition name="STEP-CHANNEL-COUNT" op="gt">0</condition>
 			<snippet>-- "StepFixed" configuration (autorange enabled = false,  #step channels > 0):</snippet>
-			<include path="xml-handler/src/resources/sweep/StepFixed.xml"/>
+			<include path="STEP_FIXED_XML"/>
 		</composite>
 	</composite>
 	<!-- =========================== local method ConfigureSmus ========================= -->

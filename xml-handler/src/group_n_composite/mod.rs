@@ -66,7 +66,7 @@ impl Group {
                     let res = parse_include(e.attributes());
                     match res {
                         Ok(ExternalFileResult::Snippet(snippet)) => {
-                            //ToDo!
+                            todo!();
                         }
                         Ok(ExternalFileResult::Composite(composite)) => {
                             children.push(IncludeResult::Composite(composite));
@@ -153,7 +153,7 @@ impl Composite {
                             sub_children.push(IncludeResult::Composite(composite));
                         }
                         ExternalFileResult::Variables(_) => {
-                            //ToDo!
+                            todo!();
                         }
                     }
                 }
@@ -221,7 +221,6 @@ fn parse_include(
             }
         }
         None => {
-            //TODO: Handle error
             return Err(XMLHandlerError::UnknownXMLFileError {
                 file_name: file_attr,
             });

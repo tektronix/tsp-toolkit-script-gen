@@ -6,7 +6,7 @@ use crate::{
     substitute::Substitute,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Snippet {
     pub name: String,
     pub repeat: String,

@@ -1,5 +1,5 @@
 [workspace]
-members = ["kic-script-gen", "xml-handler"]
+members = ["kic-script-gen", "script-gen-manager", "xml-handler"]
 resolver = "2"
 
 [workspace.package]
@@ -10,6 +10,7 @@ anyhow = "1.0.81"
 quick-xml = "0.36.0"
 thiserror = "1.0.58"
 xml-handler = {path = "xml-handler"}
+script-gen-manager = {path = "script-gen-manager"}
 
 [workspace.lints.rust]
 warnings = "deny"

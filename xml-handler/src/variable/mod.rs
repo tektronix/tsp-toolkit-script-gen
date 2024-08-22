@@ -9,7 +9,7 @@ pub struct Variables {
     pub variable_array: Vec<Variable>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Variable {
     id: String,
     default: String,
@@ -19,7 +19,7 @@ pub struct Variable {
     constraint: Option<Constraint>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Depend {
     re_f: String,
     _variables: Vec<Variable>,

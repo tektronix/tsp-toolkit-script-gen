@@ -8,10 +8,10 @@ use crate::{
     variable::{Variable, Variables},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Group {
     id: String,
-    type_: String,
+    pub type_: String,
     children: Vec<IncludeResult>,
     variable_list: Vec<Variable>,
 }
@@ -87,7 +87,7 @@ impl Group {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Composite {
     name: String,
     type_: Option<String>,
@@ -235,7 +235,7 @@ enum ExternalFileResult {
     Variables(Variables),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum IncludeResult {
     Snippet(Snippet),
     Composite(Composite),

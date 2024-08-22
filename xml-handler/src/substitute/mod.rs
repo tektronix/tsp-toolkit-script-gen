@@ -1,7 +1,7 @@
 use crate::error::{Result, XMLHandlerError};
 use quick_xml::{events::Event, name::QName, Reader};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Substitute {
     pub name: String,
     pub value: String,

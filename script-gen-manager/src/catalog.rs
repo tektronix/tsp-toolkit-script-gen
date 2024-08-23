@@ -4,7 +4,7 @@ use xml_handler::{generic_parser, group_n_composite::Group};
 
 #[derive(Debug, Clone)]
 pub struct Catalog {
-    function_metadata_map: HashMap<String, Group>,
+    pub function_metadata_map: HashMap<String, Group>,
 }
 
 impl Catalog {

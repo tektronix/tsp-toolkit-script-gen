@@ -1,9 +1,10 @@
 use crate::{catalog::Catalog, device::SmuDevice, device_io::SimulatedDeviceIO};
 
+#[derive(Debug, Clone)]
 pub struct DeviceManager {
     path: SimulatedDeviceIO,
-    catalog: Catalog,
-    device_list: Vec<SmuDevice>
+    pub catalog: Catalog,
+    pub device_list: Vec<SmuDevice>,
 }
 
 impl DeviceManager {
@@ -12,7 +13,11 @@ impl DeviceManager {
 
         // Initialize devices as an empty vector, only non-composite smu devices for now
         let device_list = Vec::new();
-        DeviceManager { path, catalog, device_list }
+        DeviceManager {
+            path,
+            catalog,
+            device_list,
+        }
     }
 
     pub fn search(&mut self) {

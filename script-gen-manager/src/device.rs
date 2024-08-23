@@ -29,6 +29,7 @@ impl IdnResponse {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct SmuDevice {
     catalog: Catalog,
 
@@ -78,7 +79,16 @@ impl SmuDevice {
         self.fast_adc_supported = false;
         self.analog_filter_supported = false;
 
+        // Try to get the response for "IDENTIFY_{node_id}"
         let identify_response = path.get_query_response(format!("IDENTIFY_{}", self.node_id));
+
+        // If the response is empty, try to get the response for "IDENTIFY" - for localnode
+        let identify_response = if identify_response.is_empty() {
+            path.get_query_response("IDENTIFY".to_string())
+        } else {
+            identify_response
+        };
+
         let identify_res: Vec<String> = identify_response
             .split(',')
             .map(|s| s.to_string())
@@ -97,6 +107,18 @@ impl SmuDevice {
 
             self.idn_response = IdnResponse::new(model, fw_version, serial, description);
         }
+    }
+
+    pub fn get_node_id(&self) -> String {
+        self.node_id.clone()
+    }
+
+    pub fn get_model(&self) -> String {
+        self.idn_response.model.clone()
+    }
+
+    pub fn get_fw_version(&self) -> String {
+        self.idn_response.fw_version.clone()
     }
 }
 

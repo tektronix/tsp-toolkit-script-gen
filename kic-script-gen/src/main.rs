@@ -1,6 +1,5 @@
 use script_gen_manager::{
-    device_io::SimulatedDeviceIO,
-    device_manager::DeviceManager,
+    device_io::SimulatedDeviceIO, device_manager::DeviceManager, script_component::ScriptModel,
 };
 
 fn main() -> anyhow::Result<()> {
@@ -17,6 +16,10 @@ fn run() -> anyhow::Result<()> {
     let initial_path = get_initial_path();
     let mut device_manager = DeviceManager::new(initial_path);
     device_manager.search();
+
+    let mut script_model = ScriptModel::new(device_manager);
+    script_model.initialize_scripts();
+
     Ok(())
 }
 

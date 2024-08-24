@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use xml_handler::{generic_parser, group_n_composite::Group};
+use xml_handler::{generic_parser, group::Group};
 
 #[derive(Debug, Clone)]
 pub struct Catalog {

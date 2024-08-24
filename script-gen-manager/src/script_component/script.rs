@@ -31,10 +31,15 @@ impl ScriptModel {
             .function_metadata_map
             .get("Initialize")
         {
-            let mut initialize_chunk =
+            let initialize_chunk =
                 InitializeModel::new(group.clone(), self.device_manager.device_list.clone());
-            initialize_chunk.to_script();
             self.script_chunks.push(Box::new(initialize_chunk));
+        }
+    }
+
+    pub fn to_script(&mut self) {
+        for chunk in self.script_chunks.iter_mut() {
+            chunk.to_script();
         }
     }
 }

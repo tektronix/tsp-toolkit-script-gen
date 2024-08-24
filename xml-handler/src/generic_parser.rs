@@ -2,7 +2,7 @@ use quick_xml::events::Event;
 use quick_xml::reader::Reader;
 
 use crate::error::{Result, XMLHandlerError};
-use crate::group_n_composite::Group;
+use crate::group::Group;
 use crate::resources::DEFAULT_FUNC_METADATA;
 
 pub fn parse_xml() -> Result<Vec<Group>> {
@@ -32,7 +32,7 @@ pub fn parse_xml() -> Result<Vec<Group>> {
         }
     }
 
-    //println!("{:#?}", groups);
+    println!("{:#?}", groups);
 
     Ok(groups)
 }

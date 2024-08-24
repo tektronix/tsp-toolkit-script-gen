@@ -1,6 +1,6 @@
 use std::any::Any;
 
-use xml_handler::group_n_composite::Group;
+use xml_handler::group::Group;
 
 use super::FunctionModel;
 

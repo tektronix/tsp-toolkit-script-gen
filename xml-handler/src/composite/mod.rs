@@ -1,6 +1,9 @@
+use std::collections::HashMap;
+
 use quick_xml::events::Event;
 use quick_xml::name::QName;
 use quick_xml::Reader;
+use script_aggregator::script_buffer::ScriptBuffer;
 
 use crate::error::{Result, XMLHandlerError};
 use crate::group::{parse_include, ExternalFileResult, IncludeResult};
@@ -11,6 +14,8 @@ use crate::substitute::Substitute;
 pub struct Composite {
     pub name: String,
     pub type_: Option<String>,
+    pub indent: i32,
+    pub repeat: String,
 
     pub substitutions: Vec<Substitute>,
     pub sub_children: Vec<IncludeResult>,
@@ -20,12 +25,16 @@ impl Composite {
     fn new(
         name: String,
         type_: Option<String>,
+        indent: i32,
+        repeat: String,
         substitutions: Vec<Substitute>,
         sub_children: Vec<IncludeResult>,
     ) -> Self {
         Composite {
             name,
             type_,
+            indent,
+            repeat,
             substitutions,
             sub_children,
         }
@@ -37,6 +46,8 @@ impl Composite {
     ) -> Result<Composite> {
         let mut name = String::new();
         let mut type_: Option<String> = None;
+        let mut indent = 0;
+        let mut repeat = String::new();
 
         let mut substitutions: Vec<Substitute> = Vec::new();
         let mut sub_children: Vec<IncludeResult> = Vec::new();
@@ -50,6 +61,15 @@ impl Composite {
                 QName(b"type") => {
                     type_ = Some(String::from_utf8_lossy(attr.value.as_ref()).to_string())
                 }
+                QName(b"indent") => {
+                    let attr_val = String::from_utf8_lossy(attr.value.as_ref()).to_string();
+                    if attr_val == "default" {
+                        indent = 4;
+                    } else {
+                        indent = 0;
+                    }
+                }
+                QName(b"repeat") => repeat = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
                 _ => {}
             }
         }
@@ -86,11 +106,36 @@ impl Composite {
                     sub_children.push(IncludeResult::Composite(res));
                 }
                 Ok(Event::End(e)) if e.name().as_ref() == b"composite" => {
-                    return Ok(Composite::new(name, type_, substitutions, sub_children));
+                    return Ok(Composite::new(name, type_, indent, repeat, substitutions, sub_children));
                 }
 
                 _ => (),
             }
         }
+    }
+
+    pub fn to_script(&self, temp: &mut ScriptBuffer, val_replacement_map: &HashMap<String, String>) {
+        if self.evaluate_conditions(val_replacement_map) {
+            if self.indent > 0 {
+                temp.change_indent(self.indent);
+            }
+            if self.repeat == "" {
+                for res in self.sub_children.iter() {
+                    if let IncludeResult::Snippet(snippet) = res {
+                        snippet.evaluate(temp, val_replacement_map);
+                    }
+                }
+            } else {
+                todo!();
+            }
+            if self.indent > 0 {
+                temp.change_indent(-self.indent);
+            }
+        }
+    }
+
+    fn evaluate_conditions(&self, val_replacement_map: &HashMap<String, String>) -> bool {
+        //TODO: required mainly for sweep model
+        true
     }
 }

@@ -7,3 +7,4 @@ edition = "2021"
 quick-xml = { workspace = true }
 thiserror = { workspace = true }
 lazy_static = "1.4.0"
+script-aggregator = { workspace = true }

@@ -4,9 +4,9 @@ pub mod generic_parser;
 
 mod resources;
 
+pub mod composite;
 pub mod condition;
 pub mod group;
-pub mod composite;
 pub mod snippet;
 pub mod substitute;
 pub mod variable;

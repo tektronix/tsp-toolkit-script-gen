@@ -32,7 +32,7 @@ pub fn parse_xml() -> Result<Vec<Group>> {
         }
     }
 
-    println!("{:#?}", groups);
+    //println!("{:#?}", groups);
 
     Ok(groups)
 }

@@ -19,6 +19,7 @@ fn run() -> anyhow::Result<()> {
 
     let mut script_model = ScriptModel::new(device_manager);
     script_model.initialize_scripts();
+    script_model.to_script();
 
     Ok(())
 }

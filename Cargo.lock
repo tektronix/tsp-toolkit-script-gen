@@ -57,9 +57,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "script-aggregator"
+version = "0.1.0"
+
+[[package]]
 name = "script-gen-manager"
 version = "0.1.0"
 dependencies = [
+ "script-aggregator",
  "xml-handler",
 ]
 
@@ -106,5 +111,6 @@ version = "0.1.0"
 dependencies = [
  "lazy_static",
  "quick-xml",
+ "script-aggregator",
  "thiserror",
 ]

@@ -26,7 +26,7 @@ impl FunctionModel for FinalizeModel {
 
     fn to_script(&mut self) {
         //TODO!
-        //no replacements to be done for finalize snippet, just call the 
+        //no replacements to be done for finalize snippet, just call the
         //script aggregator with indentation handled
         todo!();
     }

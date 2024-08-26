@@ -2,17 +2,17 @@ use quick_xml::{events::Event, name::QName, Reader};
 
 use crate::resources::Resource;
 use crate::{
+    composite::Composite,
     error::{Result, XMLHandlerError},
     snippet::Snippet,
     variable::{Variable, Variables},
-    composite::Composite,
 };
 
 #[derive(Debug, Clone)]
 pub struct Group {
     id: String,
     pub type_: String,
-    children: Vec<IncludeResult>,
+    pub children: Vec<IncludeResult>,
     variable_list: Vec<Variable>,
 }
 

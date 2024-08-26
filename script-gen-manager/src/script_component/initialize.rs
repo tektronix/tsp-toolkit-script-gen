@@ -1,6 +1,7 @@
 use std::{any::Any, collections::HashMap};
 
-use xml_handler::group::Group;
+use script_aggregator::script_buffer::ScriptBuffer;
+use xml_handler::{composite::Composite, group::Group};
 
 use crate::device::SmuDevice;
 
@@ -39,6 +40,16 @@ impl FunctionModel for InitializeModel {
             .insert(String::from("INCLUDE-SRCVALS"), String::from("1"));
 
         //TODO! aux build stuff
+
+        let mut temp = ScriptBuffer::new();
+        temp.set_auto_indent(true);
+        for child in self.metadata.children.iter() {
+            if let xml_handler::group::IncludeResult::Composite(comp) = child {
+                if let Some(_) = comp.type_ {
+                    self.aux_build(&mut temp, comp);
+                }
+            }
+        }
 
         self.val_replacement_map
             .insert(String::from("PRODUCT-SETUP"), self.get_product_setup());
@@ -106,5 +117,12 @@ impl InitializeModel {
         println!("{}", current_setup);
 
         current_setup
+    }
+
+    //TODO! aux build needs to be moved to FunctionModel
+    //since only InitializeModel needs it, keeping it here for now
+    fn aux_build(&self, temp: &mut ScriptBuffer, aux: &Composite) {
+        temp.change_indent(ScriptBuffer::DEFAULT_INDENT);
+        aux.to_script(temp, &self.val_replacement_map);
     }
 }

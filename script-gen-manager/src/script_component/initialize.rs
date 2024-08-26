@@ -57,14 +57,14 @@ impl FunctionModel for InitializeModel {
 }
 
 impl InitializeModel {
+    const DESCRIPTION: &'static str = "This function prepares the test for execution. \n 
+                                       It first verifies that current setup matches project's setup. \n
+                                       Then, it initializes members used to keep track of reading buffer storage.  ";
+
     pub fn new(group: Group, device_list: Vec<SmuDevice>) -> Self {
         InitializeModel {
             type_: group.type_.clone(),
-            description: String::from(
-                "This function prepares the test for execution. \n 
-                 It first verifies that current setup matches project's setup. \n
-                 Then, it initializes members used to keep track of reading buffer storage.  ",
-            ),
+            description: Self::DESCRIPTION.to_string(),
             metadata: group,
             device_list,
             val_replacement_map: HashMap::new(),

@@ -24,7 +24,13 @@ impl ScriptBuffer {
     }
 
     pub fn change_indent(&mut self, val: i32) {
-        self.set_indent(cmp::max(0, cmp::min(ScriptBuffer::MAXIMUM_INDENT.chars().count() as i32, self.indent_count + val)));
+        self.set_indent(cmp::max(
+            0,
+            cmp::min(
+                ScriptBuffer::MAXIMUM_INDENT.chars().count() as i32,
+                self.indent_count + val,
+            ),
+        ));
     }
 
     pub fn set_indent(&mut self, val: i32) {
@@ -33,7 +39,10 @@ impl ScriptBuffer {
             self.indent = String::new();
         } else if val > 0 && val <= ScriptBuffer::MAXIMUM_INDENT.chars().count() as i32 {
             self.indent_count = val;
-            self.indent = ScriptBuffer::MAXIMUM_INDENT.chars().take(val as usize).collect();
+            self.indent = ScriptBuffer::MAXIMUM_INDENT
+                .chars()
+                .take(val as usize)
+                .collect();
         }
     }
 }

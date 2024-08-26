@@ -98,13 +98,18 @@ impl Snippet {
         }
     }
 
-    pub fn evaluate(&self, temp: &mut ScriptBuffer, val_replacement_map: &std::collections::HashMap<String, String>) {
+    pub fn evaluate(
+        &self,
+        temp: &mut ScriptBuffer,
+        val_replacement_map: &std::collections::HashMap<String, String>,
+    ) {
         let mut temp_code_snippet = self.code_snippet.clone();
 
         for key in val_replacement_map.keys() {
             let from_val = format!("%{}%", key);
             println!("{}", from_val);
-            temp_code_snippet = temp_code_snippet.replace(&from_val, val_replacement_map.get(key).unwrap());
+            temp_code_snippet =
+                temp_code_snippet.replace(&from_val, val_replacement_map.get(key).unwrap());
         }
 
         println!("{}", temp_code_snippet);

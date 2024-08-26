@@ -69,7 +69,9 @@ impl Composite {
                         indent = 0;
                     }
                 }
-                QName(b"repeat") => repeat = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
+                QName(b"repeat") => {
+                    repeat = String::from_utf8_lossy(attr.value.as_ref()).to_string()
+                }
                 _ => {}
             }
         }
@@ -106,7 +108,14 @@ impl Composite {
                     sub_children.push(IncludeResult::Composite(res));
                 }
                 Ok(Event::End(e)) if e.name().as_ref() == b"composite" => {
-                    return Ok(Composite::new(name, type_, indent, repeat, substitutions, sub_children));
+                    return Ok(Composite::new(
+                        name,
+                        type_,
+                        indent,
+                        repeat,
+                        substitutions,
+                        sub_children,
+                    ));
                 }
 
                 _ => (),
@@ -114,7 +123,11 @@ impl Composite {
         }
     }
 
-    pub fn to_script(&self, temp: &mut ScriptBuffer, val_replacement_map: &HashMap<String, String>) {
+    pub fn to_script(
+        &self,
+        temp: &mut ScriptBuffer,
+        val_replacement_map: &HashMap<String, String>,
+    ) {
         if self.evaluate_conditions(val_replacement_map) {
             if self.indent > 0 {
                 temp.change_indent(self.indent);

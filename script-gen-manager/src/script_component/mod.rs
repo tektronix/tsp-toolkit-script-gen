@@ -2,6 +2,7 @@ pub mod function;
 
 mod script;
 
+mod data_report;
 mod finalize;
 mod initialize;
 

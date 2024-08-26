@@ -33,12 +33,13 @@ impl FunctionModel for FinalizeModel {
 }
 
 impl FinalizeModel {
+    const DESCRIPTION: &'static str =
+        "The function completes the script and places the instrument in a known state.";
+
     pub fn new(group: Group) -> Self {
         FinalizeModel {
             type_: group.type_.clone(),
-            description: String::from(
-                "The function completes the script and places the instrument in a known state.",
-            ),
+            description: Self::DESCRIPTION.to_string(),
             metadata: group,
         }
     }

@@ -96,9 +96,8 @@ pub fn parse_include(
 
     for attr in attributes {
         let attr = attr?;
-        match attr.key {
-            QName(b"path") => file_attr = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
-            _ => {}
+        if let QName(b"path") = attr.key {
+            file_attr = String::from_utf8_lossy(attr.value.as_ref()).to_string();
         }
     }
 
@@ -132,11 +131,9 @@ pub fn parse_include(
                 }
             }
         }
-        None => {
-            return Err(XMLHandlerError::UnknownXMLFileError {
-                file_name: file_attr,
-            });
-        }
+        None => Err(XMLHandlerError::UnknownXMLFileError {
+            file_name: file_attr,
+        }),
     }
 }
 

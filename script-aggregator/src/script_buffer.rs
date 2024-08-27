@@ -1,10 +1,15 @@
 use std::cmp;
 
+use crate::indent_engine::IndentEngine;
+
 #[derive(Debug)]
 pub struct ScriptBuffer {
     auto_indent: bool,
     indent: String,
     indent_count: i32,
+
+    body: String,
+    body_indenter: IndentEngine,
 }
 
 impl ScriptBuffer {
@@ -16,6 +21,9 @@ impl ScriptBuffer {
             auto_indent: false,
             indent: String::new(),
             indent_count: 0,
+
+            body: String::new(),
+            body_indenter: IndentEngine::new(&String::from("    ")),
         }
     }
 
@@ -45,4 +53,14 @@ impl ScriptBuffer {
                 .collect();
         }
     }
+
+    pub fn append(&self, statement: String) {}
+
+    // fn another_append(&self, statement: String) {
+    //     if self.auto_indent {
+
+    //     } else {
+    //         println!("{}", statement);
+    //     }
+    // }
 }

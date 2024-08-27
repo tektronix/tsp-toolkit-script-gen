@@ -45,7 +45,7 @@ impl FunctionModel for InitializeModel {
         temp.set_auto_indent(true);
         for child in self.metadata.children.iter() {
             if let xml_handler::group::IncludeResult::Composite(comp) = child {
-                if let Some(_) = comp.type_ {
+                if comp.type_.is_some() {
                     self.aux_build(&mut temp, comp);
                 }
             }
@@ -94,26 +94,25 @@ impl InitializeModel {
         }
 
         let mut current_setup = String::from("{");
-        for i in 0..unique_nodes.len() {
-            let mut formatted_string: String;
-            if i == 0 {
-                formatted_string = format!(
+        for (i, node) in unique_nodes.iter().enumerate() {
+            let formatted_string: String = if i == 0 {
+                format!(
                     "{{{},[[{}]],[[{}]]}}",
-                    unique_nodes[i].get_node_id(),
-                    unique_nodes[i].get_model(),
-                    unique_nodes[i].get_fw_version()
-                );
+                    node.get_node_id(),
+                    node.get_model(),
+                    node.get_fw_version()
+                )
             } else {
-                formatted_string = format!(
+                format!(
                     ",{{{},[[{}]],[[{}]]}}",
-                    unique_nodes[i].get_node_id(),
-                    unique_nodes[i].get_model(),
-                    unique_nodes[i].get_fw_version()
-                );
-            }
+                    node.get_node_id(),
+                    node.get_model(),
+                    node.get_fw_version()
+                )
+            };
             current_setup.push_str(&formatted_string);
         }
-        current_setup.push_str("}");
+        current_setup.push('}');
         println!("{}", current_setup);
 
         current_setup

@@ -132,7 +132,7 @@ impl Composite {
             if self.indent > 0 {
                 temp.change_indent(self.indent);
             }
-            if self.repeat == "" {
+            if self.repeat.is_empty() {
                 for res in self.sub_children.iter() {
                     if let IncludeResult::Snippet(snippet) = res {
                         snippet.evaluate(temp, val_replacement_map);

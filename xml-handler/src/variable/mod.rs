@@ -172,11 +172,8 @@ impl Depend {
 
         for attr in attributes {
             let attr = attr?;
-            match attr.key {
-                QName(b"ref") => {
-                    re_f = String::from_utf8_lossy(attr.value.as_ref()).to_string();
-                }
-                _ => {}
+            if let QName(b"ref") = attr.key {
+                re_f = String::from_utf8_lossy(attr.value.as_ref()).to_string();
             }
         }
 

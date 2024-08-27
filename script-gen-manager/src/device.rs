@@ -1,33 +1,6 @@
+use tsp_toolkit_kic_lib::instrument::info::InstrumentInfo;
+
 use crate::{catalog::Catalog, device_io::SimulatedDeviceIO};
-
-#[derive(Debug, Clone)]
-struct IdnResponse {
-    model: String,
-    fw_version: String,
-    serial: String,
-    description: String,
-    //line_freq: f64,
-}
-
-impl IdnResponse {
-    pub fn new(model: String, fw_version: String, serial: String, description: String) -> Self {
-        IdnResponse {
-            model,
-            fw_version,
-            serial,
-            description,
-        }
-    }
-
-    pub fn empty_idn_response() -> Self {
-        IdnResponse {
-            model: String::new(),
-            fw_version: String::new(),
-            serial: String::new(),
-            description: String::new(),
-        }
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct SmuDevice {
@@ -40,13 +13,12 @@ pub struct SmuDevice {
     fast_adc_supported: bool,
     analog_filter_supported: bool,
 
-    idn_response: IdnResponse,
+    instr_idn_info: InstrumentInfo,
 }
 
 impl SmuDevice {
     pub fn new(id: String, catalog: Catalog) -> Self {
         let (node_id, smu_id) = SmuDevice::parse_id(id);
-        let idn_response = IdnResponse::empty_idn_response();
         SmuDevice {
             catalog,
             node_id,
@@ -54,7 +26,7 @@ impl SmuDevice {
             async_meas_supported: false,
             fast_adc_supported: false,
             analog_filter_supported: false,
-            idn_response,
+            instr_idn_info: InstrumentInfo::default(),
         }
     }
 
@@ -63,7 +35,7 @@ impl SmuDevice {
         let smu_id: String;
 
         let res: Vec<String> = id.split('.').map(|s| s.to_string()).collect();
-        if res.len() > 0 {
+        if !res.is_empty() {
             node_id = res[0].clone();
             smu_id = id;
         } else {
@@ -98,14 +70,17 @@ impl SmuDevice {
             let model = identify_res[0].clone();
             let fw_version = identify_res[1].clone();
             let serial = identify_res[2].clone();
-            let description = identify_res[3].clone();
 
             //Comment taken from TSP Express
             // NOTE: the response also includes line frequency -- but the system uses
             //       the line frequency of the connected node (i.e. localnode.linefreq)
+            //let description = identify_res[3].clone();
             //let _ = identify_res[4].clone();
 
-            self.idn_response = IdnResponse::new(model, fw_version, serial, description);
+            //self.idn_response = IdnResponse::new(model, fw_version, serial, description);
+            self.instr_idn_info.model = Some(model);
+            self.instr_idn_info.firmware_rev = Some(fw_version);
+            self.instr_idn_info.serial_number = Some(serial);
         }
     }
 
@@ -114,11 +89,19 @@ impl SmuDevice {
     }
 
     pub fn get_model(&self) -> String {
-        self.idn_response.model.clone()
+        if let Some(model) = &self.instr_idn_info.model {
+            model.clone()
+        } else {
+            String::from("Unknown Model")
+        }
     }
 
     pub fn get_fw_version(&self) -> String {
-        self.idn_response.fw_version.clone()
+        if let Some(fw_version) = &self.instr_idn_info.firmware_rev {
+            fw_version.clone()
+        } else {
+            String::from("Unknown Firmware Version")
+        }
     }
 }
 

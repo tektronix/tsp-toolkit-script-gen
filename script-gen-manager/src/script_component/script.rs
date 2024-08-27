@@ -1,8 +1,4 @@
-use crate::{
-    catalog::Catalog,
-    device::SmuDevice,
-    device_manager::{self, DeviceManager},
-};
+use crate::device_manager::DeviceManager;
 
 use super::{FunctionModel, InitializeModel};
 

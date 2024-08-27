@@ -39,23 +39,29 @@ impl FunctionModel for DataReportModel {
             .insert(String::from("WAIT-INTERVAL"), String::from("1"));
         self.val_replacement_map
             .insert(String::from("MAX-READINGS-TO-RETURN"), String::from("100"));
-        
-            self.val_replacement_map
+
+        self.val_replacement_map
             .insert(String::from("TAG-DATA-REPORT"), String::from("Data"));
         self.val_replacement_map
             .insert(String::from("TAG-SWEEP-START"), String::from("SWEEP-START"));
         self.val_replacement_map
             .insert(String::from("TAG-START"), String::from("START"));
-        self.val_replacement_map
-            .insert(String::from("TAG-EXPECTED-COUNT"), String::from("EXPECTED-COUNT"));
+        self.val_replacement_map.insert(
+            String::from("TAG-EXPECTED-COUNT"),
+            String::from("EXPECTED-COUNT"),
+        );
         self.val_replacement_map
             .insert(String::from("TAG-NAME"), String::from("NAME"));
         self.val_replacement_map
             .insert(String::from("TAG-PTS-IN-BUFF"), String::from("PTS-IN-BUFF"));
-        self.val_replacement_map
-            .insert(String::from("TAG-PTS-RETURNED"), String::from("PTS-RETURNED"));
-        self.val_replacement_map
-            .insert(String::from("TAG-BASE-TIME-STAMP"), String::from("BASE-TIME-STAMP"));
+        self.val_replacement_map.insert(
+            String::from("TAG-PTS-RETURNED"),
+            String::from("PTS-RETURNED"),
+        );
+        self.val_replacement_map.insert(
+            String::from("TAG-BASE-TIME-STAMP"),
+            String::from("BASE-TIME-STAMP"),
+        );
         self.val_replacement_map
             .insert(String::from("TAG-READINGS"), String::from("READINGS"));
         self.val_replacement_map

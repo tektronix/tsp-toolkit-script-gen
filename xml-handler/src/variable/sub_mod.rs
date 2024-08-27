@@ -35,9 +35,8 @@ impl Reference {
 
         for attr in attributes {
             let attr = attr?;
-            match attr.key {
-                QName(b"id") => id = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
-                _ => {}
+            if let QName(b"id") = attr.key {
+                id = String::from_utf8_lossy(attr.value.as_ref()).to_string();
             }
         }
 

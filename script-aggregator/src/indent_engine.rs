@@ -1,5 +1,5 @@
 #[derive(Debug)]
-struct IndentEngine {
+pub struct IndentEngine {
     indent: String,
     next_indent: String,
     step: String,
@@ -8,7 +8,7 @@ struct IndentEngine {
 }
 
 impl IndentEngine {
-    fn new(step: &String) -> Self {
+    pub fn new(step: &String) -> Self {
         IndentEngine {
             indent: String::new(),
             next_indent: String::new(),

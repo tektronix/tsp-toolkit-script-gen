@@ -6,4 +6,4 @@ edition = "2021"
 [dependencies]
 xml-handler = { workspace = true }
 script-aggregator = { workspace = true }
-tsp-toolkit-kic-lib = { path = "C:\\git\\Public\\kic_lib" }
+tsp-toolkit-kic-lib = { workspace = true }

@@ -7,3 +7,5 @@ edition = "2021"
 quick-xml = { workspace = true }
 thiserror = { workspace = true }
 lazy_static = "1.4.0"
+script-aggregator = { workspace = true }
+tsp-toolkit-kic-lib = { path = "C:\\git\\Public\\kic_lib" }

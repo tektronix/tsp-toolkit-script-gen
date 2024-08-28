@@ -9,7 +9,7 @@ pub struct Variables {
     pub variable_array: Vec<Variable>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Variable {
     id: String,
     default: String,
@@ -19,7 +19,7 @@ pub struct Variable {
     constraint: Option<Constraint>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Depend {
     re_f: String,
     _variables: Vec<Variable>,
@@ -172,11 +172,8 @@ impl Depend {
 
         for attr in attributes {
             let attr = attr?;
-            match attr.key {
-                QName(b"ref") => {
-                    re_f = String::from_utf8_lossy(attr.value.as_ref()).to_string();
-                }
-                _ => {}
+            if let QName(b"ref") = attr.key {
+                re_f = String::from_utf8_lossy(attr.value.as_ref()).to_string();
             }
         }
 

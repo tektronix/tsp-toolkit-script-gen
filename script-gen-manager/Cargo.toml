@@ -1,0 +1,9 @@
+[package]
+name = "script-gen-manager"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+xml-handler = { workspace = true }
+script-aggregator = { workspace = true }
+tsp-toolkit-kic-lib = { workspace = true }

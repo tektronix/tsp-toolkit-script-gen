@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 anyhow = { workspace = true }
 xml-handler = { workspace = true }
+script-gen-manager = { workspace = true }

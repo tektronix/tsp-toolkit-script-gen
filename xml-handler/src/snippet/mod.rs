@@ -1,4 +1,7 @@
+use std::{fs::File, io::Write};
+
 use quick_xml::{events::Event, name::QName, Reader};
+use script_aggregator::script_buffer::ScriptBuffer;
 
 use crate::{
     condition::Condition,
@@ -6,7 +9,7 @@ use crate::{
     substitute::Substitute,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Snippet {
     pub name: String,
     pub repeat: String,
@@ -63,13 +66,15 @@ impl Snippet {
                     eprintln!("Error at position {}: {:?}", reader.error_position(), e);
                     return Err(XMLHandlerError::ParseError { source: e });
                 }
-                Ok(Event::Text(e)) => {
+                Ok(Event::Text(mut e)) => {
                     // Capture the text content inside the <snippet> tag
+                    e.inplace_trim_start();
+                    e.inplace_trim_end();
                     match e.unescape() {
                         Ok(text) => {
                             code_snippet.push_str(&text);
-                            // let mut file = File::create("C:\\Trebuchet\\Snippet.txt")?;
-                            // file.write_all(code_snippet.as_bytes())?;
+                            let mut file = File::create("C:\\Trebuchet\\Snippet.txt")?;
+                            file.write_all(code_snippet.as_bytes())?;
                         }
                         Err(e) => {
                             eprintln!("Error decoding text: {}", e);
@@ -96,4 +101,23 @@ impl Snippet {
             }
         }
     }
+
+    pub fn evaluate(
+        &self,
+        temp: &mut ScriptBuffer,
+        val_replacement_map: &std::collections::HashMap<String, String>,
+    ) {
+        let mut temp_code_snippet = self.code_snippet.clone();
+
+        for key in val_replacement_map.keys() {
+            let from_val = format!("%{}%", key);
+            println!("{}", from_val);
+            temp_code_snippet =
+                temp_code_snippet.replace(&from_val, val_replacement_map.get(key).unwrap());
+        }
+
+        println!("{}", temp_code_snippet);
+    }
+
+    fn insert(&self, temp: &mut ScriptBuffer) {}
 }

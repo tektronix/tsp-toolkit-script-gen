@@ -2,17 +2,17 @@ use quick_xml::{events::Event, name::QName, Reader};
 
 use crate::resources::Resource;
 use crate::{
+    composite::Composite,
     error::{Result, XMLHandlerError},
     snippet::Snippet,
-    substitute::Substitute,
     variable::{Variable, Variables},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Group {
     id: String,
-    type_: String,
-    children: Vec<IncludeResult>,
+    pub type_: String,
+    pub children: Vec<IncludeResult>,
     variable_list: Vec<Variable>,
 }
 
@@ -87,95 +87,7 @@ impl Group {
     }
 }
 
-#[derive(Debug)]
-struct Composite {
-    name: String,
-    type_: Option<String>,
-
-    substitutions: Vec<Substitute>,
-    sub_children: Vec<IncludeResult>,
-}
-
-impl Composite {
-    fn new(
-        name: String,
-        type_: Option<String>,
-        substitutions: Vec<Substitute>,
-        sub_children: Vec<IncludeResult>,
-    ) -> Self {
-        Composite {
-            name,
-            type_,
-            substitutions,
-            sub_children,
-        }
-    }
-
-    fn parse_composite<R: std::io::BufRead>(
-        reader: &mut Reader<R>,
-        attributes: quick_xml::events::attributes::Attributes,
-    ) -> Result<Composite> {
-        let mut name = String::new();
-        let mut type_: Option<String> = None;
-
-        let mut substitutions: Vec<Substitute> = Vec::new();
-        let mut sub_children: Vec<IncludeResult> = Vec::new();
-
-        let mut buf: Vec<u8> = Vec::new();
-
-        for attr in attributes {
-            let attr = attr?;
-            match attr.key {
-                QName(b"name") => name = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
-                QName(b"type") => {
-                    type_ = Some(String::from_utf8_lossy(attr.value.as_ref()).to_string())
-                }
-                _ => {}
-            }
-        }
-
-        loop {
-            match reader.read_event_into(&mut buf) {
-                Err(e) => {
-                    eprintln!("Error at position {}: {:?}", reader.error_position(), e);
-                    return Err(XMLHandlerError::ParseError { source: e });
-                }
-                Ok(Event::Start(e)) if e.name().as_ref() == b"substitute" => {
-                    substitutions.push(Substitute::parse_substitute(reader, e.attributes())?);
-                }
-                Ok(Event::Empty(e)) if e.name().as_ref() == b"include" => {
-                    let res = parse_include(e.attributes())?;
-                    match res {
-                        ExternalFileResult::Snippet(snippet) => {
-                            sub_children.push(IncludeResult::Snippet(snippet));
-                        }
-                        ExternalFileResult::Composite(composite) => {
-                            sub_children.push(IncludeResult::Composite(composite));
-                        }
-                        ExternalFileResult::Variables(_) => {
-                            todo!();
-                        }
-                    }
-                }
-                Ok(Event::Start(e)) if e.name().as_ref() == b"snippet" => {
-                    let res = Snippet::parse_snippet(reader, e.attributes())?;
-                    sub_children.push(IncludeResult::Snippet(res));
-                }
-                Ok(Event::Start(e)) if e.name().as_ref() == b"composite" => {
-                    let res = Self::parse_composite(reader, e.attributes())?;
-                    sub_children.push(IncludeResult::Composite(res));
-                }
-                Ok(Event::End(e)) if e.name().as_ref() == b"composite" => {
-                    return Ok(Composite::new(name, type_, substitutions, sub_children));
-                }
-
-                _ => (),
-            }
-        }
-    }
-}
-
-fn parse_include(
+pub fn parse_include(
     attributes: quick_xml::events::attributes::Attributes,
 ) -> Result<ExternalFileResult> {
     let mut file_attr = String::new();
@@ -184,9 +96,8 @@ fn parse_include(
 
     for attr in attributes {
         let attr = attr?;
-        match attr.key {
-            QName(b"path") => file_attr = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
-            _ => {}
+        if let QName(b"path") = attr.key {
+            file_attr = String::from_utf8_lossy(attr.value.as_ref()).to_string();
         }
     }
 
@@ -220,23 +131,21 @@ fn parse_include(
                 }
             }
         }
-        None => {
-            return Err(XMLHandlerError::UnknownXMLFileError {
-                file_name: file_attr,
-            });
-        }
+        None => Err(XMLHandlerError::UnknownXMLFileError {
+            file_name: file_attr,
+        }),
     }
 }
 
 #[derive(Debug)]
-enum ExternalFileResult {
+pub enum ExternalFileResult {
     Snippet(Snippet),
     Composite(Composite),
     Variables(Variables),
 }
 
-#[derive(Debug)]
-enum IncludeResult {
+#[derive(Debug, Clone)]
+pub enum IncludeResult {
     Snippet(Snippet),
     Composite(Composite),
 }

@@ -1,7 +1,7 @@
 use crate::error::{Result, XMLHandlerError};
 use quick_xml::{events::Event, name::QName, Reader};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Reference {
     pub id: String,
     default: String,
@@ -9,7 +9,7 @@ pub struct Reference {
     value: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Constraint {
     pub min: f64,
     pub max: f64,
@@ -35,9 +35,8 @@ impl Reference {
 
         for attr in attributes {
             let attr = attr?;
-            match attr.key {
-                QName(b"id") => id = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
-                _ => {}
+            if let QName(b"id") = attr.key {
+                id = String::from_utf8_lossy(attr.value.as_ref()).to_string();
             }
         }
 

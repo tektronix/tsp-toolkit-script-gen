@@ -1,8 +1,8 @@
 use std::{any::Any, collections::HashMap};
 
+use super::function::FunctionModel;
+use script_aggregator::script_buffer::ScriptBuffer;
 use xml_handler::group::Group;
-
-use super::FunctionModel;
 
 #[derive(Debug)]
 pub struct DataReportModel {
@@ -14,19 +14,27 @@ pub struct DataReportModel {
 }
 
 impl FunctionModel for DataReportModel {
-    fn set_type(&mut self, type_: String) {
-        self.type_ = type_;
-    }
-
-    fn get_type(&self) -> String {
-        self.type_.clone()
-    }
-
     fn as_any(&self) -> &dyn Any {
         self
     }
 
-    fn to_script(&mut self) {
+    fn get_type(&self) -> &str {
+        self.type_.as_str()
+    }
+
+    fn get_description(&self) -> &str {
+        self.description.as_str()
+    }
+
+    fn get_val_replacement_map(&self) -> &std::collections::HashMap<String, String> {
+        &self.val_replacement_map
+    }
+
+    fn get_metadata(&self) -> &xml_handler::group::Group {
+        &self.metadata
+    }
+
+    fn to_script(&mut self, script_buffer: &mut ScriptBuffer) {
         //TODO: Below three replacement values depend on sweep model, will be handled later
         self.val_replacement_map
             .insert(String::from("READING-BUFFERS"), String::from(""));

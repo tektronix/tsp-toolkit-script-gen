@@ -1,9 +1,15 @@
-use std::{fs::File, io::Write};
+use std::{
+    any::Any,
+    collections::HashMap,
+    fs::File,
+    io::{self, BufRead, Cursor, Write},
+};
 
 use quick_xml::{events::Event, name::QName, Reader};
 use script_aggregator::script_buffer::ScriptBuffer;
 
 use crate::{
+    composite::CommonChunk,
     condition::Condition,
     error::{Result, XMLHandlerError},
     substitute::Substitute,
@@ -13,6 +19,7 @@ use crate::{
 pub struct Snippet {
     pub name: String,
     pub repeat: String,
+    pub indent: i32,
     pub code_snippet: String,
     pub substitutions: Vec<Substitute>,
     pub conditions: Vec<Condition>,
@@ -30,6 +37,7 @@ impl Snippet {
         Snippet {
             name,
             repeat,
+            indent: 0,
             code_snippet,
             substitutions,
             conditions,
@@ -73,8 +81,8 @@ impl Snippet {
                     match e.unescape() {
                         Ok(text) => {
                             code_snippet.push_str(&text);
-                            let mut file = File::create("C:\\Trebuchet\\Snippet.txt")?;
-                            file.write_all(code_snippet.as_bytes())?;
+                            // let mut file = File::create("C:\\Trebuchet\\Snippet.txt")?;
+                            // file.write_all(code_snippet.as_bytes())?;
                         }
                         Err(e) => {
                             eprintln!("Error decoding text: {}", e);
@@ -104,20 +112,62 @@ impl Snippet {
 
     pub fn evaluate(
         &self,
-        temp: &mut ScriptBuffer,
+        script_buffer: &mut ScriptBuffer,
         val_replacement_map: &std::collections::HashMap<String, String>,
     ) {
         let mut temp_code_snippet = self.code_snippet.clone();
 
+        for sub in self.substitutions.iter() {
+            let to_val = self.lookup(val_replacement_map, &sub.name);
+            temp_code_snippet = temp_code_snippet.replace(&sub.value, &to_val);
+        }
+
         for key in val_replacement_map.keys() {
             let from_val = format!("%{}%", key);
-            println!("{}", from_val);
             temp_code_snippet =
                 temp_code_snippet.replace(&from_val, val_replacement_map.get(key).unwrap());
         }
-
-        println!("{}", temp_code_snippet);
+        self.insert(script_buffer, temp_code_snippet);
     }
 
-    fn insert(&self, temp: &mut ScriptBuffer) {}
+    fn insert(&self, script_buffer: &mut ScriptBuffer, temp_code: String) {
+        // Create a cursor to read the string as bytes
+        let cursor = Cursor::new(temp_code);
+        let reader = io::BufReader::new(cursor);
+
+        // Read the input string line by line
+        for line in reader.lines() {
+            match line {
+                Ok(line) => {
+                    script_buffer.append(line);
+                }
+                Err(e) => {
+                    //TODO: Add error handling
+                    eprintln!("Error reading line: {}", e);
+                }
+            }
+        }
+    }
+}
+
+impl CommonChunk for Snippet {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn get_repeat(&self) -> &str {
+        self.repeat.as_str()
+    }
+
+    fn get_indent(&self) -> i32 {
+        self.indent
+    }
+
+    fn get_conditions(&self) -> &Vec<Condition> {
+        &self.conditions
+    }
+
+    fn evaluate(&self, script_buffer: &mut ScriptBuffer, val_replacement_map: &HashMap<String, String>) {
+        self.evaluate(script_buffer, val_replacement_map);
+    }
 }

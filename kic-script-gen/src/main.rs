@@ -1,5 +1,6 @@
 use script_gen_manager::{
-    device_io::SimulatedDeviceIO, device_manager::DeviceManager, script_component::ScriptModel,
+    device_io::SimulatedDeviceIO, device_manager::DeviceManager,
+    script_component::script::ScriptModel,
 };
 
 fn main() -> anyhow::Result<()> {
@@ -19,6 +20,7 @@ fn run() -> anyhow::Result<()> {
 
     let mut script_model = ScriptModel::new(device_manager);
     script_model.initialize_scripts();
+    script_model.add_sweep();
     script_model.to_script();
 
     Ok(())

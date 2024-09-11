@@ -3,33 +3,41 @@ use std::{any::Any, collections::HashMap};
 use script_aggregator::script_buffer::ScriptBuffer;
 use xml_handler::{composite::Composite, group::Group};
 
+use super::function::FunctionModel;
 use crate::device::SmuDevice;
-
-use super::FunctionModel;
 
 #[derive(Debug)]
 pub struct InitializeModel {
     type_: String,
     description: String,
     metadata: Group,
-    device_list: Vec<SmuDevice>,
     val_replacement_map: HashMap<String, String>,
+
+    device_list: Vec<SmuDevice>,
 }
 
 impl FunctionModel for InitializeModel {
-    fn set_type(&mut self, type_: String) {
-        self.type_ = type_;
-    }
-
-    fn get_type(&self) -> String {
-        self.type_.clone()
-    }
-
     fn as_any(&self) -> &dyn Any {
         self
     }
 
-    fn to_script(&mut self) {
+    fn get_type(&self) -> &str {
+        self.type_.as_str()
+    }
+
+    fn get_description(&self) -> &str {
+        self.description.as_str()
+    }
+
+    fn get_val_replacement_map(&self) -> &std::collections::HashMap<String, String> {
+        &self.val_replacement_map
+    }
+
+    fn get_metadata(&self) -> &xml_handler::group::Group {
+        &self.metadata
+    }
+
+    fn to_script(&mut self, script_buffer: &mut ScriptBuffer) {
         self.val_replacement_map
             .insert(String::from("MAX-NODES"), String::from("64"));
         self.val_replacement_map
@@ -39,35 +47,36 @@ impl FunctionModel for InitializeModel {
         self.val_replacement_map
             .insert(String::from("INCLUDE-SRCVALS"), String::from("1"));
 
-        //TODO! aux build stuff
-
-        let mut temp = ScriptBuffer::new();
-        temp.set_auto_indent(true);
         for child in self.metadata.children.iter() {
             if let xml_handler::group::IncludeResult::Composite(comp) = child {
                 if comp.type_.is_some() {
+                    let mut temp = ScriptBuffer::new();
+                    temp.set_auto_indent(true);
                     self.aux_build(&mut temp, comp);
+                    script_buffer.prepend(temp.to_string());
                 }
             }
         }
 
         self.val_replacement_map
             .insert(String::from("PRODUCT-SETUP"), self.get_product_setup());
+
+        self.build(script_buffer);
     }
 }
 
 impl InitializeModel {
-    const DESCRIPTION: &'static str = "This function prepares the test for execution. \n 
-                                       It first verifies that current setup matches project's setup. \n
-                                       Then, it initializes members used to keep track of reading buffer storage.  ";
+    const DESCRIPTION: &'static str = "This function prepares the test for execution.
+    It first verifies that current setup matches project's setup.
+    Then, it initializes members used to keep track of reading buffer storage.  ";
 
     pub fn new(group: Group, device_list: Vec<SmuDevice>) -> Self {
         InitializeModel {
             type_: group.type_.clone(),
             description: Self::DESCRIPTION.to_string(),
             metadata: group,
-            device_list,
             val_replacement_map: HashMap::new(),
+            device_list,
         }
     }
 
@@ -113,7 +122,6 @@ impl InitializeModel {
             current_setup.push_str(&formatted_string);
         }
         current_setup.push('}');
-        println!("{}", current_setup);
 
         current_setup
     }
@@ -122,6 +130,7 @@ impl InitializeModel {
     //since only InitializeModel needs it, keeping it here for now
     fn aux_build(&self, temp: &mut ScriptBuffer, aux: &Composite) {
         temp.change_indent(ScriptBuffer::DEFAULT_INDENT);
-        aux.to_script(temp, &self.val_replacement_map);
+        //aux.to_script(temp, &self.val_replacement_map);
+        temp.change_indent(-ScriptBuffer::DEFAULT_INDENT);
     }
 }

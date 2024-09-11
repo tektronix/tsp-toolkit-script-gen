@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::collections::HashMap;
 
 use quick_xml::events::Event;
@@ -5,6 +6,7 @@ use quick_xml::name::QName;
 use quick_xml::Reader;
 use script_aggregator::script_buffer::ScriptBuffer;
 
+use crate::condition::{self, Condition};
 use crate::error::{Result, XMLHandlerError};
 use crate::group::{parse_include, ExternalFileResult, IncludeResult};
 use crate::snippet::Snippet;
@@ -17,6 +19,7 @@ pub struct Composite {
     pub indent: i32,
     pub repeat: String,
 
+    pub conditions: Vec<Condition>,
     pub substitutions: Vec<Substitute>,
     pub sub_children: Vec<IncludeResult>,
 }
@@ -27,6 +30,7 @@ impl Composite {
         type_: Option<String>,
         indent: i32,
         repeat: String,
+        conditions: Vec<Condition>,
         substitutions: Vec<Substitute>,
         sub_children: Vec<IncludeResult>,
     ) -> Self {
@@ -35,6 +39,7 @@ impl Composite {
             type_,
             indent,
             repeat,
+            conditions,
             substitutions,
             sub_children,
         }
@@ -49,6 +54,7 @@ impl Composite {
         let mut indent = 0;
         let mut repeat = String::new();
 
+        let mut conditions: Vec<Condition> = Vec::new();
         let mut substitutions: Vec<Substitute> = Vec::new();
         let mut sub_children: Vec<IncludeResult> = Vec::new();
 
@@ -85,6 +91,9 @@ impl Composite {
                 Ok(Event::Start(e)) if e.name().as_ref() == b"substitute" => {
                     substitutions.push(Substitute::parse_substitute(reader, e.attributes())?);
                 }
+                Ok(Event::Start(e)) if e.name().as_ref() == b"condition" => {
+                    conditions.push(Condition::parse_condition(reader, e.attributes())?);
+                }
                 Ok(Event::Empty(e)) if e.name().as_ref() == b"include" => {
                     let res = parse_include(e.attributes())?;
                     match res {
@@ -113,6 +122,7 @@ impl Composite {
                         type_,
                         indent,
                         repeat,
+                        conditions,
                         substitutions,
                         sub_children,
                     ));
@@ -123,32 +133,220 @@ impl Composite {
         }
     }
 
-    pub fn to_script(
+    // pub fn to_script(
+    //     &self,
+    //     script_buffer: &mut ScriptBuffer,
+    //     val_replacement_map: &HashMap<String, String>,
+    // ) {
+    //     if self.evaluate_conditions(val_replacement_map) {
+    //         if self.indent > 0 {
+    //             script_buffer.change_indent(self.indent);
+    //         }
+    //         if self.repeat.is_empty() {
+    //             for res in self.sub_children.iter() {
+    //                 if let IncludeResult::Snippet(snippet) = res {
+    //                     snippet.evaluate(script_buffer, val_replacement_map);
+    //                 }
+    //             }
+    //         } else {
+    //             todo!();
+    //         }
+    //         if self.indent > 0 {
+    //             script_buffer.change_indent(-self.indent);
+    //         }
+    //     }
+    // }
+
+    fn evaluate_conditions(&self, val_replacement_map: &HashMap<String, String>) -> bool {
+        //TODO: required mainly for sweep model
+        true
+    }
+}
+
+pub trait CommonChunk {
+    fn as_any(&self) -> &dyn Any;
+    fn get_repeat(&self) -> &str;
+    fn get_indent(&self) -> i32;
+    fn get_conditions(&self) -> &Vec<Condition>;
+    fn evaluate(
         &self,
-        temp: &mut ScriptBuffer,
+        script_buffer: &mut ScriptBuffer,
+        val_replacement_map: &HashMap<String, String>,
+    );
+    fn to_script(
+        &self,
+        script_buffer: &mut ScriptBuffer,
         val_replacement_map: &HashMap<String, String>,
     ) {
         if self.evaluate_conditions(val_replacement_map) {
-            if self.indent > 0 {
-                temp.change_indent(self.indent);
+            if self.get_indent() > 0 {
+                script_buffer.change_indent(self.get_indent());
             }
-            if self.repeat.is_empty() {
-                for res in self.sub_children.iter() {
-                    if let IncludeResult::Snippet(snippet) = res {
-                        snippet.evaluate(temp, val_replacement_map);
+
+            if self.get_repeat().is_empty() {
+                self.evaluate(script_buffer, val_replacement_map)
+            } else {
+                let repeat_val = self.get_repeat();
+                let active = repeat_val.to_owned() + ":";
+                //TODO: Commenting below line for now, need to discuss if it is required
+                //let obsolete = repeat_val.to_owned() + ".value"; // for backward compatibility
+
+                let mut loop_count = 1;
+                let loop_count_name = repeat_val.to_owned() + ".LOOP-COUNT";
+                let list_arr = val_replacement_map.get(repeat_val);
+                if let Some(list_arr) = list_arr {
+                    let list = list_arr.split(',').collect::<Vec<&str>>();
+                    for val in list {
+                        let mut val_replacement_map1 = val_replacement_map.clone();
+                        val_replacement_map1.insert(active.clone(), val.to_string());
+                        //val_replacement_map.insert(obsolete.clone(), val.to_string());
+                        val_replacement_map1.insert(loop_count_name.clone(), loop_count.to_string());
+                        self.evaluate(script_buffer, &val_replacement_map1);
+                        loop_count += 1;
                     }
                 }
-            } else {
-                todo!();
             }
-            if self.indent > 0 {
-                temp.change_indent(-self.indent);
+
+            if self.get_indent() > 0 {
+                script_buffer.change_indent(-self.get_indent());
             }
         }
     }
 
     fn evaluate_conditions(&self, val_replacement_map: &HashMap<String, String>) -> bool {
-        //TODO: required mainly for sweep model
-        true
+        let mut include = true;
+        let conditions = self.get_conditions();
+        for condition in conditions {
+            let op = &condition.op;
+            let object = self.lookup(val_replacement_map, &condition.name);
+            if object.is_empty() {
+                //TODO: handle error
+            }
+            if "ne" == op {
+                if &condition.value == &object {
+                    include = false;
+                    break;
+                }
+            } else if "gt" == op {
+                let val1 = object.parse::<f64>().unwrap();
+                let val2 = condition.value.parse::<f64>().unwrap();
+                if val1 <= val2 {
+                    include = false;
+                    break;
+                }
+            } else if "ge" == op {
+                let val1 = object.parse::<f64>().unwrap();
+                let val2 = condition.value.parse::<f64>().unwrap();
+                if val1 < val2 {
+                    include = false;
+                    break;
+                }
+            } else if "lt" == op {
+                let val1 = object.parse::<f64>().unwrap();
+                let val2 = condition.value.parse::<f64>().unwrap();
+                if val1 >= val2 {
+                    include = false;
+                    break;
+                }
+            } else if "le" == op {
+                let val1 = object.parse::<f64>().unwrap();
+                let val2 = condition.value.parse::<f64>().unwrap();
+                if val1 > val2 {
+                    include = false;
+                    break;
+                }
+            } else if "in" == op {
+                // object must be in expression
+                let expression = &condition.value;
+                let token = object;
+                let index = expression.find(&token);
+                if let Some(index) = index {
+                    // verify complete token match vs. partial token match
+                    if (index > 0 && expression.chars().nth(index - 1) != Some(','))
+                        || (index + token.len() < expression.len()
+                            && expression.chars().nth(index + token.len()) != Some(','))
+                    {
+                        include = false;
+                        break;
+                    }
+                } else {
+                    include = false;
+                    break;
+                }
+            } else if "regex" == op {
+                //TODO: handle regex
+            } else
+            // must be "e1" (==)
+            {
+                if &condition.value != &object {
+                    include = false;
+                    break;
+                }
+            }
+        }
+        include
+    }
+
+    fn lookup(&self, val_replacement_map: &HashMap<String, String>, symbol: &str) -> String {
+        let index = symbol.find(':');
+        let mut temp = "".to_string();
+
+        if index.is_none() || (index.unwrap() + 1) == symbol.len() {
+            temp = symbol.to_string();
+        } else {
+            let index = index.unwrap();
+            let scope = &symbol[..index];
+            let val_arr = val_replacement_map.get(scope);
+            if let Some(val_arr) = val_arr {
+                temp = val_arr.split(',').collect::<Vec<&str>>()[0].to_string();
+                temp = temp + &symbol[index..];
+            } else {
+                //TODO: handle error
+            }
+        }
+
+        match val_replacement_map.get(&temp) {
+            Some(val) => val.clone(),
+            None => {
+                //handle error
+                "".to_string()
+            }
+        }
+    }
+}
+
+impl CommonChunk for Composite {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn get_repeat(&self) -> &str {
+        self.repeat.as_str()
+    }
+
+    fn get_indent(&self) -> i32 {
+        self.indent
+    }
+
+    fn get_conditions(&self) -> &Vec<Condition> {
+        &self.conditions
+    }
+
+    fn evaluate(
+        &self,
+        script_buffer: &mut ScriptBuffer,
+        val_replacement_map: &HashMap<String, String>,
+    ) {
+        for res in self.sub_children.iter() {
+            match res {
+                IncludeResult::Snippet(snippet) => {
+                    snippet.to_script(script_buffer, val_replacement_map)
+                }
+
+                IncludeResult::Composite(composite) => {
+                    composite.to_script(script_buffer, val_replacement_map)
+                }
+            }
+        }
     }
 }

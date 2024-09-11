@@ -1,10 +1,15 @@
-use crate::device_manager::DeviceManager;
+use std::{fs::File, io::Write,};
 
-use super::{FunctionModel, InitializeModel};
+use super::{
+    finalize::FinalizeModel, function::FunctionModel, initialize::InitializeModel,
+    sweep::SweepModel,
+};
+use crate::device_manager::DeviceManager;
+use script_aggregator::script_buffer::ScriptBuffer;
 
 pub struct ScriptModel {
     device_manager: DeviceManager,
-    script_chunks: Vec<Box<dyn FunctionModel>>,
+    chunks: Vec<Box<dyn FunctionModel>>,
 }
 
 impl ScriptModel {
@@ -14,12 +19,12 @@ impl ScriptModel {
 
         ScriptModel {
             device_manager,
-            script_chunks: Vec::new(), //Initialize with an empty vector
+            chunks: Vec::new(), //Initialize with an empty vector
         }
     }
 
     pub fn initialize_scripts(&mut self) {
-        self.script_chunks.clear();
+        self.chunks.clear();
 
         if let Some(group) = self
             .device_manager
@@ -27,15 +32,59 @@ impl ScriptModel {
             .function_metadata_map
             .get("Initialize")
         {
-            let initialize_chunk =
+            let initialize =
                 InitializeModel::new(group.clone(), self.device_manager.device_list.clone());
-            self.script_chunks.push(Box::new(initialize_chunk));
+            self.chunks.push(Box::new(initialize));
+        }
+
+        if let Some(group) = self
+            .device_manager
+            .catalog
+            .function_metadata_map
+            .get("Finalize")
+        {
+            let finalize = FinalizeModel::new(group.clone());
+            self.chunks.push(Box::new(finalize));
         }
     }
 
     pub fn to_script(&mut self) {
-        for chunk in self.script_chunks.iter_mut() {
-            chunk.to_script();
+        let mut script_buffer = ScriptBuffer::new();
+        script_buffer.set_auto_indent(true);
+        for chunk in self.chunks.iter_mut() {
+            chunk.to_script(&mut script_buffer);
+        }
+        println!("{}", script_buffer.to_string());
+        let file = File::create("C:\\Trebuchet\\Snippet.txt");
+        match file {
+            Ok(mut file_res) => {file_res.write_all(script_buffer.to_string().as_bytes());},
+            Err(e) => {
+                println!("Error: {}", e);
+                return;
+            }
+            
+        }
+    }
+
+    pub fn add(&mut self, chunk: Box<dyn FunctionModel>, index: usize) {
+        if index > self.chunks.len() {
+            //ToDo: handle error
+            todo!();
+        } else {
+            self.chunks.insert(index, chunk);
+        }
+    }
+
+    pub fn add_sweep(&mut self) {
+        if let Some(group) = self
+            .device_manager
+            .catalog
+            .function_metadata_map
+            .get("Sweep")
+        {
+            let mut sweep = SweepModel::new(group.clone());
+            sweep.auto_configure(&self.device_manager);
+            self.chunks.push(Box::new(sweep));
         }
     }
 }

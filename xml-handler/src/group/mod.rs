@@ -233,7 +233,6 @@ mod tests {
 
         match parse_groups_from_xml(xml) {
             Ok(groups) => {
-                println!("{:?}", groups);
                 assert_eq!(groups[0].children.len(), 1);
                 if let IncludeResult::Composite(composite) = &groups[0].children[0] {
                     assert_eq!(composite.name, "test_composite");
@@ -258,7 +257,6 @@ mod tests {
 
         match parse_groups_from_xml(xml) {
             Ok(groups) => {
-                println!("{:?}", groups);
                 assert_eq!(groups[0].children.len(), 1);
                 if let IncludeResult::Composite(composite) = &groups[0].children[0] {
                     assert_eq!(composite.name, "test_composite");
@@ -294,7 +292,6 @@ mod tests {
 
         match parse_groups_from_xml(xml) {
             Ok(groups) => {
-                println!("{:?}", groups);
                 assert_eq!(groups[0].children.len(), 1);
                 if let IncludeResult::Composite(composite) = &groups[0].children[0] {
                     assert_eq!(composite.name, "");

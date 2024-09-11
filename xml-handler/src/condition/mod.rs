@@ -4,13 +4,17 @@ use quick_xml::{events::Event, name::QName, Reader};
 #[derive(Debug, Clone)]
 pub struct Condition {
     pub name: String,
-    op: String,
+    pub op: String,
     pub value: String,
 }
 
 impl Condition {
     fn new(name: String, op: String, value: String) -> Self {
-        Condition { name, op, value }
+        Condition {
+            name,
+            op: if op.is_empty() { "eq".to_string() } else { op },
+            value,
+        }
     }
 
     pub fn parse_condition<R: std::io::BufRead>(

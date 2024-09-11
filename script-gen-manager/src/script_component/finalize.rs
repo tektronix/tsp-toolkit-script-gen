@@ -1,34 +1,40 @@
-use std::any::Any;
+use std::{any::Any, collections::HashMap};
 
+use super::function::FunctionModel;
+use script_aggregator::script_buffer::ScriptBuffer;
 use xml_handler::group::Group;
-
-use super::FunctionModel;
 
 #[derive(Debug)]
 pub struct FinalizeModel {
     type_: String,
     description: String,
     metadata: Group,
+    val_replacement_map: HashMap<String, String>,
 }
 
 impl FunctionModel for FinalizeModel {
-    fn set_type(&mut self, type_: String) {
-        self.type_ = type_;
-    }
-
-    fn get_type(&self) -> String {
-        self.type_.clone()
-    }
-
     fn as_any(&self) -> &dyn Any {
         self
     }
 
-    fn to_script(&mut self) {
-        //TODO!
-        //no replacements to be done for finalize snippet, just call the
-        //script aggregator with indentation handled
-        todo!();
+    fn get_type(&self) -> &str {
+        self.type_.as_str()
+    }
+
+    fn get_description(&self) -> &str {
+        self.description.as_str()
+    }
+
+    fn get_val_replacement_map(&self) -> &std::collections::HashMap<String, String> {
+        &self.val_replacement_map
+    }
+
+    fn get_metadata(&self) -> &xml_handler::group::Group {
+        &self.metadata
+    }
+
+    fn to_script(&mut self, script_buffer: &mut ScriptBuffer) {
+        self.build(script_buffer);
     }
 }
 
@@ -41,6 +47,7 @@ impl FinalizeModel {
             type_: group.type_.clone(),
             description: Self::DESCRIPTION.to_string(),
             metadata: group,
+            val_replacement_map: HashMap::new(),
         }
     }
 }

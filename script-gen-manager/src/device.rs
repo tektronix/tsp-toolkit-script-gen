@@ -84,6 +84,10 @@ impl SmuDevice {
         }
     }
 
+    pub fn get_id(&self) -> String {
+        self.smu_id.clone()
+    }
+
     pub fn get_node_id(&self) -> String {
         self.node_id.clone()
     }

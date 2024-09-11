@@ -5,6 +5,7 @@ pub struct DeviceManager {
     path: SimulatedDeviceIO,
     pub catalog: Catalog,
     pub device_list: Vec<SmuDevice>,
+    line_frequency: i32,
 }
 
 impl DeviceManager {
@@ -17,7 +18,12 @@ impl DeviceManager {
             path,
             catalog,
             device_list,
+            line_frequency: 60,
         }
+    }
+
+    pub fn get_line_frequency(&self) -> i32 {
+        self.line_frequency
     }
 
     pub fn search(&mut self) {
@@ -28,5 +34,9 @@ impl DeviceManager {
             device.determine_attributes(self.path.clone());
             self.device_list.push(device);
         }
+    }
+
+    pub fn get_device(&self, index: usize) -> &SmuDevice {
+        &self.device_list[index]
     }
 }

@@ -6,16 +6,18 @@ use super::channel_range::ChannelRange;
 
 pub trait Channel: Debug {
     fn as_any(&self) -> &dyn Any;
+    fn get_name(&self) -> &str;
     fn get_device(&self) -> &SmuDevice;
     fn get_channel_attributes(&mut self) -> &mut ChannelAttributes;
+    fn get_measurement_function(&self) -> &str;
 
     fn set_defaults(&mut self) {
         //TODO: hardcoding this for now
         let chan_attributes = self.get_channel_attributes();
         chan_attributes.source_limit_i = 0.001;
         chan_attributes.source_limit_v = 1.0;
-        chan_attributes.source_function = String::from("Voltage");
-        chan_attributes.measure_function = String::from("Current");
+        chan_attributes.source_function = String::from("voltage");
+        chan_attributes.measure_function = String::from("current");
 
         chan_attributes.sense_mode = String::from("Two-Wire");
         chan_attributes.source_mode = String::from("Normal");

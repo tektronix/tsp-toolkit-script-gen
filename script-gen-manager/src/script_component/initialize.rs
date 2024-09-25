@@ -1,7 +1,7 @@
 use std::{any::Any, collections::HashMap};
 
 use script_aggregator::script_buffer::ScriptBuffer;
-use xml_handler::{composite::Composite, group::Group};
+use xml_handler::{composite::CommonChunk, group::Group};
 
 use super::function::FunctionModel;
 use crate::device::SmuDevice;
@@ -38,8 +38,8 @@ impl FunctionModel for InitializeModel {
     }
 
     fn to_script(&mut self, script_buffer: &mut ScriptBuffer) {
-        self.val_replacement_map
-            .insert(String::from("MAX-NODES"), String::from("64"));
+        // self.val_replacement_map
+        //     .insert(String::from("MAX-NODES"), String::from("64"));
         self.val_replacement_map
             .insert(String::from("APPEND-MODE"), String::from("1"));
         self.val_replacement_map
@@ -47,12 +47,16 @@ impl FunctionModel for InitializeModel {
         self.val_replacement_map
             .insert(String::from("INCLUDE-SRCVALS"), String::from("1"));
 
-        for child in self.metadata.children.iter() {
+        for child in self.metadata.children.iter_mut() {
             if let xml_handler::group::IncludeResult::Composite(comp) = child {
                 if comp.type_.is_some() {
                     let mut temp = ScriptBuffer::new();
                     temp.set_auto_indent(true);
-                    self.aux_build(&mut temp, comp);
+
+                    temp.change_indent(ScriptBuffer::DEFAULT_INDENT);
+                    comp.to_script(script_buffer, &self.val_replacement_map);
+                    temp.change_indent(-ScriptBuffer::DEFAULT_INDENT);
+
                     script_buffer.prepend(temp.to_string());
                 }
             }
@@ -124,13 +128,5 @@ impl InitializeModel {
         current_setup.push('}');
 
         current_setup
-    }
-
-    //TODO! aux build needs to be moved to FunctionModel
-    //since only InitializeModel needs it, keeping it here for now
-    fn aux_build(&self, temp: &mut ScriptBuffer, aux: &Composite) {
-        temp.change_indent(ScriptBuffer::DEFAULT_INDENT);
-        //aux.to_script(temp, &self.val_replacement_map);
-        temp.change_indent(-ScriptBuffer::DEFAULT_INDENT);
     }
 }

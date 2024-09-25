@@ -78,9 +78,13 @@ pub trait FunctionModel {
         let metadata = self.get_metadata();
         let val_replacement_map = self.get_val_replacement_map();
 
-        for child in metadata.children.iter() {
+        let mut metadata = metadata.clone();
+        for child in metadata.children.iter_mut() {
             if let xml_handler::group::IncludeResult::Composite(comp) = child {
-                comp.to_script(script_buffer, val_replacement_map);
+                //not aux type
+                if comp.type_.is_none() {
+                    comp.to_script(script_buffer, val_replacement_map);
+                }
             }
         }
 
@@ -98,5 +102,15 @@ pub trait FunctionModel {
         } else {
             format!("{}", value) // Default notation
         }
+    }
+
+    fn aux_build(
+        &mut self,
+        script_buffer: &mut ScriptBuffer,
+        comp: &mut xml_handler::composite::Composite,
+    ) {
+        script_buffer.change_indent(ScriptBuffer::DEFAULT_INDENT);
+        comp.to_script(script_buffer, self.get_val_replacement_map());
+        script_buffer.change_indent(-ScriptBuffer::DEFAULT_INDENT);
     }
 }

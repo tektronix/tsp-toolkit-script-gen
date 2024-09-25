@@ -159,8 +159,7 @@ impl SweepModel {
         for step_channel in self.step_channels.iter() {
             //Note - all composite smu stuff will be false, None, 0 for now
             let device = step_channel.get_device();
-            let smu = format!("smu{}", index);
-            self.attributes.device_names.push(smu.clone());
+            let smu = format!("step{}", index);
             self.attributes.step_names.push(smu.clone());
 
             self.val_replacement_map
@@ -288,8 +287,7 @@ impl SweepModel {
 
         for sweep_channel in self.sweep_channels.iter() {
             let device = sweep_channel.get_device();
-            let smu = format!("smu{}", index);
-            self.attributes.device_names.push(smu.clone());
+            let smu = format!("sweep{}", index);
             self.attributes.sweep_names.push(smu.clone());
 
             self.val_replacement_map
@@ -364,10 +362,8 @@ impl SweepModel {
             let mut is_negative_going = false;
             if self.attributes.custom_sweep {
                 todo!();
-            } else {
-                if start_value < 0.0 || stop_value < 0.0 {
-                    is_negative_going = true;
-                }
+            } else if start_value < 0.0 || stop_value < 0.0 {
+                is_negative_going = true;
             }
 
             if sweep_channel.chan_attributes.pulse_enabled && pulse_bias_value < 0.0 {
@@ -586,7 +582,7 @@ impl SweepModel {
             .extend(self.attributes.step_names.iter().cloned());
         self.attributes
             .device_names
-            .extend(self.attributes.step_names.iter().cloned());
+            .extend(self.attributes.sweep_names.iter().cloned());
 
         self.val_replacement_map.insert(
             String::from("DEVICES"),
@@ -654,8 +650,53 @@ impl SweepModel {
             String::from("AUTORANGE-ENABLED"),
             self.attributes.auto_range_enabled.to_string(),
         );
+        self.val_replacement_map
+            .insert(String::from("AUTOZERO"), String::from("AUTOZERO_ONCE"));
+        self.val_replacement_map
+            .insert(String::from("NPLC"), String::from("0.1"));
+        self.val_replacement_map
+            .insert(String::from("MEASURE-COUNT"), String::from("1"));
+        self.val_replacement_map
+            .insert(String::from("SOURCE-DELAY"), String::from("0"));
+        self.val_replacement_map
+            .insert(String::from("MEASURE-DELAY"), String::from("0"));
+        self.val_replacement_map
+            .insert(String::from("MEASURE-DELAY-FACTOR"), String::from("1"));
+        self.val_replacement_map
+            .insert(String::from("MEASURE-ANALOG-FILTER"), String::from("0"));
+        self.val_replacement_map.insert(
+            String::from("MEASURE-FILTER-ENABLE"),
+            String::from("FILTER_OFF"),
+        );
+        self.val_replacement_map
+            .insert(String::from("MEASURE-FILTER-COUNT"), String::from("1"));
+        self.val_replacement_map.insert(
+            String::from("MEASURE-FILTER-TYPE"),
+            String::from("FILTER_MOVING_AVG"),
+        );
+        self.val_replacement_map
+            .insert(String::from("EFFECTIVE-FILTER-COUNT"), String::from("1"));
+        self.val_replacement_map
+            .insert(String::from("HIGH-SPEED-SAMPLING"), String::from("false"));
+        self.val_replacement_map
+            .insert(String::from("SAMPLING-INTERVAL"), String::from("1e-6"));
+        self.val_replacement_map
+            .insert(String::from("SAMPLING-COUNT"), String::from("1000"));
+        self.val_replacement_map
+            .insert(String::from("SAMPLING-DELAY"), String::from("0"));
+        self.val_replacement_map
+            .insert(String::from("SAMPLING-ANALOG-FILTER"), String::from("0"));
 
-        //TODO - more replacements
+        self.val_replacement_map.insert(
+            String::from("PULSE-WIDTH"),
+            String::from("49.5000004768E-3"),
+        );
+        self.val_replacement_map
+            .insert(String::from("SWEEP-TIME-PER-POINT"), String::from("50e-3"));
+        self.val_replacement_map.insert(
+            String::from("MEASURE-POINT-TIME"),
+            String::from("1.72666666667E-3"),
+        );
     }
 
     fn deduce_master_node(&self) -> String {

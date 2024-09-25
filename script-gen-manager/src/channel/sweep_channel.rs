@@ -18,6 +18,10 @@ impl Channel for SweepChannel {
         self
     }
 
+    fn get_name(&self) -> &str {
+        self.chan_attributes.preferred_name
+    }
+
     fn get_device(&self) -> &SmuDevice {
         &self.chan_attributes.device
     }
@@ -25,14 +29,20 @@ impl Channel for SweepChannel {
     fn get_channel_attributes(&mut self) -> &mut ChannelAttributes {
         &mut self.chan_attributes
     }
+
+    fn get_measurement_function(&self) -> &str {
+        &self.chan_attributes.measure_function
+    }
 }
 
 impl SweepChannel {
     pub fn new(device: SmuDevice) -> Self {
-        SweepChannel {
+        let mut sweep_chan = SweepChannel {
             chan_attributes: ChannelAttributes::new("Sweep", "Sweep_Smu", device),
             common_attributes: CommonAttributes::new(),
             pulse_bias: 0.0,
-        }
+        };
+        sweep_chan.set_defaults();
+        sweep_chan
     }
 }

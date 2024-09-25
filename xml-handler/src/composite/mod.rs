@@ -6,7 +6,7 @@ use quick_xml::name::QName;
 use quick_xml::Reader;
 use script_aggregator::script_buffer::ScriptBuffer;
 
-use crate::condition::{self, Condition};
+use crate::condition::Condition;
 use crate::error::{Result, XMLHandlerError};
 use crate::group::{parse_include, ExternalFileResult, IncludeResult};
 use crate::snippet::Snippet;
@@ -22,6 +22,7 @@ pub struct Composite {
     pub conditions: Vec<Condition>,
     pub substitutions: Vec<Substitute>,
     pub sub_children: Vec<IncludeResult>,
+    pub parent: Option<Box<Composite>>,
 }
 
 impl Composite {
@@ -42,6 +43,7 @@ impl Composite {
             conditions,
             substitutions,
             sub_children,
+            parent: None,
         }
     }
 
@@ -156,11 +158,6 @@ impl Composite {
     //         }
     //     }
     // }
-
-    fn evaluate_conditions(&self, val_replacement_map: &HashMap<String, String>) -> bool {
-        //TODO: required mainly for sweep model
-        true
-    }
 }
 
 pub trait CommonChunk {
@@ -169,12 +166,12 @@ pub trait CommonChunk {
     fn get_indent(&self) -> i32;
     fn get_conditions(&self) -> &Vec<Condition>;
     fn evaluate(
-        &self,
+        &mut self,
         script_buffer: &mut ScriptBuffer,
         val_replacement_map: &HashMap<String, String>,
     );
     fn to_script(
-        &self,
+        &mut self,
         script_buffer: &mut ScriptBuffer,
         val_replacement_map: &HashMap<String, String>,
     ) {
@@ -200,7 +197,8 @@ pub trait CommonChunk {
                         let mut val_replacement_map1 = val_replacement_map.clone();
                         val_replacement_map1.insert(active.clone(), val.to_string());
                         //val_replacement_map.insert(obsolete.clone(), val.to_string());
-                        val_replacement_map1.insert(loop_count_name.clone(), loop_count.to_string());
+                        val_replacement_map1
+                            .insert(loop_count_name.clone(), loop_count.to_string());
                         self.evaluate(script_buffer, &val_replacement_map1);
                         loop_count += 1;
                     }
@@ -223,7 +221,7 @@ pub trait CommonChunk {
                 //TODO: handle error
             }
             if "ne" == op {
-                if &condition.value == &object {
+                if condition.value == object {
                     include = false;
                     break;
                 }
@@ -275,10 +273,9 @@ pub trait CommonChunk {
                 }
             } else if "regex" == op {
                 //TODO: handle regex
-            } else
-            // must be "e1" (==)
-            {
-                if &condition.value != &object {
+            } else {
+                // must be "e1" (==)
+                if condition.value != object {
                     include = false;
                     break;
                 }
@@ -296,10 +293,10 @@ pub trait CommonChunk {
         } else {
             let index = index.unwrap();
             let scope = &symbol[..index];
-            let val_arr = val_replacement_map.get(scope);
-            if let Some(val_arr) = val_arr {
-                temp = val_arr.split(',').collect::<Vec<&str>>()[0].to_string();
-                temp = temp + &symbol[index..];
+
+            if let Some(val_arr) = val_replacement_map.get(&(scope.to_string() + ":")) {
+                temp = val_arr.to_string();
+                temp += &symbol[index..];
             } else {
                 //TODO: handle error
             }
@@ -333,17 +330,20 @@ impl CommonChunk for Composite {
     }
 
     fn evaluate(
-        &self,
+        &mut self,
         script_buffer: &mut ScriptBuffer,
         val_replacement_map: &HashMap<String, String>,
     ) {
-        for res in self.sub_children.iter() {
+        let parent_clone = self.clone();
+        for res in self.sub_children.iter_mut() {
             match res {
                 IncludeResult::Snippet(snippet) => {
+                    snippet.parent = Some(Box::new(parent_clone.clone()));
                     snippet.to_script(script_buffer, val_replacement_map)
                 }
 
                 IncludeResult::Composite(composite) => {
+                    composite.parent = Some(Box::new(parent_clone.clone()));
                     composite.to_script(script_buffer, val_replacement_map)
                 }
             }

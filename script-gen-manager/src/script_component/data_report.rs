@@ -35,13 +35,16 @@ impl FunctionModel for DataReportModel {
     }
 
     fn to_script(&mut self, script_buffer: &mut ScriptBuffer) {
-        //TODO: Below three replacement values depend on sweep model, will be handled later
+        let buffers = String::from("{}");
+        let buffer_names = String::from("{}");
+        let buffer_smu_names = String::from("{}");
+
         self.val_replacement_map
-            .insert(String::from("READING-BUFFERS"), String::from(""));
+            .insert(String::from("READING-BUFFERS"), buffers);
         self.val_replacement_map
-            .insert(String::from("READING-BUFFER-NAMES"), String::from(""));
+            .insert(String::from("READING-BUFFER-NAMES"), buffer_names);
         self.val_replacement_map
-            .insert(String::from("READING-BUFFER-SMU-NAMES"), String::from(""));
+            .insert(String::from("READING-BUFFER-SMU-NAMES"), buffer_smu_names);
 
         self.val_replacement_map
             .insert(String::from("WAIT-INTERVAL"), String::from("1"));
@@ -80,12 +83,13 @@ impl FunctionModel for DataReportModel {
             .insert(String::from("TAG-END"), String::from("END"));
         self.val_replacement_map
             .insert(String::from("TAG-COMPLETE"), String::from("COMPLETE"));
+
+        self.build(script_buffer);
     }
 }
 
 impl DataReportModel {
-    const DESCRIPTION: &'static str =
-        "The function completes the script and places the instrument in a known state.";
+    const DESCRIPTION: &'static str = "This script returns a series of reading buffers. ";
 
     pub fn new(group: Group) -> Self {
         DataReportModel {
@@ -98,7 +102,7 @@ impl DataReportModel {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 enum SelectMode {
     Auto,
     Custom,

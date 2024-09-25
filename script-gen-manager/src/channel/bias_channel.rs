@@ -13,12 +13,20 @@ impl Channel for BiasChannel {
         self
     }
 
+    fn get_name(&self) -> &str {
+        self.chan_attributes.preferred_name
+    }
+
     fn get_device(&self) -> &SmuDevice {
         &self.chan_attributes.device
     }
 
     fn get_channel_attributes(&mut self) -> &mut ChannelAttributes {
         &mut self.chan_attributes
+    }
+
+    fn get_measurement_function(&self) -> &str {
+        &self.chan_attributes.measure_function
     }
 }
 

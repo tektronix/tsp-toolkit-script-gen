@@ -9,7 +9,7 @@ use quick_xml::{events::Event, name::QName, Reader};
 use script_aggregator::script_buffer::ScriptBuffer;
 
 use crate::{
-    composite::CommonChunk,
+    composite::{CommonChunk, Composite},
     condition::Condition,
     error::{Result, XMLHandlerError},
     substitute::Substitute,
@@ -23,6 +23,7 @@ pub struct Snippet {
     pub code_snippet: String,
     pub substitutions: Vec<Substitute>,
     pub conditions: Vec<Condition>,
+    pub parent: Option<Box<Composite>>,
 }
 
 impl Snippet {
@@ -41,6 +42,7 @@ impl Snippet {
             code_snippet,
             substitutions,
             conditions,
+            parent: None,
         }
     }
 
@@ -110,7 +112,7 @@ impl Snippet {
         }
     }
 
-    pub fn evaluate(
+    pub fn evaluate_snippet(
         &self,
         script_buffer: &mut ScriptBuffer,
         val_replacement_map: &std::collections::HashMap<String, String>,
@@ -122,11 +124,15 @@ impl Snippet {
             temp_code_snippet = temp_code_snippet.replace(&sub.value, &to_val);
         }
 
-        for key in val_replacement_map.keys() {
-            let from_val = format!("%{}%", key);
-            temp_code_snippet =
-                temp_code_snippet.replace(&from_val, val_replacement_map.get(key).unwrap());
+        let mut current_parent = self.parent.as_deref(); // Use as_deref to get Option<&Composite>
+        while let Some(parent) = current_parent {
+            for sub in parent.substitutions.iter() {
+                let to_val = parent.lookup(val_replacement_map, &sub.name);
+                temp_code_snippet = temp_code_snippet.replace(&sub.value, &to_val);
+            }
+            current_parent = parent.parent.as_deref(); // Use as_deref to get Option<&Composite>
         }
+
         self.insert(script_buffer, temp_code_snippet);
     }
 
@@ -167,7 +173,11 @@ impl CommonChunk for Snippet {
         &self.conditions
     }
 
-    fn evaluate(&self, script_buffer: &mut ScriptBuffer, val_replacement_map: &HashMap<String, String>) {
-        self.evaluate(script_buffer, val_replacement_map);
+    fn evaluate(
+        &mut self,
+        script_buffer: &mut ScriptBuffer,
+        val_replacement_map: &HashMap<String, String>,
+    ) {
+        self.evaluate_snippet(script_buffer, val_replacement_map);
     }
 }

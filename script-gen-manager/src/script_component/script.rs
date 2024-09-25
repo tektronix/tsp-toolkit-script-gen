@@ -1,8 +1,8 @@
-use std::{fs::File, io::Write,};
+use std::{fs::File, io::Write};
 
 use super::{
-    finalize::FinalizeModel, function::FunctionModel, initialize::InitializeModel,
-    sweep::SweepModel,
+    data_report::DataReportModel, finalize::FinalizeModel, function::FunctionModel,
+    initialize::InitializeModel, sweep::SweepModel,
 };
 use crate::device_manager::DeviceManager;
 use script_aggregator::script_buffer::ScriptBuffer;
@@ -57,22 +57,22 @@ impl ScriptModel {
         println!("{}", script_buffer.to_string());
         let file = File::create("C:\\Trebuchet\\Snippet.txt");
         match file {
-            Ok(mut file_res) => {file_res.write_all(script_buffer.to_string().as_bytes());},
+            Ok(mut file_res) => {
+                file_res.write_all(script_buffer.to_string().as_bytes());
+            }
             Err(e) => {
                 println!("Error: {}", e);
-                return;
             }
-            
         }
     }
 
-    pub fn add(&mut self, chunk: Box<dyn FunctionModel>, index: usize) {
-        if index > self.chunks.len() {
-            //ToDo: handle error
-            todo!();
+    pub fn add(&mut self, chunk: Box<dyn FunctionModel>) {
+        let index = if self.chunks.len() > 1 {
+            self.chunks.len() - 1
         } else {
-            self.chunks.insert(index, chunk);
-        }
+            0
+        };
+        self.chunks.insert(index, chunk);
     }
 
     pub fn add_sweep(&mut self) {
@@ -84,7 +84,19 @@ impl ScriptModel {
         {
             let mut sweep = SweepModel::new(group.clone());
             sweep.auto_configure(&self.device_manager);
-            self.chunks.push(Box::new(sweep));
+            self.add(Box::new(sweep));
+        }
+    }
+
+    pub fn add_data_report(&mut self) {
+        if let Some(group) = self
+            .device_manager
+            .catalog
+            .function_metadata_map
+            .get("DataReport")
+        {
+            let data_report = DataReportModel::new(group.clone());
+            self.add(Box::new(data_report));
         }
     }
 }

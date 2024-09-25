@@ -17,6 +17,10 @@ impl Channel for StepChannel {
         self
     }
 
+    fn get_name(&self) -> &str {
+        self.chan_attributes.preferred_name
+    }
+
     fn get_device(&self) -> &SmuDevice {
         &self.chan_attributes.device
     }
@@ -24,13 +28,19 @@ impl Channel for StepChannel {
     fn get_channel_attributes(&mut self) -> &mut ChannelAttributes {
         &mut self.chan_attributes
     }
+
+    fn get_measurement_function(&self) -> &str {
+        &self.chan_attributes.measure_function
+    }
 }
 
 impl StepChannel {
     pub fn new(device: SmuDevice) -> Self {
-        StepChannel {
+        let mut step_chan = StepChannel {
             chan_attributes: ChannelAttributes::new("Sweep", "Step_Smu", device),
             common_attributes: CommonAttributes::new(),
-        }
+        };
+        step_chan.set_defaults();
+        step_chan
     }
 }

@@ -1,10 +1,14 @@
 use crate::error::{Result, XMLHandlerError};
 use quick_xml::{events::Event, name::QName, Reader};
 
+/// Represents the condition tag in the XML data.
 #[derive(Debug, Clone)]
 pub struct Condition {
+    /// The name of the condition.
     pub name: String,
+    /// The operator of the condition (e.g., "eq" for equals).
     pub op: String,
+    /// The value of the condition.
     pub value: String,
 }
 

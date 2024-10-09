@@ -4,18 +4,27 @@ mod sub_mod;
 use crate::error::{Result, XMLHandlerError};
 pub use sub_mod::{Constraint, Reference};
 
+/// Represents a variables tag in the XML data.
 #[derive(Debug)]
 pub struct Variables {
+    /// A list of variables associated with the variables tag.
     pub variable_array: Vec<Variable>,
 }
 
+/// Represents a variable tag in the XML data.
 #[derive(Debug, Clone)]
 pub struct Variable {
+    /// A unique identifier for the variable.
     id: String,
+    /// The default value of the variable.
     default: String,
+    /// The value attribute of the variable.
     value_attr: String,
+    /// A list of dependencies for this variable.
     depends_array: Vec<Depend>,
+    /// A list of references associated with this variable.
     ref_array: Vec<Reference>,
+    /// An optional constraint applied to the variable.
     constraint: Option<Constraint>,
 }
 
@@ -197,8 +206,6 @@ impl Depend {
 
 #[cfg(test)]
 mod tests {
-    use crate::error::XMLHandlerError;
-
     use super::*;
 
     // Non-testable helper function

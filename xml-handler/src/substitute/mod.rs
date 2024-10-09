@@ -1,9 +1,12 @@
 use crate::error::{Result, XMLHandlerError};
 use quick_xml::{events::Event, name::QName, Reader};
 
+/// Represents the substitute tag in the XML data.
 #[derive(Debug, Clone)]
 pub struct Substitute {
+    /// The substitute name.
     pub name: String,
+    /// The substitute pattern.
     pub value: String,
 }
 

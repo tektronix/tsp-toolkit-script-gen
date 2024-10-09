@@ -19,6 +19,12 @@ impl IndentEngine {
         }
     }
 
+    /// Applies the indentation logic to the specified statement and appends it to the buffer.
+    ///
+    /// # Arguments
+    ///
+    /// * `buffer` - The buffer to append the indentation and statement to.
+    /// * `statement` - The statement to process for increase/decrease indentation.
     pub fn apply(&mut self, buffer: &mut String, statement: &str) {
         let trimmed = statement.trim();
         self.pre_process(trimmed);
@@ -27,6 +33,11 @@ impl IndentEngine {
         self.post_process();
     }
 
+    /// Process a statement before it is added to the output and update the indentation accordingly.
+    ///
+    /// # Arguments
+    ///
+    /// * `statement` - The statement to be pre-processed.
     pub fn pre_process(&mut self, statement: &str) {
         // Starting multiline comment?
         if statement.contains("--[[") {
@@ -87,6 +98,21 @@ impl IndentEngine {
         }
     }
 
+    /// Checks if a keyword is present in a statement without being part of a larger alphanumeric word.
+    ///
+    /// This function searches for the `keyword` within the `statement` and ensures that the keyword
+    /// is not part of a larger alphanumeric word. It returns `true` if the keyword is found as a
+    /// standalone word, and `false` otherwise.
+    ///
+    /// # Arguments
+    ///
+    /// * `statement` - The string in which to search for the keyword.
+    /// * `keyword` - The keyword to search for.
+    ///
+    /// # Returns
+    ///
+    /// * `true` if the keyword is found as a standalone word.
+    /// * `false` otherwise.
     fn find(&self, statement: &str, keyword: &str) -> bool {
         if let Some(index) = statement.find(keyword) {
             if index > 0
@@ -111,6 +137,8 @@ impl IndentEngine {
         false
     }
 
+    /// Adjust the indentation after a statement has been added to the output.  
+    /// This simply uses a value computed in preprocess.
     pub fn post_process(&mut self) {
         self.indent.clone_from(&self.next_indent);
     }

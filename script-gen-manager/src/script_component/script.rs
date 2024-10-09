@@ -54,7 +54,7 @@ impl ScriptModel {
         for chunk in self.chunks.iter_mut() {
             chunk.to_script(&mut script_buffer);
         }
-        println!("{}", script_buffer.to_string());
+        // println!("{}", script_buffer.to_string());
         let file = File::create("C:\\Trebuchet\\Snippet.txt");
         match file {
             Ok(mut file_res) => {

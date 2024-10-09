@@ -29,50 +29,50 @@ pub trait FunctionModel {
     }
 
     fn start_chunk(&self, script_buffer: &mut ScriptBuffer) {
-        script_buffer.append(
+        script_buffer.body_append(
             "----------------------------------------------------------------------------"
                 .to_owned(),
         );
-        script_buffer.append(format!(
+        script_buffer.body_append(format!(
             "-- START OF {} SEGMENT ... do not modify this section ",
             self.get_type().to_uppercase()
         ));
-        script_buffer.append(
+        script_buffer.body_append(
             "----------------------------------------------------------------------------"
                 .to_owned(),
         );
-        script_buffer.append(
+        script_buffer.body_append(
             "--=========================================================================="
                 .to_owned(),
         );
-        script_buffer.append(self.to_lua_comment(self.get_description()));
-        script_buffer.append(
+        script_buffer.body_append(self.to_lua_comment(self.get_description()));
+        script_buffer.body_append(
             "--=========================================================================="
                 .to_owned(),
         );
     }
 
     fn finish_chunk(&self, script_buffer: &mut ScriptBuffer) {
-        script_buffer.append(
+        script_buffer.body_append(
             "----------------------------------------------------------------------------"
                 .to_owned(),
         );
-        script_buffer.append(format!(
+        script_buffer.body_append(format!(
             "-- END OF {} SEGMENT ... do not modify code after this point",
             self.get_type().to_uppercase()
         ));
-        script_buffer.append(
+        script_buffer.body_append(
             "----------------------------------------------------------------------------\n"
                 .to_owned(),
         );
-        script_buffer.append("".to_owned());
+        script_buffer.body_append("".to_owned());
     }
 
     fn build(&mut self, script_buffer: &mut ScriptBuffer) {
         let chunk_name = script_buffer.get_unique_name(format!("_{}", self.get_type()));
         self.start_chunk(script_buffer);
 
-        script_buffer.append(format!("function {}()\n", chunk_name));
+        script_buffer.body_append(format!("function {}()\n", chunk_name));
         script_buffer.change_indent(ScriptBuffer::DEFAULT_INDENT);
 
         let metadata = self.get_metadata();
@@ -89,10 +89,10 @@ pub trait FunctionModel {
         }
 
         script_buffer.change_indent(-ScriptBuffer::DEFAULT_INDENT);
-        script_buffer.append("end".to_owned());
+        script_buffer.body_append("end".to_owned());
 
         self.finish_chunk(script_buffer);
-        script_buffer.postpend(format!("{}()", chunk_name));
+        script_buffer.postamble_append(format!("{}()", chunk_name));
     }
 
     fn format(&self, value: f64) -> String {

@@ -1,17 +1,26 @@
 use crate::error::{Result, XMLHandlerError};
 use quick_xml::{events::Event, name::QName, Reader};
 
+/// Represents a reference tag in the XML data.
 #[derive(Debug, Clone)]
 pub struct Reference {
+    /// A unique identifier for the reference.
     pub id: String,
+    /// The default value of the reference.
     default: String,
+    /// Indicates the useall attribute of the reference.
     useall: String,
+    /// The value of the reference.
     value: String,
 }
 
+/// Represents a constraint with minimum and maximum values.
+/// This corresponds to constarints tag in the XML data.
 #[derive(Debug, Clone)]
 pub struct Constraint {
+    /// The minimum value of the constraint.
     pub min: f64,
+    /// The minimum value of the constraint.
     pub max: f64,
 }
 

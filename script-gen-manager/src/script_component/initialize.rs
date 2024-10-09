@@ -54,10 +54,10 @@ impl FunctionModel for InitializeModel {
                     temp.set_auto_indent(true);
 
                     temp.change_indent(ScriptBuffer::DEFAULT_INDENT);
-                    comp.to_script(script_buffer, &self.val_replacement_map);
+                    comp.to_script(&mut temp, &self.val_replacement_map);
                     temp.change_indent(-ScriptBuffer::DEFAULT_INDENT);
 
-                    script_buffer.prepend(temp.to_string());
+                    script_buffer.preamble_append(temp.to_string());
                 }
             }
         }

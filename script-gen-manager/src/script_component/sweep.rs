@@ -54,7 +54,7 @@ impl FunctionModel for SweepModel {
 
     fn to_script(&mut self, script_buffer: &mut ScriptBuffer) {
         if self.step_channels.is_empty() && self.sweep_channels.is_empty() {
-            script_buffer.postpend(String::from(
+            script_buffer.postamble_append(String::from(
                 "-- no sweep ... requires at least 1 step channel or 1 sweep channel",
             ));
         } else {

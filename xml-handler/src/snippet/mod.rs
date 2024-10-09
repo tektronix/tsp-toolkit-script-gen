@@ -15,14 +15,22 @@ use crate::{
     substitute::Substitute,
 };
 
+/// Represents the snippet tag in the XML data.
 #[derive(Debug, Clone)]
 pub struct Snippet {
+    /// The name of the snippet.
     pub name: String,
+    /// The repeat attribute of the snippet.
     pub repeat: String,
+    /// The indent level
     pub indent: i32,
+    /// The actual code snippet.
     pub code_snippet: String,
+    /// The substitutions associated with the snippet.
     pub substitutions: Vec<Substitute>,
+    /// The conditions associated with the snippet.
     pub conditions: Vec<Condition>,
+    /// The parent Composite, if any.
     pub parent: Option<Box<Composite>>,
 }
 
@@ -145,7 +153,7 @@ impl Snippet {
         for line in reader.lines() {
             match line {
                 Ok(line) => {
-                    script_buffer.append(line);
+                    script_buffer.body_append(line);
                 }
                 Err(e) => {
                     //TODO: Add error handling

@@ -8,11 +8,16 @@ use crate::{
     variable::{Variable, Variables},
 };
 
+/// Represents the outer-most XML node with an ID, type, children, and a list of variables.
 #[derive(Debug, Clone)]
 pub struct Group {
+    /// The unique identifier for the group. (INITIALIZE, FINALIZE, etc.)
     id: String,
+    /// The type of the group. (Initialize, Finalize, etc.)
     pub type_: String,
+    /// The children of the group. (Composites, Snippets, etc.)
     pub children: Vec<IncludeResult>,
+    /// The list of variables defined in the group.
     variable_list: Vec<Variable>,
 }
 
@@ -31,6 +36,23 @@ impl Group {
         }
     }
 
+    /// Parses a `Group` from the XML reader and its attributes.
+    ///
+    /// # Arguments
+    ///
+    /// * `reader` - A mutable reference to a `Reader` that reads the XML data.
+    /// * `attributes` - The attributes of the XML element being parsed.
+    ///
+    /// # Errors
+    ///
+    /// This function will return an `XMLHandlerError` if there is an error while reading
+    /// or parsing the XML data.
+    ///
+    /// # Returns
+    ///
+    /// A `Result` which is:
+    /// - `Ok(Group)` containing the parsed `Group` object if parsing is successful.
+    /// - `Err(XMLHandlerError)` if there is an error during parsing.
     pub fn parse_group<R: std::io::BufRead>(
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
@@ -87,6 +109,23 @@ impl Group {
     }
 }
 
+/// Parses an `ExternalFileResult` from the provided XML attributes.
+///
+/// # Arguments
+///
+/// * `attributes` - The attributes of the XML element being parsed.
+///
+/// # Errors
+///
+/// This function will return an `XMLHandlerError` if there is an error while reading
+/// or parsing the XML data.
+///
+/// # Returns
+///
+/// A `Result` which is:
+/// - `Ok(ExternalFileResult)` containing the parsed `ExternalFileResult (Snippet, Composite or Variables)` object
+/// if parsing is successful.
+/// - `Err(XMLHandlerError)` if there is an error during parsing.
 pub fn parse_include(
     attributes: quick_xml::events::attributes::Attributes,
 ) -> Result<ExternalFileResult> {

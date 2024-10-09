@@ -12,16 +12,25 @@ use crate::group::{parse_include, ExternalFileResult, IncludeResult};
 use crate::snippet::Snippet;
 use crate::substitute::Substitute;
 
+/// Represents the composite tag in the XML data.
 #[derive(Debug, Clone)]
 pub struct Composite {
+    /// The name of the composite.
     pub name: String,
+    /// The type of the composite, if specified (Ex: aux).
     pub type_: Option<String>,
+    /// The indentation level.
     pub indent: i32,
+    /// The repeat attribute of the composite.
     pub repeat: String,
 
+    /// The conditions associated with the composite.
     pub conditions: Vec<Condition>,
+    /// The substitutions associated with the composite.
     pub substitutions: Vec<Substitute>,
+    /// A composite can further contain more composites or snippets.
     pub sub_children: Vec<IncludeResult>,
+    /// The parent Composite, if any.
     pub parent: Option<Box<Composite>>,
 }
 

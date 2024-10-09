@@ -45,10 +45,22 @@ impl ScriptBuffer {
         }
     }
 
+    /// Enables or disables automatic indentation.
+    /// If true, will enable indenting and override the manual indentation settings
+    ///
+    /// # Arguments
+    ///
+    /// * `auto_indent` - A boolean value indicating whether to enable or disable automatic indentation.
     pub fn set_auto_indent(&mut self, auto_indent: bool) {
         self.auto_indent = auto_indent;
     }
 
+    /// Changes the current indentation level by a specified value.
+    /// The absolute value for indentation is limited to between 0 and 20 inclusive.
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - The value to change the current indentation level by. It can be positive or negative.
     pub fn change_indent(&mut self, value: i32) {
         let new_indent = cmp::max(
             0,
@@ -60,6 +72,11 @@ impl ScriptBuffer {
         self.set_indent(new_indent);
     }
 
+    /// Sets the current indentation level (in # of spaces) to a specified value.
+    ///
+    /// # Arguments
+    ///
+    /// * `value` - The value to set the current indentation level to. It must be between 0 and the maximum allowed indentation level.
     pub fn set_indent(&mut self, value: usize) {
         if value == 0 {
             self.indent_count = 0;
@@ -70,7 +87,12 @@ impl ScriptBuffer {
         }
     }
 
-    pub fn append(&mut self, statement: String) {
+    /// Appends a statement to the "body" portion of the script.
+    ///
+    /// # Arguments
+    ///
+    /// * `statement` - The statement to be appended to the body.
+    pub fn body_append(&mut self, statement: String) {
         if self.auto_indent {
             self.body_indenter.apply(&mut self.body, &statement);
         } else if self.indent_enabled && self.indent.is_some() {
@@ -86,7 +108,12 @@ impl ScriptBuffer {
         }
     }
 
-    pub fn postpend(&mut self, statement: String) {
+    /// Appends a statement to the "postamble" portion of the script.
+    ///
+    /// # Arguments
+    ///
+    /// * `statement` - The statement to be appended to the postamble.
+    pub fn postamble_append(&mut self, statement: String) {
         if self.auto_indent {
             self.postamble_indenter
                 .apply(&mut self.postamble, &statement);
@@ -103,7 +130,12 @@ impl ScriptBuffer {
         }
     }
 
-    pub fn prepend(&mut self, statement: String) {
+    /// Appends a statement to the "preamble" portion of the script.
+    ///
+    /// # Arguments
+    ///
+    /// * `statement` - The statement to be appended to the preamble.
+    pub fn preamble_append(&mut self, statement: String) {
         if self.auto_indent {
             self.preamble_indenter.apply(&mut self.preamble, &statement);
         } else if self.indent_enabled && self.indent.is_some() {
@@ -119,6 +151,16 @@ impl ScriptBuffer {
         }
     }
 
+    /// Generates a unique name based on the given basename.
+    /// This is used to prevent name collision for methods added by various FunctionModels.
+    ///
+    /// # Arguments
+    ///
+    /// * `basename` - The base name to be made unique.
+    ///
+    /// # Returns
+    ///
+    /// * A unique name based on the given basename.
     pub fn get_unique_name(&mut self, basename: String) -> String {
         let mut name = basename.clone();
         let mut copy = 1;
@@ -126,10 +168,19 @@ impl ScriptBuffer {
             name = format!("{}{}", basename, copy);
             copy += 1;
         }
+        // Save the name for future duplicate detection
         self.names.push(name.clone());
         name
     }
 
+    /// Converts the script buffer to a single string.
+    ///
+    /// This function concatenates the preamble, body, and postamble of the script buffer
+    /// into a single string and returns it.
+    ///
+    /// # Returns
+    ///
+    /// * A `String` containing the entire script buffer content.
     pub fn to_string(&self) -> String {
         let mut script = String::new();
         script.push_str(&self.preamble);

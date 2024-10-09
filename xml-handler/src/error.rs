@@ -1,6 +1,7 @@
 use quick_xml::events::attributes;
 use thiserror::Error;
 
+/// Define errors that originate from this crate
 #[derive(Error, Debug)]
 pub enum XMLHandlerError {
     /// An IO error occurred

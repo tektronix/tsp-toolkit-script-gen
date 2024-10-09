@@ -5,6 +5,19 @@ use crate::error::{Result, XMLHandlerError};
 use crate::group::Group;
 use crate::resources::DEFAULT_FUNC_METADATA;
 
+/// Parses the XML data from the DefaultFunctionMetaData.xml file and returns a vector of `Group` objects.
+///
+/// # Errors
+///
+/// This function will return an `XMLHandlerError` if there is an error while reading
+/// or parsing the XML data. The specific variant of `XMLHandlerError` will depend on the nature
+/// of the error encountered.
+///
+/// # Returns
+///
+/// A `Result` which is:
+/// - `Ok(Vec<Group>)` containing a vector of `Group` objects if parsing is successful.
+/// - `Err(XMLHandlerError)` if there is an error during parsing.
 pub fn parse_xml() -> Result<Vec<Group>> {
     let binding = DEFAULT_FUNC_METADATA.to_string();
     let mut reader = Reader::from_str(binding.as_str());

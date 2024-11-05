@@ -7,6 +7,7 @@ use super::{
 use crate::device_manager::DeviceManager;
 use script_aggregator::script_buffer::ScriptBuffer;
 
+/// Creates and manages the individual functions that make up the script.
 pub struct ScriptModel {
     device_manager: DeviceManager,
     chunks: Vec<Box<dyn FunctionModel>>,
@@ -14,7 +15,7 @@ pub struct ScriptModel {
 
 impl ScriptModel {
     pub fn new(mut device_manager: DeviceManager) -> Self {
-        //parse the xml
+        // parse the xml and populate function_metadata_map
         device_manager.catalog.refresh_function_metadata();
 
         ScriptModel {
@@ -23,6 +24,7 @@ impl ScriptModel {
         }
     }
 
+    /// Clears the existing script chunks and adds the initialize and finalize chunks.
     pub fn initialize_scripts(&mut self) {
         self.chunks.clear();
 
@@ -48,6 +50,7 @@ impl ScriptModel {
         }
     }
 
+    /// Converts the script chunks to a script including ordering, indent and substitution.
     pub fn to_script(&mut self) {
         let mut script_buffer = ScriptBuffer::new();
         script_buffer.set_auto_indent(true);
@@ -66,6 +69,11 @@ impl ScriptModel {
         }
     }
 
+    /// Adds a function chunk to the script.
+    ///
+    /// # Arguments
+    ///
+    /// * `chunk` - A boxed `FunctionModel` instance to be added to the script.
     pub fn add(&mut self, chunk: Box<dyn FunctionModel>) {
         let index = if self.chunks.len() > 1 {
             self.chunks.len() - 1
@@ -75,6 +83,7 @@ impl ScriptModel {
         self.chunks.insert(index, chunk);
     }
 
+    /// Adds a sweep function chunk to the script.
     pub fn add_sweep(&mut self) {
         if let Some(group) = self
             .device_manager
@@ -88,6 +97,7 @@ impl ScriptModel {
         }
     }
 
+    /// Adds a data report function chunk to the script.
     pub fn add_data_report(&mut self) {
         if let Some(group) = self
             .device_manager

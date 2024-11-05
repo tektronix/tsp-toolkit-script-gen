@@ -1,5 +1,6 @@
 use crate::{catalog::Catalog, device::SmuDevice, device_io::SimulatedDeviceIO};
 
+/// Manages device search, storage, and retrieval.
 #[derive(Debug, Clone)]
 pub struct DeviceManager {
     path: SimulatedDeviceIO,
@@ -22,10 +23,17 @@ impl DeviceManager {
         }
     }
 
+    /// Retrieves the line frequency.
+    ///
+    /// # Returns
+    ///
+    /// The line frequency as an integer.
     pub fn get_line_frequency(&self) -> i32 {
         self.line_frequency
     }
 
+    /// Searches for devices using simulated device IO query-response mechanism
+    /// and populates the device list.
     pub fn search(&mut self) {
         let search_response = self.path.get_query_response("SEARCH".to_string());
         let instruments: Vec<String> = search_response.split(',').map(|s| s.to_string()).collect();
@@ -36,6 +44,15 @@ impl DeviceManager {
         }
     }
 
+    /// Retrieves a device based on input index.
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The index of the device in the device list.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the `SmuDevice` at the specified index.
     pub fn get_device(&self, index: usize) -> &SmuDevice {
         &self.device_list[index]
     }

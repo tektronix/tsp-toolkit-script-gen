@@ -17,7 +17,7 @@ use crate::substitute::Substitute;
 pub struct Composite {
     /// The name of the composite.
     pub name: String,
-    /// The type of the composite, if specified (Ex: aux).
+    /// The type of the composite, if specified (e.g., aux).
     pub type_: Option<String>,
     /// The indentation level.
     pub indent: i32,
@@ -179,11 +179,19 @@ pub trait CommonChunk {
         script_buffer: &mut ScriptBuffer,
         val_replacement_map: &HashMap<String, String>,
     );
+
+    /// The composite/snippet instances are processed and the result is appended to the script buffer.
+    ///
+    /// # Arguments
+    ///
+    /// * `script_buffer` - A mutable reference to the script buffer.
+    /// * `val_replacement_map` - A reference to the value replacement map.
     fn to_script(
         &mut self,
         script_buffer: &mut ScriptBuffer,
         val_replacement_map: &HashMap<String, String>,
     ) {
+        // determines whether the composite/snippet should be included in the script
         if self.evaluate_conditions(val_replacement_map) {
             if self.get_indent() > 0 {
                 script_buffer.change_indent(self.get_indent());
@@ -220,6 +228,18 @@ pub trait CommonChunk {
         }
     }
 
+    /// Evaluates the conditions (if any) associated with the composite/snippet.
+    ///
+    /// This method checks if the conditions specified in the composite/snippet
+    /// are met based on the values in the value replacement map.
+    ///
+    /// # Arguments
+    ///
+    /// * `val_replacement_map` - A reference to the value replacement map.
+    ///
+    /// # Returns
+    ///
+    /// A boolean indicating whether the conditions are met.
     fn evaluate_conditions(&self, val_replacement_map: &HashMap<String, String>) -> bool {
         let mut include = true;
         let conditions = self.get_conditions();
@@ -293,6 +313,20 @@ pub trait CommonChunk {
         include
     }
 
+    /// Looks up a value in the value replacement map based on the given symbol.
+    ///
+    /// e.g., The symbol "DEVICES:ASSIGN" has scope "DEVICES" and the value replacement map
+    /// value of "DEVICES:" is extracted before doing the lookup - so if DEVICES: currently
+    /// has the value "bias1" then the lookup becomes "bias1:ASSIGN".
+    ///
+    /// # Arguments
+    ///
+    /// * `val_replacement_map` - A reference to the value replacement map.
+    /// * `symbol` - The symbol to look up.
+    ///
+    /// # Returns
+    ///
+    /// A string representing the looked-up value.
     fn lookup(&self, val_replacement_map: &HashMap<String, String>, symbol: &str) -> String {
         let index = symbol.find(':');
         let mut temp = "".to_string();

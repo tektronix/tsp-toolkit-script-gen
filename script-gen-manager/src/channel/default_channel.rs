@@ -6,9 +6,13 @@ use super::channel_range::ChannelRange;
 
 pub trait Channel: Debug {
     fn as_any(&self) -> &dyn Any;
+    /// Returns the name of the channel (e.g., "Bias_Smu", "Step_Smu" etc.)
     fn get_name(&self) -> &str;
+    /// Returns the device associated with the channel.
     fn get_device(&self) -> &SmuDevice;
+    /// Returns a mutable reference to the channel attributes.
     fn get_channel_attributes(&mut self) -> &mut ChannelAttributes;
+    /// Returns the measurement function of the channel (e.g., "current", "voltage" etc.)
     fn get_measurement_function(&self) -> &str;
 
     fn set_defaults(&mut self) {
@@ -24,6 +28,7 @@ pub trait Channel: Debug {
     }
 }
 
+// Represents attributes common to bias, step and sweep channels.
 #[derive(Debug, Clone)]
 pub struct ChannelAttributes {
     pub func_name: &'static str,

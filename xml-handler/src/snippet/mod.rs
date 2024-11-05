@@ -120,6 +120,16 @@ impl Snippet {
         }
     }
 
+    /// Evaluates the snippet and inserts the resulting code into the script buffer.
+    ///
+    /// This method processes the substitutions in the snippet and its parent composites,
+    /// replaces the placeholders in the code snippet with the corresponding values,
+    /// and inserts the resulting code into the script buffer.
+    ///
+    /// # Arguments
+    ///
+    /// * `script_buffer` - A mutable reference to the script buffer.
+    /// * `val_replacement_map` - A reference to the value replacement map.
     pub fn evaluate_snippet(
         &self,
         script_buffer: &mut ScriptBuffer,
@@ -144,6 +154,15 @@ impl Snippet {
         self.insert(script_buffer, temp_code_snippet);
     }
 
+    /// Inserts the given text into the script buffer.
+    ///
+    /// Insert the specified text into the script buffer one line at a time
+    /// to ensure the target script uses the correct EOL sequence.
+    ///
+    /// # Arguments
+    ///
+    /// * `script_buffer` - A mutable reference to the script buffer.
+    /// * `temp_code` - The text to be inserted into the script buffer.
     fn insert(&self, script_buffer: &mut ScriptBuffer, temp_code: String) {
         // Create a cursor to read the string as bytes
         let cursor = Cursor::new(temp_code);

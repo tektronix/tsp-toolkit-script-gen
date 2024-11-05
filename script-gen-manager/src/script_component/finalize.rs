@@ -4,6 +4,8 @@ use super::function::FunctionModel;
 use script_aggregator::script_buffer::ScriptBuffer;
 use xml_handler::group::Group;
 
+/// FinalizeModel is an aggregation of FunctionModel that represents the _Finalize() function of the script.
+/// This is a mandatory function in the generated script.
 #[derive(Debug)]
 pub struct FinalizeModel {
     type_: String,

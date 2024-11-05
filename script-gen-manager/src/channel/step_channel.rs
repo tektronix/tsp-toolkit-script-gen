@@ -6,6 +6,7 @@ use super::{
 };
 use crate::device::SmuDevice;
 
+/// Represents a step channel and its attributes.
 #[derive(Debug, Clone)]
 pub struct StepChannel {
     pub chan_attributes: ChannelAttributes,

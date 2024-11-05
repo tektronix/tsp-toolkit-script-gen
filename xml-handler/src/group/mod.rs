@@ -11,9 +11,9 @@ use crate::{
 /// Represents the outer-most XML node with an ID, type, children, and a list of variables.
 #[derive(Debug, Clone)]
 pub struct Group {
-    /// The unique identifier for the group. (INITIALIZE, FINALIZE, etc.)
+    /// The unique identifier for the group (e.g., INITIALIZE, FINALIZE, etc.)
     id: String,
-    /// The type of the group. (Initialize, Finalize, etc.)
+    /// The type of the group (e.g., Initialize, Finalize, etc.)
     pub type_: String,
     /// The children of the group. (Composites, Snippets, etc.)
     pub children: Vec<IncludeResult>,

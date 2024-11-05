@@ -7,6 +7,7 @@ pub enum RangeValue {
     None,
 }
 
+/// Represents the measure or source range of a channel.
 #[derive(Debug, Clone)]
 pub struct ChannelRange {
     min: f64,

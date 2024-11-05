@@ -6,6 +6,7 @@ use super::{
 };
 use crate::device::SmuDevice;
 
+/// Represents a sweep channel and its attributes.
 #[derive(Debug, Clone)]
 pub struct SweepChannel {
     pub chan_attributes: ChannelAttributes,

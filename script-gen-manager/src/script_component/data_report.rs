@@ -4,6 +4,8 @@ use super::function::FunctionModel;
 use script_aggregator::script_buffer::ScriptBuffer;
 use xml_handler::group::Group;
 
+/// DataReportModel is an aggregation of FunctionModel that represents the _DataReport() function of the script.
+/// This is an optional function in the generated script.
 #[derive(Debug)]
 pub struct DataReportModel {
     type_: String,

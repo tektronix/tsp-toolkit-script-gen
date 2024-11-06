@@ -1,5 +1,6 @@
 use crate::instr_metadata::ki26xx_metadata::Ki26xxMetadata;
 
+// Represents attributes common to step and sweep channels.
 #[derive(Debug, Clone)]
 pub struct CommonAttributes {
     pub start: f64,

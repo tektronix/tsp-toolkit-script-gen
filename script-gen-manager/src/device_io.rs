@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+/// Holds the query-response map for basic simulated device IO.
 #[derive(Debug, Clone)]
 pub struct SimulatedDeviceIO {
     query_response_map: HashMap<String, String>,
@@ -9,7 +10,7 @@ impl SimulatedDeviceIO {
     pub fn new() -> Self {
         let mut query_response_map = HashMap::new();
 
-        // based on the query response map from the SimulatedDeviceIO.java in TSP Express
+        // based on the query-response map from the SimulatedDeviceIO.java in TSP Express
         query_response_map.insert(String::from("SEARCH"), String::from("localnode.smua,localnode.smub,node[37].smua,node[37].smub,node[41].smua,node[41].smub,node[45].smua,node[45].smub"));
         query_response_map.insert(
             String::from("IDENTIFY_node[37]"),
@@ -31,6 +32,15 @@ impl SimulatedDeviceIO {
         SimulatedDeviceIO { query_response_map }
     }
 
+    /// Retrieves the response for a given query key.
+    ///
+    /// # Arguments
+    ///
+    /// * `key` - A string key representing the query.
+    ///
+    /// # Returns
+    ///
+    /// A string response corresponding to the query key. Returns an empty string if the key is not found.
     pub fn get_query_response(&self, key: String) -> String {
         match self.query_response_map.get(&key) {
             Some(value) => value.to_string(),

@@ -3,6 +3,7 @@ use std::any::Any;
 use super::default_channel::{Channel, ChannelAttributes};
 use crate::device::SmuDevice;
 
+/// Represents a bias channel and its attributes.
 #[derive(Debug, Clone)]
 pub struct BiasChannel {
     pub chan_attributes: ChannelAttributes,

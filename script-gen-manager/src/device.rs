@@ -2,6 +2,7 @@ use tsp_toolkit_kic_lib::instrument::info::InstrumentInfo;
 
 use crate::{catalog::Catalog, device_io::SimulatedDeviceIO};
 
+/// Represents a Source Measure Unit (SMU) device.
 #[derive(Debug, Clone)]
 pub struct SmuDevice {
     catalog: Catalog,
@@ -17,6 +18,16 @@ pub struct SmuDevice {
 }
 
 impl SmuDevice {
+    /// Creates a new `SmuDevice` instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - <node_id>.<smu_id> string representing the device.
+    /// * `catalog` - a cache of metadata generated from resources in the application (e.g., XML files, structs etc).
+    ///
+    /// # Returns
+    ///
+    /// A new `SmuDevice` instance.
     pub fn new(id: String, catalog: Catalog) -> Self {
         let (node_id, smu_id) = SmuDevice::parse_id(id);
         SmuDevice {
@@ -30,6 +41,16 @@ impl SmuDevice {
         }
     }
 
+    /// Parses the input string into node ID and SMU ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - input string.
+    ///
+    /// # Returns
+    ///
+    /// A tuple containing the node ID and SMU ID.
+    /// e.g., if id = "node[37].smua", the function returns ("node[37]", "node[37].smua").
     fn parse_id(id: String) -> (String, String) {
         let node_id: String;
         let smu_id: String;
@@ -46,6 +67,11 @@ impl SmuDevice {
         (node_id, smu_id)
     }
 
+    /// Determines the attributes of the SMU device using simulated device IO query-response mechanism.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - A `SimulatedDeviceIO` instance used to query the device info.
     pub fn determine_attributes(&mut self, path: SimulatedDeviceIO) {
         self.async_meas_supported = false;
         self.fast_adc_supported = false;
@@ -84,14 +110,29 @@ impl SmuDevice {
         }
     }
 
+    /// Returns the SMU ID of the device.
+    ///
+    /// # Returns
+    ///
+    /// A string representing the SMU ID.
     pub fn get_id(&self) -> String {
         self.smu_id.clone()
     }
 
+    /// Returns the node ID of the device.
+    ///
+    /// # Returns
+    ///
+    /// A string representing the node ID.
     pub fn get_node_id(&self) -> String {
         self.node_id.clone()
     }
 
+    /// Returns the model number of the device.
+    ///
+    /// # Returns
+    ///
+    /// A string representing the model number. If the model is not available, returns "Unknown Model".
     pub fn get_model(&self) -> String {
         if let Some(model) = &self.instr_idn_info.model {
             model.clone()
@@ -100,6 +141,11 @@ impl SmuDevice {
         }
     }
 
+    /// Returns the firmware version of the device.
+    ///
+    /// # Returns
+    ///
+    /// A string representing the firmware version. If the firmware version is not available, returns "Unknown Firmware Version".
     pub fn get_fw_version(&self) -> String {
         if let Some(fw_version) = &self.instr_idn_info.firmware_rev {
             fw_version.clone()

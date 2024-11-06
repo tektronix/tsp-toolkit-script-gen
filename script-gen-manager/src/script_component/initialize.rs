@@ -6,6 +6,8 @@ use xml_handler::{composite::CommonChunk, group::Group};
 use super::function::FunctionModel;
 use crate::device::SmuDevice;
 
+/// InitializeModel is an aggregation of FunctionModel that represents the _Intialize() function of the script.
+/// This is a mandatory function in the generated script.
 #[derive(Debug)]
 pub struct InitializeModel {
     type_: String,
@@ -38,8 +40,8 @@ impl FunctionModel for InitializeModel {
     }
 
     fn to_script(&mut self, script_buffer: &mut ScriptBuffer) {
-        // self.val_replacement_map
-        //     .insert(String::from("MAX-NODES"), String::from("64"));
+        self.val_replacement_map
+            .insert(String::from("MAX-NODES"), String::from("64"));
         self.val_replacement_map
             .insert(String::from("APPEND-MODE"), String::from("1"));
         self.val_replacement_map
@@ -49,6 +51,7 @@ impl FunctionModel for InitializeModel {
 
         for child in self.metadata.children.iter_mut() {
             if let xml_handler::group::IncludeResult::Composite(comp) = child {
+                // aux chunk
                 if comp.type_.is_some() {
                     let mut temp = ScriptBuffer::new();
                     temp.set_auto_indent(true);
@@ -84,6 +87,12 @@ impl InitializeModel {
         }
     }
 
+    /// Generates the product setup string based on the unique nodes in the device list.
+    /// e.g., node[37].smua and node[37].smub are considered as a single node.
+    ///
+    /// # Returns
+    ///
+    /// A string representing the product setup.
     fn get_product_setup(&self) -> String {
         let mut unique_nodes: Vec<SmuDevice> = Vec::new();
 

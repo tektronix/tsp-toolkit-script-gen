@@ -5,7 +5,7 @@ use crate::error::{Result, XMLHandlerError};
 pub use sub_mod::{Constraint, Reference};
 
 /// Represents a variables tag in the XML data.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Variables {
     /// A list of variables associated with the variables tag.
     pub variable_array: Vec<Variable>,
@@ -15,9 +15,9 @@ pub struct Variables {
 #[derive(Debug, Clone)]
 pub struct Variable {
     /// A unique identifier for the variable.
-    id: String,
+    pub id: String,
     /// The default value of the variable.
-    default: String,
+    pub default: String,
     /// The value attribute of the variable.
     value_attr: String,
     /// A list of dependencies for this variable.
@@ -25,7 +25,7 @@ pub struct Variable {
     /// A list of references associated with this variable.
     ref_array: Vec<Reference>,
     /// An optional constraint applied to the variable.
-    constraint: Option<Constraint>,
+    pub constraint: Option<Constraint>,
 }
 
 #[derive(Debug, Clone)]

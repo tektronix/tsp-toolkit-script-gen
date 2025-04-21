@@ -1,0 +1,282 @@
+// .host{
+//   // background-color: var(--vscode-activityErrorBadge-foreground);
+// }
+
+.popup {
+  /* display: none; */
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  border: 1px solid #545454;
+}
+
+.window-switching-buttons {
+  position: absolute;
+  left: 10px;
+  margin-bottom: 10px;
+  background-color: grey;
+  color: white;
+}
+
+.disabled {
+  background-color: grey;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.bias-step-smu-selected .title {
+  border: 1px solid white;
+  padding: 5px;
+}
+
+.popup.active {
+  display: block;
+}
+
+.popup-content {
+  background-color: var(--vscode-activityErrorBadge-foreground);
+  padding: 20px;
+  border-radius: 5px;
+  text-align: center;
+  color: var(--vscode-editor-foreground);
+  position: relative;
+}
+
+.close {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  cursor: pointer;
+  color: var(--vscode-editor-foreground);
+}
+
+.spacer {
+  display: inline-block;
+  width: 20px; /* Adjust the value as needed */
+}
+
+.remove-button {
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  border-radius: 3px;
+  padding: 5px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-button:hover {
+  background-color: var(--vscode-button-hoverBackground);
+}
+
+.remove-button i {
+  font-size: 16px;
+}
+
+.component-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  width: 30%;
+  // background-color: var(--vscode-activityErrorBadge-foreground);
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.popup-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid #545454;
+  padding: 5px;
+  margin-top: 22px;
+  background-color: black;
+  border-radius: 5px;
+}
+
+.form-group {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 10px;
+  background-color: black;
+  color: #FFFFFF;
+  border-radius: 5px;
+  gap: 2px;
+}
+
+.form-group-dropdown {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  width: 100%;
+  margin-bottom: 10px;
+  background-color: black;
+  color: #FFFFFF;
+}
+
+.form-group-dropdown label {
+  display: flex;
+  width: 50%;
+  text-align: right;
+  padding-right: 10px;
+}
+
+.form-group-dropdown select,
+.form-group-dropdown app-input-box-dropdown {
+  width: 100%;
+}
+
+.plot-container {
+  display: flex;
+  // align-items: flex-start;
+  width: 63%; /* Adjust the width as needed */
+  background-color: var(--vscode-editor-background);
+  height: 20%;
+  // background-color: var(--vscode-activityErrorBadge-foreground);
+  // padding: 10px;
+  // box-sizing: border-box;
+}
+
+.parent-container {
+  display: flex;
+  // flex-direction: row;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+  width: 100%;
+  // background-color: var(--vscode-activityErrorBadge-foreground);
+  // box-sizing: border-box;
+  // padding: 10px;
+}
+
+.input-container {
+  width: 37%;
+  box-sizing: border-box;
+  // background-color: var(--vscode-activityWarningBadge-foreground);
+  // display: flex;
+}
+
+// .component-box {
+//   width: 100%;
+//   box-sizing: border-box;
+// }
+
+.input-group {
+  grid-template-columns: 1fr 1fr;
+  gap: 15px 20px;
+  width: 100%;
+  box-sizing: border-box;
+  // background-color: var(--vscode-activityWarningBadge-foreground);
+  color: var(--vscode-editor-foreground);
+  padding: 12px;
+  margin: 10px 0;
+  display: grid;
+}
+
+.input-group label {
+  display: block;
+  // margin-bottom: 5px;
+}
+
+.input-group input {
+  width: 100%;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 3px;
+  padding: 5px;
+}
+
+.expander {
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  // background-color: var(--vscode-input-background);
+  color: var(--vscode-editor-foreground);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
+  font-size: smaller;
+  padding-left: 10px;
+  margin-top: 7px;
+}
+
+.button-icon {
+  background-color: transparent;
+  color: currentColor;
+  padding: 0;
+  border: none;
+}
+
+.timing-autorangebox{
+  display: flex;
+  justify-content: flex-start;
+  color: var(--vscode-editor-foreground);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: 10px;
+  padding: 7px;
+}
+
+.timing{
+  border-radius: 13px;
+  background-color: transparent;
+  color: var(--vscode-activityBarBadge-foreground);
+  border-color: var(--vscode-activityBar-activeBorder);
+  border-style: solid;
+  border-width: thin;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.autorange{
+  display: flex;
+}
+
+.autorange-checkbox{
+  margin-right: 10px;
+}
+
+.checkbox{
+  display: flex;
+}
+
+.h3{
+  padding: 0;
+  display: flex;
+  margin-top: 8px;
+  margin-bottom: 5px;
+}
+
+input:focus {
+  border: 2px solid #007bff; /* Highlight border color */
+  outline: none; /* Remove default outline */
+  // background-color: #f0f8ff; /* Optional: Change background color */
+}
+
+/* Highlight styles for input boxes */
+.highlight-bias {
+  border: 2px solid green;
+  background-color: #e6ffe6; /* Light green background */
+}
+
+/* Highlight styles for graphs */
+plot-bias.highlight-bias {
+  border: 2px solid green;
+}

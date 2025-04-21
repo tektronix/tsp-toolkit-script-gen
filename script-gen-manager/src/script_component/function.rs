@@ -3,7 +3,7 @@ use std::any::Any;
 use script_aggregator::script_buffer::ScriptBuffer;
 use xml_handler::composite::CommonChunk;
 
-pub trait FunctionModel {
+pub trait FunctionModel: Send + Sync {
     fn as_any(&self) -> &dyn Any;
     /// Returns the underlying type of the function model (e.g., Initialize, Finalize, etc.)
     fn get_type(&self) -> &str;

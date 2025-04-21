@@ -1,0 +1,136 @@
+<div class="parent-container">
+  <div class="input-container">
+    <div class="timing-autorangebox">
+      <button class="timing" (click)="enableTiming()">Timing</button>
+      <app-timing
+        *ngIf="showTiming"
+        [timingConfig]="timingConfig"
+        (emitTimingData)="updateTimingConfig()"
+        (ok)="closeTimingDialog()"
+      ></app-timing>
+    </div>
+
+    <div class="expander">
+      <div style="display: flex">
+        <h3 (click)="toggleBias()" class="h3">
+          <mat-icon>{{
+            isBiasExpanded ? "expand_more" : "chevron_right"
+          }}</mat-icon>
+        </h3>
+        <h3>Bias</h3>
+      </div>
+      <button class="button-icon" (click)="addBias()">
+        <mat-icon>add</mat-icon>
+      </button>
+    </div>
+    <div *ngIf="isBiasExpanded">
+      <div *ngFor="let biasChannel of biasChannels; let i = index">
+        <app-bias
+          (focus)="setActiveComponent('bias', i)"
+          (blur)="clearActiveComponent()"
+          [class.highlight-bias]="
+            activeComponent === 'bias' && activeIndex === i
+          "
+          (emitBiasChannelData)="updateBiasChannelsConfig($event)"
+          (emitBiasExpanderState)="handleBiasChanExpanderStateChange($event)"
+          [biasChannel]="biasChannel"
+          [isBiasChanExpanded]="
+            isBiasChannelExpanded(biasChannel.common_chan_attributes.uuid)
+          "
+          [deviceList]="deviceList"
+          (emitBiasChannelDelete)="removeBiasChannel($event)"
+          (emitBiasChannelIdChange)="updateBiasChannelId($event)"
+        ></app-bias>
+      </div>
+    </div>
+
+    <div class="expander">
+      <div style="display: flex">
+        <h3 (click)="toggleStep()" class="h3">
+          <mat-icon>{{
+            isStepExpanded ? "expand_more" : "chevron_right"
+          }}</mat-icon>
+        </h3>
+        <h3>Step</h3>
+      </div>
+    </div>
+    <div *ngIf="isStepExpanded">
+      <div *ngFor="let stepChannel of stepChannels">
+        <div>
+          <app-step
+            (emitStepData)="updateStepChannelsConfig($event)"
+            (emitStepGlobalParameters)="updateStepGlobalParameters($event)"
+            [stepChannel]="stepChannel"
+            [stepGlobalParameters]="stepGlobalParameters"
+            [deviceList]="deviceList"
+            (emitStepChannelDelete)="removeStepChannel($event)"
+            (emitStepChannelIdChange)="updateStepChannelId($event)"
+          ></app-step>
+        </div>
+      </div>
+    </div>
+
+    <div class="expander">
+      <div style="display: flex">
+        <h3 (click)="toggleSweep()" class="h3">
+          <mat-icon>{{
+            isSweepExpanded ? "expand_more" : "chevron_right"
+          }}</mat-icon>
+        </h3>
+        <h3>Sweep</h3>
+      </div>
+      <button class="button-icon" (click)="addSweep()">
+        <mat-icon>add</mat-icon>
+      </button>
+    </div>
+    <div *ngIf="isSweepExpanded">
+      <div class="input-group">
+        <div class="numeric-control">
+          <input-numeric
+            [(ngModel)]="sweepPoints.value"
+            [label]="'Number of Points'"
+            *ngIf="sweepPoints"
+            name="sweepPoints"
+          ></input-numeric>
+        </div>
+        <div>
+          <input-plain
+            [(ngModel)]="sweepTimePerPoint.value"
+            [label]="'Time/Point'"
+            [unit]="sweepTimePerPoint.unit"
+            *ngIf="sweepTimePerPoint"
+            name="sweepTimePerPoint"
+          ></input-plain>
+        </div>
+        <!-- <div>
+        </div> -->
+        <!-- <div class="checkbox">
+          <label for="list">List</label>
+          <input type="checkbox" id="list" [(ngModel)]="list" name="list" />
+          <button class="timing">Edit</button>
+        </div> -->
+      </div>
+      <div *ngFor="let sweepChannel of sweepChannels">
+        <div *ngIf="isSweepExpanded">
+          <app-sweep
+            (emitSweepData)="updateSweepChannelsConfig($event)"
+            [sweepChannel]="sweepChannel"
+            [deviceList]="deviceList"
+            (emitSweepChannelDelete)="removeSweepChannel($event)"
+            (emitSweepChannelIdChange)="updateSweepChannelId($event)"
+          ></app-sweep>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="plot-container">
+    <app-plot-container
+      [biasChannels]="biasChannels"
+      [stepChannels]="stepChannels"
+      [sweepChannels]="sweepChannels"
+      [activeComponent]="activeComponent"
+      [activeIndex]="activeIndex"
+    ></app-plot-container>
+  </div>
+</div>

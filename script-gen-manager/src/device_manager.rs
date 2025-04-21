@@ -1,46 +1,41 @@
-use crate::{catalog::Catalog, device::SmuDevice, device_io::SimulatedDeviceIO};
+use crate::{device::Device, model::mainframe::Mainframe};
 
 /// Manages device search, storage, and retrieval.
 #[derive(Debug, Clone)]
 pub struct DeviceManager {
-    path: SimulatedDeviceIO,
-    pub catalog: Catalog,
-    pub device_list: Vec<SmuDevice>,
-    line_frequency: i32,
+    pub device_list: Vec<Device>,
 }
 
 impl DeviceManager {
-    pub fn new(path: SimulatedDeviceIO) -> Self {
-        let catalog = Catalog::new();
-
+    pub fn new() -> Self {
         // Initialize devices as an empty vector, only non-composite smu devices for now
         let device_list = Vec::new();
-        DeviceManager {
-            path,
-            catalog,
-            device_list,
-            line_frequency: 60,
-        }
+        DeviceManager { device_list }
     }
 
-    /// Retrieves the line frequency.
-    ///
-    /// # Returns
-    ///
-    /// The line frequency as an integer.
-    pub fn get_line_frequency(&self) -> i32 {
-        self.line_frequency
-    }
-
-    /// Searches for devices using simulated device IO query-response mechanism
-    /// and populates the device list.
-    pub fn search(&mut self) {
-        let search_response = self.path.get_query_response("SEARCH".to_string());
-        let instruments: Vec<String> = search_response.split(',').map(|s| s.to_string()).collect();
-        for instr in instruments {
-            let mut device = SmuDevice::new(instr, self.catalog.clone());
-            device.determine_attributes(self.path.clone());
-            self.device_list.push(device);
+    pub fn create_device_list(&mut self, instr_list: String) {
+        let res = serde_json::from_str(&instr_list);
+        match res {
+            Ok(res) => {
+                if let Ok(mainframe_list) = serde_json::from_value::<Vec<Mainframe>>(res) {
+                    for mainframe in mainframe_list {
+                        for slot in mainframe.slot {
+                            for i in 1..=2 {
+                                let device = Device::new(
+                                    mainframe.name.clone(),
+                                    mainframe.model.clone(),
+                                    &slot,
+                                    i,
+                                );
+                                self.device_list.push(device);
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                println!("Error: {:#?}", e);
+            }
         }
     }
 
@@ -53,7 +48,14 @@ impl DeviceManager {
     /// # Returns
     ///
     /// A reference to the `SmuDevice` at the specified index.
-    pub fn get_device(&self, index: usize) -> &SmuDevice {
+    pub fn get_device(&self, index: usize) -> &Device {
         &self.device_list[index]
+    }
+
+    pub fn get_device_ids(&self) -> Vec<String> {
+        self.device_list
+            .iter()
+            .map(|device| device._id.clone())
+            .collect()
     }
 }

@@ -1,0 +1,112 @@
+.popup {
+  /* display: none; */
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  border: 1px solid #545454;
+}
+
+.popup.active {
+  display: block;
+}
+
+.popup-content {
+  background-color: var(--vscode-editor-background);
+  padding: 20px;
+  border-radius: 5px;
+  // text-align: center;
+  color: var(--vscode-editor-foreground);
+  position: relative;
+  width: 350px;
+}
+
+.spacer {
+  display: inline-block;
+  width: 20px; /* Adjust the value as needed */
+}
+
+.popup-container {
+  // display: flex;
+  // flex-direction: column;
+  // align-items: center;
+  // border: 1px solid #545454;
+  // padding: 5px;
+  // margin-top: 22px;
+  // background-color: black;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px 20px;
+  padding: 12px;
+  border: 1px solid var(--vscode-badge-background);
+}
+.popup-container-sweep {
+  border-radius: 8px;
+  display: grid;
+  // grid-template-columns: 1fr 1fr;
+  gap: 15px 20px;
+  padding: 12px;
+  border: 1px solid var(--vscode-badge-background);
+}
+
+.form-group {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 10px;
+  background-color: black;
+  color: #ffffff;
+  border-radius: 5px;
+  gap: 2px;
+}
+
+.form-group-dropdown {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
+  width: 100%;
+  margin-bottom: 10px;
+  background-color: black;
+  color: #ffffff;
+}
+
+.form-group-dropdown label {
+  display: flex;
+  width: 50%;
+  text-align: right;
+  padding-right: 10px;
+}
+
+.form-group-dropdown select,
+.form-group-dropdown app-input-box-dropdown {
+  width: 100%;
+}
+
+.radio-buttons-container {
+  display: block;
+  justify-content: flex-end;
+  align-items: left;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.button {
+  border-radius: 13px;
+  background-color: transparent;
+  color: var(--vscode-activityBarBadge-foreground);
+  border-color: var(--vscode-activityBar-activeBorder);
+  border-style: solid;
+  border-width: thin;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-left: 15px;
+  padding-right: 15px;
+  margin-top: 10px;
+}
+
+.window-switching-buttons{
+  margin-bottom: 10px;
+}

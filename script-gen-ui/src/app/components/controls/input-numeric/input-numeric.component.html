@@ -1,0 +1,10 @@
+<div class="input-plain">
+  <label for="input">{{ label }}</label>
+  <input
+    id="input"
+    type="text"
+    [value]="displayValue"
+    (blur)="onBlur($event)"
+    (keydown)="onKeyDown($event)"
+  />
+</div>

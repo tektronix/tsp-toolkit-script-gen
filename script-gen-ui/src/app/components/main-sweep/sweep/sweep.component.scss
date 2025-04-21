@@ -1,0 +1,98 @@
+:host {
+    display: block;
+    // width: 40%;
+    // background-color: var(--vscode-activityErrorBadge-foreground);
+    padding-left: 10px;
+    box-sizing: border-box;
+  }
+
+  .component-box {
+    // background-color: var(--vscode-activityErrorBadge-foreground);
+    color: var(--vscode-editor-foreground);
+    border: 1px solid var(--vscode-editorWidget-border);
+    border-radius: 8px;
+    // padding: 12px;
+    margin: 10px 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .input-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px 20px;
+    padding: 12px;
+  }
+
+  .input-group label {
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  .input-group input {
+    width: 100%;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border);
+    border-radius: 3px;
+    padding: 5px;
+  }
+
+  h4 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: var(--vscode-editor-foreground);
+  }
+
+  .input-group-dropdown select {
+    width: 100%;
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border: 1px solid var(--vscode-input-border);
+    border-radius: 3px;
+    padding: 5px;
+  }
+
+  .start-stop-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .start-stop-container input-plain {
+    flex: 1;
+    margin-right: 10px;
+  }
+
+  .start-stop-container input-plain:last-child {
+    margin-right: 0;
+  }
+
+  .expander {
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    // background-color: var(--vscode-input-background);
+    color: var(--vscode-editor-foreground);
+    border-bottom: 1px solid var(--vscode-editorWidget-border);
+    // border: 1px solid var(--vscode-editorWidget-border);
+    // border-radius: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: smaller;
+  }
+
+  .button-icon {
+    background-color: transparent;
+    color: currentColor;
+    padding: 0;
+    border: none;
+  }
+
+  .h3{
+    padding: 0;
+    display: flex;
+    margin-top: 8px;
+    margin-bottom: 5px;
+  }

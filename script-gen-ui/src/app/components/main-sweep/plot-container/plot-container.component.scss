@@ -1,0 +1,44 @@
+.plot-container {
+  // display: flex;
+  flex-direction: column;
+  width: 100%;
+  // height: 400px;
+  // background-color: var(--vscode-editor-background);
+}
+
+.plot-item {
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: 5px;
+  padding: 10px;
+  background-color: var(--vscode-editor-background);
+}
+
+.plot-info {
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: var(--vscode-editor-foreground);
+}
+
+.plot-info p {
+  margin: 0;
+}
+
+.plot-graph {
+  height: 300px; /* Adjust the height as needed */
+}
+
+#plotly-graph1, #plotly-graph2, #plotly-graph3 {
+  width: 100%;
+  // height: 300px;
+  // margin-bottom: 10px;
+}
+
+.plot-container > div {
+  width: 100%;
+  // height: 300px;
+  // margin-bottom: 10px;
+}
+
+.highlight-bias {
+  border: 2px solid green;
+}

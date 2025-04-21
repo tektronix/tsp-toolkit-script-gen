@@ -1,0 +1,85 @@
+<div
+  class="component-box"
+  [ngClass]="{ active: isActive }"
+  (click)="toggleActive()"
+>
+  <div class="expander">
+    <div style="display: flex">
+      <mat-icon (click)="toggleBiasChannel()" class="h3">
+        {{ isBiasChanExpanded ? "expand_more" : "chevron_right" }}
+      </mat-icon>
+      <h3 (click)="toggleBiasChannel()">
+        {{ chanName }}
+      </h3>
+    </div>
+    <button class="button-icon" (click)="removeBias()">
+      <mat-icon>delete</mat-icon>
+    </button>
+  </div>
+  <div *ngIf="isBiasChanExpanded" class="input-group">
+    <div>
+      <dropdown
+        [(ngModel)]="deviceID"
+        [label]="'ID'"
+        [selected]="deviceID"
+        [options]="dropdownDeviceList"
+        (selectedChange)="onDeviceIDChange($event)"
+        *ngIf="deviceID"
+        name="deviceID"
+      ></dropdown>
+    </div>
+    <div>
+      <input-plain
+        [(ngModel)]="bias.value"
+        [label]="'Source Value'"
+        [unit]="bias.unit"
+        *ngIf="bias"
+        name="bias"
+        (inputChange)="onBiasValueChange()"
+      ></input-plain>
+    </div>
+    <div>
+      <app-input-toggle
+        [(ngModel)]="sourceFunction.value"
+        [label]="'Source Function'"
+        [options]="sourceFunction.range"
+        *ngIf="sourceFunction"
+        name="sourceFunction"
+        (toggleOptionChange)="onToggle($event)"
+      ></app-input-toggle>
+    </div>
+    <div>
+      <dropdown
+        [(ngModel)]="sourceRange.value"
+        [label]="'Source Range'"
+        [selected]="sourceRange.value"
+        [options]="sourceRange.range"
+        *ngIf="sourceRange"
+        name="sourceRange"
+        (change)="onRangeChange($event)"
+      ></dropdown>
+    </div>
+    <div>
+      <dropdown
+        [(ngModel)]="measFunction.value"
+        [label]="'Meas. Function'"
+        [selected]="measFunction.value"
+        [options]="measFunction.range"
+        *ngIf="measFunction"
+        name="measFunction"
+        (selectedChange)="submitBiasData()"
+      ></dropdown>
+    </div>
+    <div>
+      <dropdown
+        [(ngModel)]="measRange.value"
+        [label]="'Meas. Range'"
+        [selected]="measRange.value"
+        [options]="measRange.range"
+        *ngIf="measRange"
+        name="measRange"
+        (selectedChange)="submitBiasData()"
+      ></dropdown>
+    </div>
+  </div>
+</div>

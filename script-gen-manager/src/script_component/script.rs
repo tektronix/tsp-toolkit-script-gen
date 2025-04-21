@@ -4,22 +4,19 @@ use super::{
     data_report::DataReportModel, finalize::FinalizeModel, function::FunctionModel,
     initialize::InitializeModel, sweep::SweepModel,
 };
-use crate::device_manager::DeviceManager;
+use crate::catalog::Catalog;
 use script_aggregator::script_buffer::ScriptBuffer;
 
 /// Creates and manages the individual functions that make up the script.
 pub struct ScriptModel {
-    device_manager: DeviceManager,
+    catalog: Catalog,
     chunks: Vec<Box<dyn FunctionModel>>,
 }
 
 impl ScriptModel {
-    pub fn new(mut device_manager: DeviceManager) -> Self {
-        // parse the xml and populate function_metadata_map
-        device_manager.catalog.refresh_function_metadata();
-
+    pub fn new(catalog: Catalog) -> Self {
         ScriptModel {
-            device_manager,
+            catalog,
             chunks: Vec::new(), //Initialize with an empty vector
         }
     }
@@ -28,23 +25,12 @@ impl ScriptModel {
     pub fn initialize_scripts(&mut self) {
         self.chunks.clear();
 
-        if let Some(group) = self
-            .device_manager
-            .catalog
-            .function_metadata_map
-            .get("Initialize")
-        {
-            let initialize =
-                InitializeModel::new(group.clone(), self.device_manager.device_list.clone());
+        if let Some(group) = self.catalog.function_metadata_map.get("Initialize") {
+            let initialize = InitializeModel::new(group.clone());
             self.chunks.push(Box::new(initialize));
         }
 
-        if let Some(group) = self
-            .device_manager
-            .catalog
-            .function_metadata_map
-            .get("Finalize")
-        {
+        if let Some(group) = self.catalog.function_metadata_map.get("Finalize") {
             let finalize = FinalizeModel::new(group.clone());
             self.chunks.push(Box::new(finalize));
         }
@@ -85,26 +71,15 @@ impl ScriptModel {
 
     /// Adds a sweep function chunk to the script.
     pub fn add_sweep(&mut self) {
-        if let Some(group) = self
-            .device_manager
-            .catalog
-            .function_metadata_map
-            .get("Sweep")
-        {
-            let mut sweep = SweepModel::new(group.clone());
-            sweep.auto_configure(&self.device_manager);
+        if let Some(group) = self.catalog.function_metadata_map.get("Sweep") {
+            let sweep = SweepModel::new(group.clone());
             self.add(Box::new(sweep));
         }
     }
 
     /// Adds a data report function chunk to the script.
     pub fn add_data_report(&mut self) {
-        if let Some(group) = self
-            .device_manager
-            .catalog
-            .function_metadata_map
-            .get("DataReport")
-        {
+        if let Some(group) = self.catalog.function_metadata_map.get("DataReport") {
             let data_report = DataReportModel::new(group.clone());
             self.add(Box::new(data_report));
         }

@@ -1,0 +1,219 @@
+<div class="popup">
+  <div class="popup-content">
+    <!-- <span class="close" (click)="close_Timing()">&times;</span> -->
+    <div class="window-switching-buttons">
+      <button (click)="selectWindow('window1')" >
+        Bias &amp; Step SMUs
+      </button>
+      <button (click)="selectWindow('window2')" >
+        Sweep SMUs
+      </button>
+    </div>
+    <div *ngIf="selectedWindow === 'window1'" class="popup-container">
+      <div>
+        <input-numeric
+          [(ngModel)]="nplc.value"
+          [label]="'NPLC'"
+          *ngIf="nplc"
+          (inputChange)="submitTimingData()"
+        ></input-numeric>
+      </div>
+      <div >
+        <dropdown
+          [(ngModel)]="autoZero.value"
+          [label]="'Auto Zero'"
+          [selected]="autoZero.value"
+          [options]="autoZero.range"
+          *ngIf="autoZero"
+          (selectedChange)="submitTimingData()"
+        ></dropdown>
+      </div>
+      <div >
+        <dropdown
+          [(ngModel)]="sourceDelayType.value"
+          [label]="'Source Delay Type'"
+          [selected]="sourceDelayType.value"
+          [options]="sourceDelayType.range"
+          *ngIf="sourceDelayType"
+          (selectedChange)="submitTimingData()"
+        ></dropdown>
+      </div>
+      <div
+        [ngClass]="{ disabled: sourceDelayType?.value !== 'USER DEFINED' }"
+      >
+        <input-plain
+          [(ngModel)]="sourceDelay.value"
+          [label]="'Source Delay'"
+          [unit]="sourceDelay.unit"
+          *ngIf="sourceDelay"
+          (inputChange)="handleSourceDelayChange($event)"
+        ></input-plain>
+      </div>
+      <div>
+        <input-numeric
+          [(ngModel)]="measureCount.value"
+          [label]="'Measure Count (per step)'"
+          *ngIf="measureCount"
+          (inputChange)="submitTimingData()"
+        ></input-numeric>
+      </div>
+      <div >
+        <dropdown
+          [(ngModel)]="measureDelayType.value"
+          [label]="'Measure Delay Type'"
+          [selected]="measureDelayType.value"
+          [options]="measureDelayType.range"
+          *ngIf="measureDelayType"
+          (selectedChange)="submitTimingData()"
+        ></dropdown>
+      </div>
+      <div
+        [ngClass]="{ disabled: measureDelayType?.value === 'OFF' }"
+      >
+        <input-plain
+          [(ngModel)]="measureDelay.value"
+          [label]="'Measure Delay'"
+          [unit]="measureDelay.unit"
+          *ngIf="measureDelay"
+          (inputChange)="submitTimingData()"
+        ></input-plain>
+      </div>
+      <div
+        [ngClass]="{ disabled: measureDelayType?.value === 'OFF' }"
+      >
+        <input-numeric
+          [(ngModel)]="measureDelayFactor.value"
+          [label]="'Measure Delay Factor'"
+          *ngIf="measureDelayFactor"
+          (inputChange)="submitTimingData()"
+        ></input-numeric>
+      </div>
+      <div>
+        <dropdown
+          [(ngModel)]="measureFilterEnable.value"
+          [label]="'Measure Filter Enable'"
+          [selected]="measureFilterEnable.value"
+          [options]="measureFilterEnable.range"
+          *ngIf="measureFilterEnable"
+          (selectedChange)="submitTimingData()"
+        ></dropdown>
+      </div>
+      <div
+        [ngClass]="{ disabled: measureFilterEnable?.value === 'OFF' }"
+      >
+        <dropdown
+          [(ngModel)]="measureFilterType.value"
+          [label]="'Measure Filter Type'"
+          [selected]="measureFilterType.value"
+          [options]="measureFilterType.range"
+          *ngIf="measureFilterType"
+          (selectedChange)="submitTimingData()"
+        ></dropdown>
+      </div>
+      <div
+        [ngClass]="{ disabled: measureFilterEnable?.value === 'OFF' }"
+      >
+        <input-numeric
+          [(ngModel)]="measureFilterCount.value"
+          [label]="'Measure Filter Count'"
+          *ngIf="measureFilterCount"
+          (inputChange)="submitTimingData()"
+        ></input-numeric>
+      </div>
+      <div
+        [ngClass]="{ disabled: measureFilterEnable?.value === 'OFF' }"
+      >
+        <dropdown
+          [(ngModel)]="measureAnalogFilter.value"
+          [label]="'Measure Analog Filter'"
+          [selected]="measureAnalogFilter.value"
+          [options]="measureAnalogFilter.range"
+          *ngIf="measureAnalogFilter"
+          (selectedChange)="submitTimingData()"
+        ></dropdown>
+      </div>
+    </div>
+    <div *ngIf="selectedWindow === 'window2'" class="popup-container-sweep">
+      <h4>
+        Note: High speed sampling is only available when all the sweep SMUs
+        support this capability and "Auto-range available" is not selected.
+      </h4>
+      <div class="radio-buttons-container">
+        <div>
+          <label>
+            <input
+              type="radio"
+              name="timingOption"
+              [(ngModel)]="timingOption"
+              value="sameTiming"
+            />
+            Same timing as "Bias & Step SMUs"
+          </label>
+        </div>
+        <div>
+          <label>
+            <input
+              type="radio"
+              name="timingOption"
+              [(ngModel)]="timingOption"
+              value="highSpeedSampling"
+            />
+            High-Speed Sampling
+          </label>
+        </div>
+      </div>
+      <div *ngIf="timingOption === 'highSpeedSampling'">
+        <div class="form-group">
+          <input-plain
+            [(ngModel)]="samplingInterval.value"
+            [label]="'Sampling Interval'"
+            [unit]="samplingInterval.unit"
+            *ngIf="samplingInterval"
+            (inputChange)="submitTimingData()"
+          ></input-plain>
+        </div>
+        <div class="form-group">
+          <input-numeric
+            [(ngModel)]="samplingCount.value"
+            [label]="'Sampling Count'"
+            *ngIf="samplingCount"
+            (inputChange)="submitTimingData()"
+          ></input-numeric>
+        </div>
+        <div class="form-group-dropdown">
+          <dropdown
+            [(ngModel)]="samplingDelayType.value"
+            [label]="'Sampling Delay Type'"
+            [selected]="samplingDelayType.value"
+            [options]="samplingDelayType.range"
+            *ngIf="samplingDelayType"
+            (selectedChange)="submitTimingData()"
+          ></dropdown>
+        </div>
+        <div
+          class="form-group"
+          [ngClass]="{ disabled: samplingDelayType?.value === 'OFF' }"
+        >
+          <input-plain
+            [(ngModel)]="samplingDelay.value"
+            [label]="'Sampling Delay'"
+            [unit]="samplingDelay.unit"
+            *ngIf="samplingDelay"
+            (inputChange)="submitTimingData()"
+          ></input-plain>
+        </div>
+        <div class="form-group-dropdown">
+          <dropdown
+            [(ngModel)]="samplingAnalogFilter.value"
+            [label]="'Sampling Analog Filter'"
+            [selected]="samplingAnalogFilter.value"
+            [options]="samplingAnalogFilter.range"
+            *ngIf="samplingAnalogFilter"
+            (selectedChange)="submitTimingData()"
+          ></dropdown>
+        </div>
+      </div>
+    </div>
+    <button (click)="okTiming()" class="button">OK</button>
+  </div>
+</div>

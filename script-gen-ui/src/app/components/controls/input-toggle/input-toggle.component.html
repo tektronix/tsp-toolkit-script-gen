@@ -1,0 +1,17 @@
+<div class="toggle-container">
+  <label *ngIf="label">{{ label }}</label>
+  <div class="toggle-options-box">
+    <table>
+      <tr>
+        <td
+          *ngFor="let option of options"
+          class="toggle-option"
+          [class.selected]="option === selectedOption"
+          (click)="toggleOption(option)"
+        >
+          {{ option }}
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>

@@ -4,7 +4,6 @@ use script_aggregator::script_buffer::ScriptBuffer;
 use xml_handler::{composite::CommonChunk, group::Group};
 
 use super::function::FunctionModel;
-use crate::device::SmuDevice;
 
 /// InitializeModel is an aggregation of FunctionModel that represents the _Intialize() function of the script.
 /// This is a mandatory function in the generated script.
@@ -14,8 +13,6 @@ pub struct InitializeModel {
     description: String,
     metadata: Group,
     val_replacement_map: HashMap<String, String>,
-
-    device_list: Vec<SmuDevice>,
 }
 
 impl FunctionModel for InitializeModel {
@@ -65,8 +62,8 @@ impl FunctionModel for InitializeModel {
             }
         }
 
-        self.val_replacement_map
-            .insert(String::from("PRODUCT-SETUP"), self.get_product_setup());
+        // self.val_replacement_map
+        //     .insert(String::from("PRODUCT-SETUP"), self.get_product_setup());
 
         self.build(script_buffer);
     }
@@ -77,65 +74,12 @@ impl InitializeModel {
     It first verifies that current setup matches project's setup.
     Then, it initializes members used to keep track of reading buffer storage.  ";
 
-    pub fn new(group: Group, device_list: Vec<SmuDevice>) -> Self {
+    pub fn new(group: Group) -> Self {
         InitializeModel {
             type_: group.type_.clone(),
             description: Self::DESCRIPTION.to_string(),
             metadata: group,
             val_replacement_map: HashMap::new(),
-            device_list,
         }
-    }
-
-    /// Generates the product setup string based on the unique nodes in the device list.
-    /// e.g., node[37].smua and node[37].smub are considered as a single node.
-    ///
-    /// # Returns
-    ///
-    /// A string representing the product setup.
-    fn get_product_setup(&self) -> String {
-        let mut unique_nodes: Vec<SmuDevice> = Vec::new();
-
-        for device in self.device_list.iter() {
-            let mut node_found = false;
-
-            if unique_nodes.is_empty() {
-                unique_nodes.push(device.clone());
-            } else {
-                for node in unique_nodes.iter() {
-                    if node.get_node_id() == device.get_node_id() {
-                        node_found = true;
-                        break;
-                    }
-                }
-
-                if !node_found {
-                    unique_nodes.push(device.clone());
-                }
-            }
-        }
-
-        let mut current_setup = String::from("{");
-        for (i, node) in unique_nodes.iter().enumerate() {
-            let formatted_string: String = if i == 0 {
-                format!(
-                    "{{{},[[{}]],[[{}]]}}",
-                    node.get_node_id(),
-                    node.get_model(),
-                    node.get_fw_version()
-                )
-            } else {
-                format!(
-                    ",{{{},[[{}]],[[{}]]}}",
-                    node.get_node_id(),
-                    node.get_model(),
-                    node.get_fw_version()
-                )
-            };
-            current_setup.push_str(&formatted_string);
-        }
-        current_setup.push('}');
-
-        current_setup
     }
 }

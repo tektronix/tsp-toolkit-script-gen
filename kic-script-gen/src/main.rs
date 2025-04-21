@@ -1,33 +1,19 @@
-use script_gen_manager::{
-    device_io::SimulatedDeviceIO, device_manager::DeviceManager,
-    script_component::script::ScriptModel,
-};
+use kic_script_gen::back_end::client_server::start;
+use script_gen_manager::{catalog, script_component::script::ScriptModel};
 
-fn main() -> anyhow::Result<()> {
-    eprintln!("Welcome to TSP script generator");
+#[actix_web::main]
+async fn main() -> anyhow::Result<()> {
+    eprintln!("Welcome to KIC Script Generator!");
 
-    run()?;
+    let mut catalog = catalog::Catalog::new();
+    catalog.refresh_function_metadata();
 
-    Ok(())
-}
-
-fn run() -> anyhow::Result<()> {
-    eprintln!("Running the script generator...");
-
-    let initial_path = get_initial_path();
-    let mut device_manager = DeviceManager::new(initial_path);
-    device_manager.search();
-
-    let mut script_model = ScriptModel::new(device_manager);
+    let mut script_model = ScriptModel::new(catalog.clone());
     script_model.initialize_scripts();
     script_model.add_sweep();
     script_model.add_data_report();
-    script_model.to_script();
+
+    start(catalog.clone()).await?;
 
     Ok(())
-}
-
-// returning simulated IO only for now
-fn get_initial_path() -> SimulatedDeviceIO {
-    SimulatedDeviceIO::new()
 }

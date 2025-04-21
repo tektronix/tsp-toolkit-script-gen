@@ -1,0 +1,30 @@
+<div *ngFor="let biasChannel of biasChannels; let i = index">
+  <div>
+    <plot-bias
+      [biasChannel]="biasChannel"
+      [plotDataX]="plotDataX"
+      [plotConfig]="plotConfig"
+      [class.highlight-bias]="activeComponent === 'bias' && activeIndex === i"
+    ></plot-bias>
+  </div>
+</div>
+
+<div *ngFor="let stepChannel of stepChannels">
+  <div>
+    <plot-step
+      [stepChannel]="stepChannel"
+      [plotDataX]="plotDataX"
+      [plotConfig]="plotConfig"
+    ></plot-step>
+  </div>
+</div>
+
+<div *ngFor="let sweepChannel of sweepChannels">
+  <div>
+    <plot-sweep
+      [sweepChannel]="sweepChannel"
+      [plotDataX]="plotDataX"
+      [plotConfig]="plotConfig"
+    ></plot-sweep>
+  </div>
+</div>

@@ -1,0 +1,7 @@
+<div class="expander">
+  <h3 (click)="onToggle()">{{ title }}</h3>
+  <button *ngIf="isExpanded" (click)="onButtonClick()">
+    {{ buttonLabel }}
+  </button>
+  <ng-content *ngIf="isExpanded"></ng-content>
+</div>

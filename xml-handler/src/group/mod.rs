@@ -18,7 +18,7 @@ pub struct Group {
     /// The children of the group. (Composites, Snippets, etc.)
     pub children: Vec<IncludeResult>,
     /// The list of variables defined in the group.
-    variable_list: Vec<Variable>,
+    pub variable_list: Vec<Variable>,
 }
 
 impl Group {

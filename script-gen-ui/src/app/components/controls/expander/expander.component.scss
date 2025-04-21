@@ -1,0 +1,11 @@
+.expander {
+  display: flex;
+  justify-content: space-between;
+  // align-items: center;
+  // width: 100%;
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+  // padding: 10px;
+  // margin-bottom: 10px;
+  border-radius: 5px;
+}

@@ -1,0 +1,9 @@
+<div>
+  <div>
+    <app-main-sweep
+      *ngIf="isMainSweepVisible"
+      [sweepConfig]="sweepConfig"
+    ></app-main-sweep>
+    <app-empty-config *ngIf="!isMainSweepVisible"></app-empty-config>
+  </div>
+</div>

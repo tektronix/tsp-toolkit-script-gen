@@ -1,0 +1,43 @@
+.plot-graph {
+  // display: flex;
+  flex-direction: column;
+  width: 100%;
+  // height: 400px;
+  background-color: var(--vscode-editor-background);
+  // height: 300px;
+}
+
+.plot-item {
+  border-left: 1px solid #F6F07D;
+  border-radius: 11px;
+  margin-bottom: 10px;
+  padding-bottom: 7px;
+  background-color: black;
+  border-right: 1px solid #F6F07D;
+  border-bottom: 1px solid #F6F07D;
+}
+
+.plot-info {
+  // margin-bottom: 10px;
+  font-size: 14px;
+  color:black;
+  display: flex;
+  background-color: #F6F07D;
+  // background-color: #F6F07D;
+  border: 5px #F6F07D;
+  padding: 5px;
+  border-top-left-radius: 9px;
+  border-top-right-radius: 9px;
+  padding-left: 10px;
+  font-size: smaller;
+}
+
+.plot-info p {
+  margin: 0;
+}
+
+.vertical-line {
+  border-left: 1px solid #000;
+  height: 12px; /* Adjust height as needed */
+  margin: 0 10px; /* Adjust spacing as needed */
+}

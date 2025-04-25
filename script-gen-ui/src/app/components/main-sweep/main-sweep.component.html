@@ -28,9 +28,6 @@
         <app-bias
           (focus)="setActiveComponent('bias', i)"
           (blur)="clearActiveComponent()"
-          [class.highlight-bias]="
-            activeComponent === 'bias' && activeIndex === i
-          "
           (emitBiasChannelData)="updateBiasChannelsConfig($event)"
           (emitBiasExpanderState)="handleBiasChanExpanderStateChange($event)"
           [biasChannel]="biasChannel"
@@ -40,6 +37,9 @@
           [deviceList]="deviceList"
           (emitBiasChannelDelete)="removeBiasChannel($event)"
           (emitBiasChannelIdChange)="updateBiasChannelId($event)"
+          [color]="getBiasColor(biasChannel)"
+          [isActive]="activeComponent === 'bias' && activeIndex === i"
+          (click)="setActiveComponent('bias', i)"
         ></app-bias>
       </div>
     </div>
@@ -55,7 +55,7 @@
       </div>
     </div>
     <div *ngIf="isStepExpanded">
-      <div *ngFor="let stepChannel of stepChannels">
+      <div *ngFor="let stepChannel of stepChannels; let i = index">
         <div>
           <app-step
             (emitStepData)="updateStepChannelsConfig($event)"
@@ -65,6 +65,9 @@
             [deviceList]="deviceList"
             (emitStepChannelDelete)="removeStepChannel($event)"
             (emitStepChannelIdChange)="updateStepChannelId($event)"
+            [color]="getStepColor(stepChannel)"
+            [isActive]="activeComponent === 'step' && activeIndex === i"
+            (click)="setActiveComponent('step', i)"
           ></app-step>
         </div>
       </div>
@@ -110,7 +113,7 @@
           <button class="timing">Edit</button>
         </div> -->
       </div>
-      <div *ngFor="let sweepChannel of sweepChannels">
+      <div *ngFor="let sweepChannel of sweepChannels; let i = index">
         <div *ngIf="isSweepExpanded">
           <app-sweep
             (emitSweepData)="updateSweepChannelsConfig($event)"
@@ -118,6 +121,9 @@
             [deviceList]="deviceList"
             (emitSweepChannelDelete)="removeSweepChannel($event)"
             (emitSweepChannelIdChange)="updateSweepChannelId($event)"
+            [color]="getSweepColor(sweepChannel)"
+            [isActive]="activeComponent === 'sweep' && activeIndex === i"
+            (click)="setActiveComponent('sweep', i)"
           ></app-sweep>
         </div>
       </div>
@@ -129,6 +135,7 @@
       [biasChannels]="biasChannels"
       [stepChannels]="stepChannels"
       [sweepChannels]="sweepChannels"
+      [colorMap]="colorMap"
       [activeComponent]="activeComponent"
       [activeIndex]="activeIndex"
     ></app-plot-container>

@@ -5,7 +5,26 @@
   text-align: left;
 }
 
-:host select {
+// :host select {
+//   width: 100%;
+//   background-color: var(--vscode-input-background);
+//   color: var(--vscode-input-foreground);
+//   border: 1px solid var(--vscode-editorWidget-border);
+//   border-radius: 5px;
+//   padding: 4px;
+// }
+
+.dropdown {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.dropdown label {
+  margin-bottom: 5px;
+}
+
+.dropdown select {
   width: 100%;
   background-color: var(--vscode-input-background);
   color: var(--vscode-input-foreground);

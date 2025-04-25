@@ -57,6 +57,18 @@ export class StepComponent {
     newChanId: string;
   }>();
 
+  @Input() isActive: boolean = false;
+  @Input() color: string = '';
+  isFocused: boolean = false;
+
+  toggleFocus(state: boolean): void {
+    this.isFocused = state;
+  }
+
+  toggleActive() {
+    this.isActive = !this.isActive;
+  }
+
   expandedStepChannels: { [key: string]: boolean } = {};
 
   constructor() {}

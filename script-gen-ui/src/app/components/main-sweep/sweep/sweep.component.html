@@ -1,5 +1,12 @@
-<div class="component-box">
-  <div class="expander">
+<div
+  class="component-box"
+  [ngClass]="{ active: isActive }"
+  [style.border]="isActive ? '1px solid ' + color : null"
+  [style.background-color]="isActive ? 'var(--vscode-activityErrorBadge-foreground)' : null"
+>
+  <div class="expander"
+  [style.background-color]="isActive ? 'var(--vscode-activityBar-background)' : 'transparent'"
+  >
     <div style="display: flex;">
       <mat-icon (click)="toggleSweepChannel(chanName)" class="h3">
         {{ expandedSweepChannels[chanName] ? 'expand_more' : 'chevron_right' }}

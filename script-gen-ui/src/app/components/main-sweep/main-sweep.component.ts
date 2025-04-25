@@ -52,12 +52,17 @@ export class MainSweepComponent {
   activeComponent: 'bias' | 'step' | 'sweep' | null = null; // Tracks the active component
   activeIndex: number | null = null;
 
+  colorIndex: number = 0;
+  colors: string[] = ['#F6F07D', '#7FBDC6', '#C95B66', '#91CE32', '#FF9832', '#2626BF', '#E254A6', '#00E09B']
+  colorMap: Map<string, string> = new Map();
+
   setActiveComponent(
     component: 'bias' | 'step' | 'sweep',
     index: number
   ): void {
     this.activeComponent = component;
     this.activeIndex = index;
+    console.log(`Active Component: ${component}, Index: ${index}`);
   }
 
   // Called when an input box loses focus
@@ -87,7 +92,7 @@ export class MainSweepComponent {
   constructor(private webSocketService: WebSocketService) {}
 
   // ngOnInit() {
-  //   this.updateAll();
+  //   // this.updateAll();
   // }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -96,6 +101,18 @@ export class MainSweepComponent {
       this.updateAll();
       console.log('sweepConfig updated:', this.sweepConfig);
     }
+  }
+
+  getBiasColor(biasChannel: BiasChannel): string {
+    return this.colorMap.get(biasChannel.common_chan_attributes.uuid) || 'gray';
+  }
+
+  getStepColor(stepChannel: StepChannel): string {
+    return this.colorMap.get(stepChannel.start_stop_channel.common_chan_attributes.uuid) || 'gray';
+  }
+
+  getSweepColor(sweepChannel: SweepChannel): string {
+    return this.colorMap.get(sweepChannel.start_stop_channel.common_chan_attributes.uuid) || 'gray';
   }
 
   updateAll() {
@@ -110,6 +127,31 @@ export class MainSweepComponent {
 
       this.sweepPoints = this.sweepGlobalParameters.sweep_points;
       this.sweepTimePerPoint = this.sweepGlobalParameters.sweep_time_per_point;
+
+      this.biasChannels.forEach((biasChannel) => {
+        const uuid = biasChannel.common_chan_attributes.uuid;
+        if (!this.colorMap.has(uuid)) {
+          const color = this.colors[this.colorIndex % this.colors.length];
+          this.colorMap.set(uuid, color);
+          this.colorIndex++;
+        }
+      });
+      this.stepChannels.forEach((stepChannel) => {
+        const uuid = stepChannel.start_stop_channel.common_chan_attributes.uuid;
+        if (!this.colorMap.has(uuid)) {
+          const color = this.colors[this.colorIndex % this.colors.length];
+          this.colorMap.set(uuid, color);
+          this.colorIndex++;
+        }
+      });
+      this.sweepChannels.forEach((sweepChannel) => {
+        const uuid = sweepChannel.start_stop_channel.common_chan_attributes.uuid;
+        if (!this.colorMap.has(uuid)) {
+          const color = this.colors[this.colorIndex % this.colors.length];
+          this.colorMap.set(uuid, color);
+          this.colorIndex++;
+        }
+      });
     }
   }
 

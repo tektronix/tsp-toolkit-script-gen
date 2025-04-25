@@ -262,21 +262,11 @@
   display: flex;
   margin-top: 8px;
   margin-bottom: 5px;
+  padding-right: 5px;
 }
 
 input:focus {
   border: 2px solid #007bff; /* Highlight border color */
   outline: none; /* Remove default outline */
   // background-color: #f0f8ff; /* Optional: Change background color */
-}
-
-/* Highlight styles for input boxes */
-.highlight-bias {
-  border: 2px solid green;
-  background-color: #e6ffe6; /* Light green background */
-}
-
-/* Highlight styles for graphs */
-plot-bias.highlight-bias {
-  border: 2px solid green;
 }

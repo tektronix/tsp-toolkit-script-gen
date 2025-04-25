@@ -1,9 +1,12 @@
 <div
   class="component-box"
   [ngClass]="{ active: isActive }"
-  (click)="toggleActive()"
+  [style.border]="isActive ? '1px solid ' + color : null"
+  [style.background-color]="isActive ? 'var(--vscode-activityErrorBadge-foreground)' : null"
 >
-  <div class="expander">
+  <div class="expander"
+    [style.background-color]="isActive ? 'var(--vscode-activityBar-background)' : 'transparent'"
+    >
     <div style="display: flex">
       <mat-icon (click)="toggleBiasChannel()" class="h3">
         {{ isBiasChanExpanded ? "expand_more" : "chevron_right" }}

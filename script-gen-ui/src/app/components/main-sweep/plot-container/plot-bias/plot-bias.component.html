@@ -1,6 +1,13 @@
 <div>
-  <div class="plot-item">
-    <div class="plot-info">
+  <div
+    class="plot-item"
+    [ngStyle]="{
+      border: isActive
+        ? '1px solid ' + activeStyle.backgroundColor
+        : '1px solid var(--vscode-editorWidget-border)'
+        }"
+    >
+    <div class="plot-info" [ngStyle]="activeStyle">
       <p>Name: <strong>{{ chanName }}</strong></p>
       <span class="vertical-line"></span>
       <p> ID: <strong>{{ deviceID }}</strong></p>

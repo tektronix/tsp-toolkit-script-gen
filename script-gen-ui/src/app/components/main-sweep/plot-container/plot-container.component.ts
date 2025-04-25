@@ -28,6 +28,7 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
   @Input() sweepGlobalParameters: SweepGlobalParameters | undefined;
 
+  @Input() colorMap: Map<string, string> = new Map(); // Accept colorMap from MainSweepComponent
   @Input() activeComponent: 'bias' | 'step' | 'sweep' | null = null; // Accept active component
   @Input() activeIndex: number | null = null; // Accept active index
 
@@ -161,4 +162,17 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
     });
   }
 
+  getColor(uuid: string): string {
+    return this.colorMap.get(uuid) || 'gray'; // Retrieve color from colorMap
+  }
+
+  getActiveStyle(uuid: string, componentType: 'bias' | 'step' | 'sweep', index: number): any {
+    const isActive = this.activeComponent === componentType && this.activeIndex === index;
+    const backgroundColor = this.colorMap.get(uuid) || 'var(--vscode-activityBar-border)';
+
+    return {
+      backgroundColor: isActive ? backgroundColor : 'var(--vscode-activityBar-border)',
+      color: isActive ? 'black' : 'white',
+    };
+  }
 }

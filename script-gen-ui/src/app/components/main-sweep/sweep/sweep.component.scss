@@ -70,17 +70,17 @@
   }
 
   .expander {
-    border-radius: 5px;
     display: flex;
+    border-radius: 7px;
     justify-content: space-between;
-    // background-color: var(--vscode-input-background);
     color: var(--vscode-editor-foreground);
     border-bottom: 1px solid var(--vscode-editorWidget-border);
-    // border: 1px solid var(--vscode-editorWidget-border);
-    // border-radius: 10px;
     padding-left: 10px;
     padding-right: 10px;
     font-size: smaller;
+    // background-color: var(--vscode-activityErrorBadge-foreground);
+    // border-top-left-radius: 12px;
+    // border-top-right-radius: 12px;
   }
 
   .button-icon {
@@ -95,4 +95,5 @@
     display: flex;
     margin-top: 8px;
     margin-bottom: 5px;
+    padding-right: 5px;
   }

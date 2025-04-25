@@ -27,7 +27,7 @@ export class BiasComponent {
   deviceID = '';
   uuid = '';
   dropdownDeviceList: string[] = [];
-  isActive: boolean = false;
+  @Input() isActive: boolean = false;
 
   toggleActive() {
     this.isActive = !this.isActive;
@@ -55,6 +55,13 @@ export class BiasComponent {
     oldChanId: string;
     newChanId: string;
   }>();
+
+  @Input() color: string = '';
+  isFocused: boolean = false;
+
+  toggleFocus(state: boolean): void {
+    this.isFocused = state;
+  }
 
   constructor() {}
 

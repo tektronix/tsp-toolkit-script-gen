@@ -53,6 +53,18 @@ export class SweepComponent {
     newChanId: string;
   }>();
 
+  @Input() isActive: boolean = false;
+  @Input() color: string = '';
+  isFocused: boolean = false;
+
+  toggleFocus(state: boolean): void {
+    this.isFocused = state;
+  }
+
+  toggleActive() {
+    this.isActive = !this.isActive;
+  }
+
   expandedSweepChannels: { [key: string]: boolean } = {};
 
   constructor() {}

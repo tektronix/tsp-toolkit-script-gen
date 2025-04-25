@@ -18,6 +18,10 @@ export class PlotSweepComponent implements AfterViewInit{
   @Input() plotDataX: number[] = [];
   @Input() plotConfig: any;
 
+  @Input() isActive: boolean = false;
+  @Input() activeStyle: any = {}; // Accept activeStyle as an input
+  @Input() color: string = ''; // Accept color as an input
+
   sweepDivID:string = '';
 
   commonChanAttributes: CommonChanAttributes | undefined;
@@ -32,7 +36,7 @@ export class PlotSweepComponent implements AfterViewInit{
   stop: ParameterFloat | undefined;
   style: ParameterString | undefined;
 
-  plotLayout =  {
+  plotLayout = {
     xaxis: {
       visible: true,
       ticksuffix: ' s',
@@ -55,12 +59,31 @@ export class PlotSweepComponent implements AfterViewInit{
       griddash: 'dot',
       type: 'linear',
       position: 20,
+      linewidth: 1
     },
+    xaxis2: {
+      visible: true,
+       rangemode: 'nonnegative',
+       dtick: 1,
+       tick0: 0,
+       showticklabels: false,
+       showline: true,
+       layer: 'below traces',
+       zeroline: false,
+       zerolinecolor: 'gray',
+       zerolinewidth: 1,
+       showgrid: false,
+       type: 'linear',
+       position: 1,
+       overlaying: 'x',
+       side: 'top',
+      tickprefix: 'm',
+      linewidth: 1
+     },
     yaxis: {
       visible: true,
-      ticksuffix: ' V',
       range: [0, 1],
-      tickfont: { family: 'Times New Roman', color: 'white' },
+      tickfont: { family: 'Times New Roman', color: 'white', size: 9 },
       dtick: 0.25,
       tick0: 0,
       tickwidth: 0,
@@ -75,30 +98,15 @@ export class PlotSweepComponent implements AfterViewInit{
       griddash: 'dot',
     },
     yaxis2: {
-      title: {
-        // text: '0.25V/div',
-        font: {color: 'white', size: 9, family: 'Times New Roman'}
-      },
       tickfont: {family: 'Times New Roman', color: 'white', size: 9},
       anchor: 'x',
       overlaying: 'y',
       side: 'left',
       position: -3,
-      showline: false,
-      showlegend: false,
       showticklabels: true,
-      zerolinewidth: 0,
-      showgrid: true,
-      gridcolor: 'lightgrey',
-      gridwidth: 0.3,
-      type: 'linear',
-      griddash: 'dot',
-      // position: 20,
       visible: true,
       ticksuffix: ' V',
-      range: [0, 1], // Adjust the range as needed
-      separatethousands: false,
-      // tickfont: { family: 'Times New Roman', color: 'white' },
+      range: [0, 1],
       dtick: 1,
       tick0: 0,
       showtickprefix: 'all',
@@ -106,14 +114,10 @@ export class PlotSweepComponent implements AfterViewInit{
       tickwidth: 0,
       linecolor: 'black',
       linewidth: 1,
-      layer: 'below traces',
-
     },
-    // grid: {rows: 1, columns: 1, pattern: 'independent'},
     border_radius: 10,
     paper_bgcolor: 'black',
     plot_bgcolor: 'black',
-    // border_radius: 10,
     hovermode: 'closest',
     dragmode: false,
     autosize: false,
@@ -124,21 +128,7 @@ export class PlotSweepComponent implements AfterViewInit{
       b: 17,
       t: 10,
       pad: 4,
-    },
-    shapes: [
-      {
-        type: 'line',
-        x0: 0, // Start of the line on the x-axis
-        x1: 10, // End of the line on the x-axis
-        y0: 1, // Y-axis value where the line starts
-        y1: 1, // Y-axis value where the line ends (same as y0 for a horizontal line)
-        line: {
-          color: 'grey', // Color of the line
-          width: 2, // Thickness of the line
-          dash: 'solid', // Line style: 'solid', 'dot', 'dash', etc.
-        },
-      },
-    ],
+    }
   };
 
   plotData1 = { x: [0],
@@ -146,13 +136,14 @@ export class PlotSweepComponent implements AfterViewInit{
     mode: 'lines',
     line: {
       width: 2,
-      color: '#C95B66',
+      color: this.color,
       shape: 'hv'
     },
   };
   plotData2 = {  x: [],
     y: [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2],
     yaxis: 'y2',
+    xaxis: 'x2'
   };
   private plotData = [this.plotData1, this.plotData2];
 
@@ -162,6 +153,8 @@ export class PlotSweepComponent implements AfterViewInit{
         this.sweepChannel.start_stop_channel.common_chan_attributes;
 
       this.chanName = this.commonChanAttributes.chan_name;
+      this.deviceID = this.commonChanAttributes.device_id;
+      console.log("device_id, channame", this.deviceID, this.chanName);
       this.sourceFunction = this.commonChanAttributes.source_function;
       this.sourceRange = this.commonChanAttributes.source_range;
       this.measFunction = this.commonChanAttributes.meas_function;
@@ -176,12 +169,11 @@ export class PlotSweepComponent implements AfterViewInit{
     console.log(this.plotDataX, this.plotData);
     this.plotData1.x = this.plotDataX;
     const stepSize = (1 - 0) / (10 - 1);
-        const sweepValues = Array.from({ length: 10 }, (_, i) => 0 + i * stepSize);
-        this.plotData1.y = Array.from({ length: 10 }, () => sweepValues).flat();
-        this.plotData1.x = Array.from({ length: 10 }, (_, i) => Array.from({ length: 10 }, (_, j) => i + j / 10)).flat();
-        // Plotly.update(id, [plot_data], layout);
-    // this.plotData1.y = [0,0,0,0,0,0,0,0,0,0,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.25,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,0.75,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2];
-    // Plotly.newPlot('divSweep', this.plotData, this.plotLayout, this.plotConfig);
+    const sweepValues = Array.from({ length: 10 }, (_, i) => 0 + i * stepSize);
+    this.plotData1.y = Array.from({ length: 10 }, () => sweepValues).flat();
+    this.plotData1.x = Array.from({ length: 10 }, (_, i) => Array.from({ length: 10 }, (_, j) => i + j / 10)).flat();
+    this.plotData1.line.color = this.color;
+    this.updatePlotLayout();
   }
 
   ngAfterViewInit(): void{
@@ -189,5 +181,21 @@ export class PlotSweepComponent implements AfterViewInit{
       Plotly.newPlot(this.sweepDivID, this.plotData, this.plotLayout, this.plotConfig);
       console.log('sweep data', this.plotData, this.plotLayout, this.plotConfig);
     }
+  }
+
+  private updatePlotLayout(): void {
+    if (this.sourceFunction) {
+      this.plotLayout.yaxis2.ticksuffix = this.sourceFunction.value === 'Voltage' ? ' V' : ' A';
+    }
+
+    // if (this.sourceRange) {
+    //   const maxRange = parseFloat(this.sourceRange.value);
+    //   this.plotLayout.yaxis.range = [0, maxRange];
+    //   this.plotLayout.yaxis2.range = [0, maxRange];
+    //   this.plotLayout.yaxis2.dtick = maxRange;
+
+    //   const dtick = maxRange / 4;
+    //   this.plotLayout.yaxis.dtick = dtick;
+    // }
   }
 }

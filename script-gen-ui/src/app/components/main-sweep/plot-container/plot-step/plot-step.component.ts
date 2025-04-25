@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { AfterViewInit, Component, Input } from '@angular/core';
 import { StepChannel } from '../../../../model/chan_data/stepChannel';
 import { ChannelRange } from '../../../../model/chan_data/channelRange';
 import { ParameterFloat, ParameterInt, ParameterString } from '../../../../model/sweep_data/TimingConfig';
@@ -12,7 +12,7 @@ import * as Plotly from 'plotly.js-dist';
   templateUrl: './plot-step.component.html',
   styleUrl: './plot-step.component.scss'
 })
-export class PlotStepComponent {
+export class PlotStepComponent implements AfterViewInit{
   @Input() stepChannel: StepChannel | undefined;
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
 
@@ -20,6 +20,10 @@ export class PlotStepComponent {
   // @Input() plotLayout: any;
   @Input() plotDataX: number[] = [];
   @Input() plotConfig: any;
+
+  @Input() isActive: boolean = false;
+  @Input() activeStyle: any = {}; // Accept activeStyle as an input
+  @Input() color: string = ''; // Accept color as an input
 
   commonChanAttributes: CommonChanAttributes | undefined;
   chanName = 'step1';
@@ -43,7 +47,7 @@ export class PlotStepComponent {
       ticksuffix: ' s',
       rangemode: 'nonnegative',
       separatethousands: false,
-      tickfont: { family: 'Times New Roman', color: 'white', size: 9},
+      tickfont: { family: 'Times New Roman', color: 'white', size: 9 },
       dtick: 1,
       tick0: 0,
       showtickprefix: 'none',
@@ -60,12 +64,31 @@ export class PlotStepComponent {
       griddash: 'dot',
       type: 'linear',
       position: 20,
+      linewidth: 1
     },
+    xaxis2: {
+      visible: true,
+       rangemode: 'nonnegative',
+       dtick: 1,
+       tick0: 0,
+       showticklabels: false,
+       showline: true,
+       layer: 'below traces',
+       zeroline: false,
+       zerolinecolor: 'gray',
+       zerolinewidth: 1,
+       showgrid: false,
+       type: 'linear',
+       position: 1,
+       overlaying: 'x',
+       side: 'top',
+      tickprefix: 'm',
+      linewidth: 1
+     },
     yaxis: {
       visible: true,
-      ticksuffix: ' V',
       range: [0, 1],
-      tickfont: { family: 'Times New Roman', color: 'white' },
+      tickfont: { family: 'Times New Roman', color: 'white', size: 9 },
       dtick: 0.25,
       tick0: 0,
       tickwidth: 0,
@@ -80,30 +103,15 @@ export class PlotStepComponent {
       griddash: 'dot',
     },
     yaxis2: {
-      title: {
-        // text: '0.25V/div',
-        font: {color: 'white', size: 9, family: 'Times New Roman'}
-      },
       tickfont: {family: 'Times New Roman', color: 'white', size: 9},
       anchor: 'x',
       overlaying: 'y',
       side: 'left',
       position: -3,
-      showline: false,
-      showlegend: false,
       showticklabels: true,
-      zerolinewidth: 0,
-      showgrid: true,
-      gridcolor: 'lightgrey',
-      gridwidth: 0.3,
-      type: 'linear',
-      griddash: 'dot',
-      // position: 20,
       visible: true,
       ticksuffix: ' V',
-      range: [0, 1], // Adjust the range as needed
-      separatethousands: false,
-      // tickfont: { family: 'Times New Roman', color: 'white' },
+      range: [0, 1],
       dtick: 1,
       tick0: 0,
       showtickprefix: 'all',
@@ -111,14 +119,10 @@ export class PlotStepComponent {
       tickwidth: 0,
       linecolor: 'black',
       linewidth: 1,
-      layer: 'below traces',
-
     },
-    // grid: {rows: 1, columns: 1, pattern: 'independent'},
     border_radius: 10,
     paper_bgcolor: 'black',
     plot_bgcolor: 'black',
-    // borderradius: 10,
     hovermode: 'closest',
     dragmode: false,
     autosize: false,
@@ -129,21 +133,7 @@ export class PlotStepComponent {
       b: 17,
       t: 10,
       pad: 4,
-    },
-    shapes: [
-      {
-        type: 'line',
-        x0: 0, // Start of the line on the x-axis
-        x1: 10, // End of the line on the x-axis
-        y0: 1, // Y-axis value where the line starts
-        y1: 1, // Y-axis value where the line ends (same as y0 for a horizontal line)
-        line: {
-          color: 'grey', // Color of the line
-          width: 2, // Thickness of the line
-          dash: 'solid', // Line style: 'solid', 'dot', 'dash', etc.
-        },
-      },
-    ],
+    }
   };
 
   plotData1 = { x: [0],
@@ -151,13 +141,14 @@ export class PlotStepComponent {
     mode: 'lines',
     line: {
       width: 2,
-      color: '#7FBDC6',
+      color: this.color,
       shape: 'hv'
     },
   };
   plotData2 = {  x: [],
     y: [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2],
     yaxis: 'y2',
+    xaxis: 'x2'
   };
   private plotData = [this.plotData1, this.plotData2];
 
@@ -168,6 +159,7 @@ export class PlotStepComponent {
 
       this.chanName = this.commonChanAttributes.chan_name;
       this.deviceID = this.commonChanAttributes.device_id;
+      console.log("device_id, channame", this.deviceID, this.chanName);
       this.sourceFunction = this.commonChanAttributes.source_function;
       this.measFunction = this.commonChanAttributes.meas_function;
       this.sourceRange = this.commonChanAttributes.source_range;
@@ -180,18 +172,20 @@ export class PlotStepComponent {
       this.stepPoints = this.stepGlobalParameters.step_points;
       this.stepToSweepDelay = this.stepGlobalParameters.step_to_sweep_delay;
 
-      // if (this.start?.value !== undefined && this.stop?.value !== undefined && this.stepPoints?.value !== undefined) {
-      //   const stepSize = (this.stop.value - this.start.value) / (this.stepPoints.value - 1);
-      //   this.plotDataX = Array.from({ length: this.stepPoints.value }, (_, i) => i).concat(this.stepPoints.value);
-      //   this.plotData1.y = Array.from({ length: this.stepPoints?.value ?? 0 }, (_, i) => (this.start?.value ?? 0) + i * stepSize).concat(this.stop?.value ?? 0);
-      // }
-      // // this.generateStepData(this.stepPoints.value, this.start.value, this.stop.value, this.plotData1);
-      // console.log("after",this.plotDataX, this.plotData, this.stepPoints);
     }
     this.plotData1.x = this.plotDataX;
     this.plotData1.y = [0, 0.111, 0.222, 0.333, 0.444, 0.555, 0.666, 0.777, 0.888, 0.999, 1];
+    this.plotData1.line.color = this.color;
+    this.updatePlotLayout();
     console.log('after loop', this.plotDataX, this.plotData, this.stepPoints);
-    Plotly.newPlot('divStep', this.plotData, this.plotLayout, this.plotConfig);
+    // Plotly.newPlot('divStep', this.plotData, this.plotLayout, this.plotConfig);
+  }
+
+  ngAfterViewInit(): void{
+    if (this.plotDataX && this.plotConfig) {
+      Plotly.newPlot('divStep', this.plotData, this.plotLayout, this.plotConfig);
+      console.log('step data', this.plotData, this.plotLayout, this.plotConfig);
+    }
   }
 
   generateStepData(num_steps: number, start: number, stop: number, plot_data: any){
@@ -200,5 +194,21 @@ export class PlotStepComponent {
     plot_data.y = Array.from({ length: num_steps }, (_, i) => start + i * stepSize).concat(stop);
     console.log('generated step data:', plot_data);
     // Plotly.update(id, [plot_data], layout);
+  }
+
+  private updatePlotLayout(): void {
+    if (this.sourceFunction) {
+      this.plotLayout.yaxis2.ticksuffix = this.sourceFunction.value === 'Voltage' ? ' V' : ' A';
+    }
+
+    if (this.sourceRange) {
+      const maxRange = parseFloat(this.sourceRange.value);
+      this.plotLayout.yaxis.range = [0, maxRange];
+      this.plotLayout.yaxis2.range = [0, maxRange];
+      this.plotLayout.yaxis2.dtick = maxRange;
+
+      const dtick = maxRange / 4;
+      this.plotLayout.yaxis.dtick = dtick;
+    }
   }
 }

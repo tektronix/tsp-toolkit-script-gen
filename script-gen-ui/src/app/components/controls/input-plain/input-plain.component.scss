@@ -22,3 +22,22 @@
   border-radius: 10px;
   padding: 4px;
 }
+
+.input-plain {
+  display: flex;
+  flex-direction: column;
+  // width: 100%;
+}
+
+.input-plain label {
+  margin-bottom: 5px;
+}
+
+.input-plain select {
+  // width: 100%;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: 5px;
+  padding: 4px;
+}

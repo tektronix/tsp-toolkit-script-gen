@@ -18,6 +18,17 @@ export class PlotBiasComponent implements AfterViewInit {
   @Input() plotConfig: any;
   plotDivID: string = '';
 
+  @Input() isActive: boolean = false;
+  @Input() activeStyle: any = {}; // Accept activeStyle as an input
+  @Input() color: string = ''; // Accept color as an input
+  private mutationObserver: MutationObserver | undefined;
+
+  defaultStyle = {
+    backgroundColor: 'transparent',
+    color: 'white',
+    fontWeight: 'normal',
+  };
+
   plotLayout =  {
     xaxis: {
       visible: true,
@@ -41,10 +52,28 @@ export class PlotBiasComponent implements AfterViewInit {
       griddash: 'dot',
       type: 'linear',
       position: 20,
+      linewidth: 1
     },
+    xaxis2: {
+      visible: true,
+       rangemode: 'nonnegative',
+       dtick: 1,
+       tick0: 0,
+       showticklabels: false,
+       showline: true,
+       layer: 'below traces',
+       zeroline: false,
+       zerolinecolor: 'gray',
+       zerolinewidth: 1,
+       showgrid: false,
+       type: 'linear',
+       position: 1,
+       overlaying: 'x',
+       side: 'top',
+      linewidth: 1
+     },
     yaxis: {
       visible: true,
-      ticksuffix: ' V',
       range: [0, 2],
       tickfont: { family: 'Times New Roman', color: 'white', size: 9 },
       dtick: 0.5,
@@ -61,45 +90,26 @@ export class PlotBiasComponent implements AfterViewInit {
       griddash: 'dot',
     },
     yaxis2: {
-      title: {
-        // text: '0.25V/div',
-        font: {color: 'white', size: 9, family: 'Times New Roman'}
-      },
       tickfont: {family: 'Times New Roman', color: 'white', size: 9},
       anchor: 'x',
       overlaying: 'y',
       side: 'left',
       position: -3,
-      showline: false,
-      showlegend: false,
       showticklabels: true,
-      zerolinewidth: 0,
-      showgrid: true,
-      gridcolor: 'lightgrey',
-      gridwidth: 0.3,
-      type: 'linear',
-      griddash: 'dot',
-      // position: 20,
       visible: true,
       ticksuffix: ' V',
-      range: [0, 2], // Adjust the range as needed
-      separatethousands: false,
-      // tickfont: { family: 'Times New Roman', color: 'white' },
+      range: [0, 2],
       dtick: 2,
       tick0: 0,
       showtickprefix: 'all',
       showticksuffix: 'all',
       tickwidth: 0,
-      linecolor: 'black',
+      linecolor: 'transparent',
       linewidth: 1,
-      layer: 'below traces',
-
     },
-    // grid: {rows: 1, columns: 1, pattern: 'independent'},
     border_radius: 10,
     paper_bgcolor: 'black',
     plot_bgcolor: 'black',
-    // border_radius: 10,
     hovermode: 'closest',
     dragmode: false,
     autosize: false,
@@ -110,21 +120,7 @@ export class PlotBiasComponent implements AfterViewInit {
       b: 17,
       t: 10,
       pad: 4,
-    },
-    shapes: [
-      {
-        type: 'line',
-        x0: 0, // Start of the line on the x-axis
-        x1: 10, // End of the line on the x-axis
-        y0: 2, // Y-axis value where the line starts
-        y1: 2, // Y-axis value where the line ends (same as y0 for a horizontal line)
-        line: {
-          color: 'grey', // Color of the line
-          width: 2, // Thickness of the line
-          dash: 'solid', // Line style: 'solid', 'dot', 'dash', etc.
-        },
-      },
-    ],
+    }
   };
 
   plotData1 = { x: [0],
@@ -132,16 +128,18 @@ export class PlotBiasComponent implements AfterViewInit {
     mode: 'lines',
     line: {
       width: 2,
-      color: 'yellow',
+      color: this.color,
     },
   };
+
   plotData2 = {  x: [],
     y: [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2],
     yaxis: 'y2',
+    xaxis: 'x2'
   };
   private plotData = [this.plotData1, this.plotData2];
 
-  chanName = 'Bias1';
+  chanName = '';
   deviceID = '';
   sourceFunction: ParameterString | undefined;
   sourceRange: ChannelRange | undefined;
@@ -167,6 +165,12 @@ export class PlotBiasComponent implements AfterViewInit {
     }
     // console.log(this.plotDataX, this.plotData);
     this.plotData1.x = this.plotDataX;
+    this.updatePlotLayout();
+    this.plotData1.line.color = this.color;
+
+    this.initializePlot();
+    this.observeThemeChanges();
+
     // Plotly.newPlot(this.plotDivID, this.plotData, this.plotLayout, this.plotConfig);
     console.log('bias data', this.plotDivID, this.plotData, this.plotLayout, this.plotConfig);
   }
@@ -176,5 +180,90 @@ export class PlotBiasComponent implements AfterViewInit {
       Plotly.newPlot(this.plotDivID, this.plotData, this.plotLayout, this.plotConfig);
       console.log('bias data', this.plotData, this.plotLayout, this.plotConfig);
     }
+    this.renderPlot();
+  }
+
+  ngOnDestroy(): void {
+    // Disconnect the MutationObserver when the component is destroyed
+    if (this.mutationObserver) {
+      this.mutationObserver.disconnect();
+    }
+  }
+
+  private updatePlotLayout(): void {
+    if (this.sourceFunction) {
+      this.plotLayout.yaxis2.ticksuffix = this.sourceFunction.value === 'Voltage' ? ' V' : ' A';
+    }
+
+    if (this.sourceRange) {
+      const maxRange = parseFloat(this.sourceRange.value);
+      this.plotLayout.yaxis.range = [0, maxRange];
+      this.plotLayout.yaxis2.range = [0, maxRange];
+      this.plotLayout.yaxis2.dtick = maxRange;
+
+      const dtick = maxRange / 4;
+      this.plotLayout.yaxis.dtick = dtick;
+    }
+  }
+
+  getCssVariableValue(variableName: string): string {
+    const root = document.documentElement;
+    const value = getComputedStyle(root).getPropertyValue(variableName).trim();
+    console.log(`CSS variable ${variableName}:`, value);
+    return value;
+  }
+
+  rgbToHex(rgb: string): string {
+    const match = rgb.match(/\d+/g);
+    if (!match) return rgb;
+
+    const [r, g, b] = match.map(Number);
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+  }
+
+  private initializePlot(): void {
+    if (this.biasChannel) {
+      this.plotDivID = `plotDiv${this.biasChannel.common_chan_attributes.chan_name}`;
+    }
+
+    const backgroundColor = this.getCssVariableValue('--vscode-editor-background');
+    const backgroundColorHex = backgroundColor.startsWith('rgb')
+      ? this.rgbToHex(backgroundColor)
+      : backgroundColor;
+
+    this.plotLayout.paper_bgcolor = backgroundColorHex;
+    this.plotLayout.plot_bgcolor = backgroundColorHex;
+
+    console.log('Initial background color:', backgroundColorHex);
+  }
+
+  private renderPlot(): void {
+    if (this.plotDataX && this.plotConfig) {
+      Plotly.newPlot(this.plotDivID, this.plotData, this.plotLayout, this.plotConfig);
+    }
+  }
+
+  private observeThemeChanges(): void {
+    const root = document.documentElement;
+
+    this.mutationObserver = new MutationObserver(() => {
+      const backgroundColor = this.getCssVariableValue('--vscode-editor-background');
+      const backgroundColorHex = backgroundColor.startsWith('rgb')
+        ? this.rgbToHex(backgroundColor)
+        : backgroundColor;
+
+      this.plotLayout.paper_bgcolor = backgroundColorHex;
+      this.plotLayout.plot_bgcolor = backgroundColorHex;
+
+      console.log('Theme changed, new background color:', backgroundColorHex);
+
+      // Re-render the plot with the updated background color
+      this.renderPlot();
+    });
+
+    this.mutationObserver.observe(root, {
+      attributes: true,
+      attributeFilter: ['style'], // Listen for changes to the "style" attribute
+    });
   }
 }

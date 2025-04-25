@@ -8,13 +8,13 @@
 }
 
 .plot-item {
-  border-left: 1px solid #C95B66;
+  // border-left: 1px solid #C95B66;
   border-radius: 10px;
   margin-bottom: 10px;
   padding-bottom: 7px;
   background-color: black;
-  border-right: 1px solid #C95B66;
-  border-bottom: 1px solid #C95B66;
+  // border-right: 1px solid #C95B66;
+  // border-bottom: 1px solid #C95B66;
 }
 
 .plot-info {
@@ -22,9 +22,9 @@
   font-size: 14px;
   color:black;
   display: flex;
-  background-color: #C95B66;
+  background-color: transparent;
   // background-color: #C95B66;
-  border: 5px #C95B66;
+  // border: 5px #C95B66;
   padding: 5px;
   border-top-left-radius: 10px;
   border-top-right-radius: 10px;

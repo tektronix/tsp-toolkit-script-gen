@@ -4,7 +4,7 @@ use super::{
     data_report::DataReportModel, finalize::FinalizeModel, function::FunctionModel,
     initialize::InitializeModel, sweep::SweepModel,
 };
-use crate::catalog::Catalog;
+use crate::{catalog::Catalog, model::sweep_data::sweep_config::SweepConfig};
 use script_aggregator::script_buffer::ScriptBuffer;
 
 /// Creates and manages the individual functions that make up the script.
@@ -37,11 +37,11 @@ impl ScriptModel {
     }
 
     /// Converts the script chunks to a script including ordering, indent and substitution.
-    pub fn to_script(&mut self) {
+    pub fn to_script(&mut self, sweep_config: &SweepConfig) {
         let mut script_buffer = ScriptBuffer::new();
         script_buffer.set_auto_indent(true);
         for chunk in self.chunks.iter_mut() {
-            chunk.to_script(&mut script_buffer);
+            chunk.to_script(sweep_config, &mut script_buffer);
         }
         // println!("{}", script_buffer.to_string());
         let file = File::create("C:\\Trebuchet\\Snippet.txt");

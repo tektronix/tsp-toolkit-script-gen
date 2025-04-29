@@ -1,18 +1,21 @@
+import { CommonModule } from '@angular/common';
 import {
   Component,
   EventEmitter,
   forwardRef,
-  input,
   Input,
-  Output,
+  Output, OnInit,
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { BrowserModule } from '@angular/platform-browser';
 
 @Component({
-  selector: 'input-numeric',
+  selector: 'app-input-numeric',
   templateUrl: './input-numeric.component.html',
   styleUrl: './input-numeric.component.scss',
-  standalone: false,
+  standalone: true,
+  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -21,17 +24,16 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
     },
   ],
 })
-export class InputNumericComponent implements ControlValueAccessor {
+export class InputNumericComponent implements ControlValueAccessor, OnInit {
   @Input() label: string | undefined;
 
   @Output() inputChange = new EventEmitter<number>();
 
   private _value: number | undefined;
-  private _displayValue: string = '';
-  private onChange: ((value: any) => void) | undefined;
+  private onChange: ((value: number) => void) | undefined;
 
   ngOnInit(): void {
-    //
+    console.log('InputNumericComponent initialized with label:', this.label);
   }
 
   get displayValue(): string {
@@ -56,19 +58,21 @@ export class InputNumericComponent implements ControlValueAccessor {
     }
   }
 
-  writeValue(value: any): void {
+  writeValue(value: number): void {
     if (value !== undefined) {
       this._value = value;
     }
   }
 
-  registerOnChange(fn: any): void {
+  registerOnChange(fn: ((value: number) => void) | undefined): void {
     this.onChange = fn;
   }
 
-  registerOnTouched(fn: any): void {}
+  registerOnTouched(): void {
+    console.log('InputNumericComponent touched');
+  }
 
-  setDisabledState?(isDisabled: boolean): void {
+  setDisabledState?(): void {
     // Handle the disabled state if needed
   }
 

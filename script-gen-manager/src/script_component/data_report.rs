@@ -1,5 +1,7 @@
 use std::{any::Any, collections::HashMap};
 
+use crate::model::sweep_data::sweep_config::SweepConfig;
+
 use super::function::FunctionModel;
 use script_aggregator::script_buffer::ScriptBuffer;
 use xml_handler::group::Group;
@@ -36,7 +38,7 @@ impl FunctionModel for DataReportModel {
         &self.metadata
     }
 
-    fn to_script(&mut self, script_buffer: &mut ScriptBuffer) {
+    fn to_script(&mut self, sweep_config: &SweepConfig, script_buffer: &mut ScriptBuffer) {
         let buffers = String::from("{}");
         let buffer_names = String::from("{}");
         let buffer_smu_names = String::from("{}");

@@ -1,28 +1,37 @@
-import { AfterViewInit, Component, Input } from '@angular/core';
+import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
 import { SweepChannel } from '../../../../model/chan_data/sweepChannel';
 import { CommonChanAttributes } from '../../../../model/chan_data/defaultChannel';
 import { ChannelRange } from '../../../../model/chan_data/channelRange';
-import { ParameterFloat, ParameterString } from '../../../../model/sweep_data/TimingConfig';
+import { ParameterFloat, ParameterInt, ParameterString } from '../../../../model/sweep_data/TimingConfig';
 import * as Plotly from 'plotly.js-dist';
+import { StepGlobalParameters, SweepGlobalParameters } from '../../../../model/sweep_data/stepSweepConfig';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { BrowserModule } from '@angular/platform-browser';
 
 @Component({
-  selector: 'plot-sweep',
-  standalone: false,
+  selector: 'app-plot-sweep',
+  standalone: true,
+  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule],
   templateUrl: './plot-sweep.component.html',
   styleUrl: './plot-sweep.component.scss'
 })
-export class PlotSweepComponent implements AfterViewInit{
+export class PlotSweepComponent implements AfterViewInit, OnInit{
   @Input() sweepChannel: SweepChannel | undefined;
-   // @Input() plotData: any;
-  // @Input() plotLayout: any;
+  @Input() sweepGlobalParameters: SweepGlobalParameters | undefined;
+  @Input() stepGlobalParameters: StepGlobalParameters | undefined;
   @Input() plotDataX: number[] = [];
-  @Input() plotConfig: any;
+  @Input() plotConfig: { staticPlot: boolean; } | undefined;
 
-  @Input() isActive: boolean = false;
-  @Input() activeStyle: any = {}; // Accept activeStyle as an input
-  @Input() color: string = ''; // Accept color as an input
+  @Input() isActive = false;
+  @Input() activeStyle: {backgroundColor:string, color:string} = {
+    backgroundColor: '',
+    color: ''
+  };
+  @Input() color = '';
 
-  sweepDivID:string = '';
+  sweepDivID = '';
 
   commonChanAttributes: CommonChanAttributes | undefined;
   chanName = 'Sweep1';
@@ -35,6 +44,9 @@ export class PlotSweepComponent implements AfterViewInit{
   start: ParameterFloat | undefined;
   stop: ParameterFloat | undefined;
   style: ParameterString | undefined;
+
+  numPoints: ParameterInt | undefined;
+  numSteps: number | undefined;
 
   plotLayout = {
     xaxis: {
@@ -148,7 +160,7 @@ export class PlotSweepComponent implements AfterViewInit{
   private plotData = [this.plotData1, this.plotData2];
 
   ngOnInit() {
-    if (this.sweepChannel) {
+    if (this.sweepChannel && this.sweepGlobalParameters && this.stepGlobalParameters) {
       this.commonChanAttributes =
         this.sweepChannel.start_stop_channel.common_chan_attributes;
 
@@ -164,20 +176,61 @@ export class PlotSweepComponent implements AfterViewInit{
       this.stop = this.sweepChannel.start_stop_channel.stop;
       this.style = this.sweepChannel.start_stop_channel.style;
 
+      this.numPoints = this.sweepGlobalParameters?.sweep_points;
+      this.numSteps = this.stepGlobalParameters?.step_points.value; // Assuming step_points has a 'value' property containing the number of steps
+
       this.sweepDivID = this.commonChanAttributes.device_id;
     }
     console.log(this.plotDataX, this.plotData);
     this.plotData1.x = this.plotDataX;
-    const stepSize = (1 - 0) / (10 - 1);
-    const sweepValues = Array.from({ length: 10 }, (_, i) => 0 + i * stepSize);
-    this.plotData1.y = Array.from({ length: 10 }, () => sweepValues).flat();
-    this.plotData1.x = Array.from({ length: 10 }, (_, i) => Array.from({ length: 10 }, (_, j) => i + j / 10)).flat();
-    this.plotData1.line.color = this.color;
+    // this.numberOfSteps = this.stepGlobalParameters.step_points.value; // Assuming step_points has a 'value' property containing the number
+
+
+    this.sweepValues();
+    // const stepSize = this.numberOfSteps ?? 1; // Default to 1 if undefined
+    // const sweepValues = Array.from({ length: 10 }, (_, i) => 0 + i * stepSize);
+    // this.plotData1.y = Array.from({ length: 10 }, () => sweepValues).flat();
+    // this.plotData1.x = Array.from({ length: 10 }, (_, i) => Array.from({ length: 10 }, (_, j) => i + j / 10)).flat();
+    // this.plotData1.line.color = this.color;
+    // console.log('plot data', this.plotData1.x, this.plotData1.y, this.numberOfSteps, this.numPoints);
     this.updatePlotLayout();
+  }
+
+  sweepValues(){
+    if (this.start && this.stop && this.numSteps && this.numPoints) {
+      const numberOfPoints = this.numPoints.value; // Default to 10 if undefined
+      // const numberOfSteps = this.numberOfSteps; // Default to 10 if undefined
+      const startValue = this.start.value; // Assuming `start` has a `value` property
+      const stopValue = this.stop.value;   // Assuming `stop` has a `value` property
+
+      // Calculate the step size based on the range (stop - start) and the number of steps
+      const stepSize = (stopValue - startValue) / (numberOfPoints - 1);
+
+      // Generate y values starting from `startValue` and ending at `stopValue`
+      const sweepValues = Array.from(
+        { length: numberOfPoints },
+        (_, i) => startValue + i * stepSize
+      ).flat();
+
+      // Populate y data for the plot
+      this.plotData1.y = Array.from(
+        { length: this.numSteps },
+        () => sweepValues
+      ).flat();
+
+      this.plotData1.x = Array.from(
+        { length: this.numSteps },
+        (_, i) => Array.from(
+          { length: numberOfPoints },
+          (_, j) => i + j / numberOfPoints
+        )
+      ).flat();
+    }
   }
 
   ngAfterViewInit(): void{
     if (this.plotDataX && this.plotConfig) {
+      this.sweepValues();
       Plotly.newPlot(this.sweepDivID, this.plotData, this.plotLayout, this.plotConfig);
       console.log('sweep data', this.plotData, this.plotLayout, this.plotConfig);
     }

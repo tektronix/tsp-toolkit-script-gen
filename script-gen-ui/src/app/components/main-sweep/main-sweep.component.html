@@ -12,11 +12,9 @@
 
     <div class="expander">
       <div style="display: flex">
-        <h3 (click)="toggleBias()" class="h3">
-          <mat-icon>{{
-            isBiasExpanded ? "expand_more" : "chevron_right"
-          }}</mat-icon>
-        </h3>
+        <button (click)="toggleBias()" class="h3-button">
+          <mat-icon>{{ isBiasExpanded ? "expand_more" : "chevron_right" }}</mat-icon>
+        </button>
         <h3>Bias</h3>
       </div>
       <button class="button-icon" (click)="addBias()">
@@ -46,11 +44,9 @@
 
     <div class="expander">
       <div style="display: flex">
-        <h3 (click)="toggleStep()" class="h3">
-          <mat-icon>{{
-            isStepExpanded ? "expand_more" : "chevron_right"
-          }}</mat-icon>
-        </h3>
+        <button (click)="toggleStep()" class="h3-button">
+          <mat-icon>{{ isBiasExpanded ? "expand_more" : "chevron_right" }}</mat-icon>
+        </button>
         <h3>Step</h3>
       </div>
     </div>
@@ -75,11 +71,9 @@
 
     <div class="expander">
       <div style="display: flex">
-        <h3 (click)="toggleSweep()" class="h3">
-          <mat-icon>{{
-            isSweepExpanded ? "expand_more" : "chevron_right"
-          }}</mat-icon>
-        </h3>
+        <button (click)="toggleSweep()" class="h3-button">
+          <mat-icon>{{ isBiasExpanded ? "expand_more" : "chevron_right" }}</mat-icon>
+        </button>
         <h3>Sweep</h3>
       </div>
       <button class="button-icon" (click)="addSweep()">
@@ -89,21 +83,21 @@
     <div *ngIf="isSweepExpanded">
       <div class="input-group">
         <div class="numeric-control">
-          <input-numeric
+          <app-input-numeric
             [(ngModel)]="sweepPoints.value"
             [label]="'Number of Points'"
             *ngIf="sweepPoints"
             name="sweepPoints"
-          ></input-numeric>
+          ></app-input-numeric>
         </div>
         <div>
-          <input-plain
+          <app-input-plain
             [(ngModel)]="sweepTimePerPoint.value"
             [label]="'Time/Point'"
             [unit]="sweepTimePerPoint.unit"
             *ngIf="sweepTimePerPoint"
             name="sweepTimePerPoint"
-          ></input-plain>
+          ></app-input-plain>
         </div>
         <!-- <div>
         </div> -->
@@ -135,6 +129,8 @@
       [biasChannels]="biasChannels"
       [stepChannels]="stepChannels"
       [sweepChannels]="sweepChannels"
+      [stepGlobalParameters]="stepGlobalParameters"
+      [sweepGlobalParameters]="sweepGlobalParameters"
       [colorMap]="colorMap"
       [activeComponent]="activeComponent"
       [activeIndex]="activeIndex"

@@ -1,20 +1,20 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 @Component({
-  selector: 'expander',
+  selector: 'app-expander',
   templateUrl: './expander.component.html',
   styleUrl: './expander.component.scss',
-  standalone: false,
+
 })
 export class ExpanderComponent {
-  @Input() title: string = '';
-  @Input() buttonLabel: string = '';
-  @Input() isExpanded: boolean = false;
-  @Output() toggle = new EventEmitter<void>();
+  @Input() title = '';
+  @Input() buttonLabel = '';
+  @Input() isExpanded = false;
+  @Output() ExpToggle = new EventEmitter<void>();
   @Output() buttonClick = new EventEmitter<void>();
 
   onToggle() {
-    this.toggle.emit();
+    this.ExpToggle.emit();
   }
 
   onButtonClick() {

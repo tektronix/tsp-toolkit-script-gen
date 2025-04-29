@@ -1,11 +1,4 @@
 import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, Input, ViewChildren, QueryList } from '@angular/core';
-import {
-  ParameterFloat,
-  ParameterString,
-} from '../../../model/sweep_data/TimingConfig';
-import { ChannelRange } from '../../../model/chan_data/channelRange';
-import { PlotUtils } from './plot-utils';
-import * as Plotly from 'plotly.js-dist';
 import { BiasChannel } from '../../../model/chan_data/biasChannel';
 import { StepChannel } from '../../../model/chan_data/stepChannel';
 import { SweepChannel } from '../../../model/chan_data/sweepChannel';
@@ -13,12 +6,19 @@ import { StepGlobalParameters, SweepGlobalParameters } from '../../../model/swee
 import { PlotBiasComponent } from './plot-bias/plot-bias.component';
 import { PlotStepComponent } from './plot-step/plot-step.component';
 import { PlotSweepComponent } from './plot-sweep/plot-sweep.component';
+import { ParameterInt } from '../../../model/sweep_data/TimingConfig';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { BrowserModule } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-plot-container',
+  standalone: true,
+  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, PlotBiasComponent, PlotStepComponent, PlotSweepComponent],
   templateUrl: './plot-container.component.html',
   styleUrls: ['./plot-container.component.scss'],
-  standalone: false
+
 })
 export class PlotContainerComponent implements OnInit, AfterViewInit {
   @ViewChild('plotContainer', { static: false }) plotContainer!: ElementRef;
@@ -28,7 +28,7 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
   @Input() sweepGlobalParameters: SweepGlobalParameters | undefined;
 
-  @Input() colorMap: Map<string, string> = new Map(); // Accept colorMap from MainSweepComponent
+  @Input() colorMap = new Map<string, string>(); // Accept colorMap from MainSweepComponent
   @Input() activeComponent: 'bias' | 'step' | 'sweep' | null = null; // Accept active component
   @Input() activeIndex: number | null = null; // Accept active index
 
@@ -36,6 +36,7 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
   @ViewChildren(PlotStepComponent) plotStepComponents!: QueryList<PlotStepComponent>;
   @ViewChildren(PlotSweepComponent) plotSweepComponents!: QueryList<PlotSweepComponent>;
 
+  numberOfSteps: ParameterInt | undefined;
   plotDataX: number[] = [];
   plotLayout = {
     xaxis: {
@@ -143,11 +144,16 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
   };
   plotConfig: { staticPlot: boolean; } | undefined;
 
-  constructor() {}
+  // constructor() {}
 
   ngOnInit(): void {
     this.plotDataX = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     this.plotConfig = { staticPlot: true };
+
+    if (this.stepGlobalParameters) {
+      this.numberOfSteps = this.stepGlobalParameters.step_points; // Assuming step_points has a 'value' property containing the number
+    }
+
     console.log('Bias Channels:', this.biasChannels);
     console.log('Step Channels:', this.stepChannels);
     console.log('Sweep Channels:', this.sweepChannels);
@@ -166,7 +172,7 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
     return this.colorMap.get(uuid) || 'gray'; // Retrieve color from colorMap
   }
 
-  getActiveStyle(uuid: string, componentType: 'bias' | 'step' | 'sweep', index: number): any {
+  getActiveStyle(uuid: string, componentType: 'bias' | 'step' | 'sweep', index: number): {backgroundColor:string, color:string} {
     const isActive = this.activeComponent === componentType && this.activeIndex === index;
     const backgroundColor = this.colorMap.get(uuid) || 'var(--vscode-activityBar-border)';
 

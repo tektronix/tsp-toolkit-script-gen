@@ -3,7 +3,7 @@ import {
   Input,
   Output,
   EventEmitter,
-  SimpleChanges,
+  SimpleChanges, OnChanges,
 } from '@angular/core';
 import {
   ParameterInt,
@@ -15,15 +15,23 @@ import { StepChannel } from '../../../model/chan_data/stepChannel';
 import { CommonChanAttributes } from '../../../model/chan_data/defaultChannel';
 import { StepGlobalParameters } from '../../../model/sweep_data/stepSweepConfig';
 import { Device } from '../../../model/device_data/device';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { BrowserModule } from '@angular/platform-browser';
+import { DropdownComponent } from '../../controls/dropdown/dropdown.component';
+import { InputNumericComponent } from '../../controls/input-numeric/input-numeric.component';
+import { InputPlainComponent } from '../../controls/input-plain/input-plain.component';
+import { InputToggleComponent } from '../../controls/input-toggle/input-toggle.component';
 
 @Component({
   selector: 'app-step',
   templateUrl: './step.component.html',
   styleUrls: ['./step.component.scss'],
-  standalone: false,
-  // imports: [FormsModule]
+  standalone: true,
+  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, DropdownComponent, InputNumericComponent, InputPlainComponent, InputToggleComponent],
 })
-export class StepComponent {
+export class StepComponent implements OnChanges {
   commonChanAttributes: CommonChanAttributes | undefined;
   chanName = '';
   deviceID = '';
@@ -43,11 +51,11 @@ export class StepComponent {
   start: ParameterFloat | undefined;
   stop: ParameterFloat | undefined;
   style: ParameterString | undefined;
-  list: boolean = false;
+  list = false;
 
   @Input() stepChannel: StepChannel | undefined;
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
-  @Input() isStepExpanded: boolean = false;
+  @Input() isStepExpanded = false;
   @Input() deviceList: Device[] = [];
   @Output() emitStepData = new EventEmitter<StepChannel>();
   @Output() emitStepGlobalParameters = new EventEmitter<StepGlobalParameters>();
@@ -57,9 +65,9 @@ export class StepComponent {
     newChanId: string;
   }>();
 
-  @Input() isActive: boolean = false;
-  @Input() color: string = '';
-  isFocused: boolean = false;
+  @Input() isActive = false;
+  @Input() color = '';
+  isFocused = false;
 
   toggleFocus(state: boolean): void {
     this.isFocused = state;
@@ -69,9 +77,9 @@ export class StepComponent {
     this.isActive = !this.isActive;
   }
 
-  expandedStepChannels: { [key: string]: boolean } = {};
+  expandedStepChannels: Record<string, boolean> = {};
 
-  constructor() {}
+  // constructor() {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['stepChannel']) {
@@ -109,8 +117,6 @@ export class StepComponent {
           .map((device) => device._id);
         this.dropdownDeviceList.push(this.deviceID); // Add the current device ID to the list
       }
-
-      this.updatePlot();
     }
   }
 
@@ -129,25 +135,25 @@ export class StepComponent {
           uuid: this.uuid,
           chan_name: this.chanName,
           device_id: this.deviceID,
-          source_function: this.sourceFunction,
-          meas_function: this.measFunction,
-          source_range: this.sourceRange,
-          meas_range: this.measRange,
-          source_limiti: this.sourceLimitI,
-          source_limitv: this.sourceLimitV,
+          source_function: this.sourceFunction!,
+          meas_function: this.measFunction!,
+          source_range: this.sourceRange!,
+          meas_range: this.measRange!,
+          source_limiti: this.sourceLimitI!,
+          source_limitv: this.sourceLimitV!,
           sense_mode: this.senseMode,
         },
-        start: this.start,
-        stop: this.stop,
-        style: this.style,
+        start: this.start!,
+        stop: this.stop!,
+        style: this.style!,
       },
     });
   }
 
   getStepGlobalParamsFromComponent(): StepGlobalParameters {
     return new StepGlobalParameters({
-      step_points: this.stepPoints,
-      step_to_sweep_delay: this.stepToSweepDelay,
+      step_points: this.stepPoints!,
+      step_to_sweep_delay: this.stepToSweepDelay!,
       list_step: this.list,
     });
   }
@@ -157,11 +163,11 @@ export class StepComponent {
   }
 
   onEnter() {
-    this.updatePlot();
     this.submitStepData();
   }
 
   onToggle(selectedOption: string) {
+    console.log('Selected option:', selectedOption);
     this.submitStepData();
   }
 
@@ -179,6 +185,6 @@ export class StepComponent {
     this.emitStepGlobalParameters.emit(this.getStepGlobalParamsFromComponent());
   }
 
-  //TODO: Remove this function once plot is updated from main-sweep.component.ts
-  updatePlot() {}
+  // TODO: Remove this function once plot is updated from main-sweep.component.ts
+
 }

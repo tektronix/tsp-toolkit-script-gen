@@ -1,18 +1,16 @@
 import {
   Component,
-  OnInit,
   ViewChildren,
   QueryList,
   Input,
   ViewChild,
-  SimpleChanges,
+  SimpleChanges, OnChanges, AfterViewInit,
 } from '@angular/core';
 import { BiasComponent } from './bias/bias.component';
 import { StepComponent } from './step/step.component';
 import { SweepComponent } from './sweep/sweep.component';
 import { WebSocketService } from '../../websocket.service';
 import {
-  GlobalParameters,
   SweepConfig,
 } from '../../model/sweep_data/sweepConfig';
 import {
@@ -31,14 +29,22 @@ import { TimingComponent } from './timing/timing.component';
 import { SweepModel } from '../../model/sweep_data/sweepModel';
 import { IpcData } from '../../model/ipcData';
 import { Device } from '../../model/device_data/device';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { BrowserModule } from '@angular/platform-browser';
+import { PlotContainerComponent } from './plot-container/plot-container.component';
+import { InputNumericComponent } from '../controls/input-numeric/input-numeric.component';
+import { InputPlainComponent } from '../controls/input-plain/input-plain.component';
 
 @Component({
   selector: 'app-main-sweep',
-  standalone: false,
+  standalone: true,
+  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, InputNumericComponent, InputPlainComponent, BiasComponent, StepComponent, SweepComponent, TimingComponent, PlotContainerComponent],
   templateUrl: './main-sweep.component.html',
   styleUrls: ['./main-sweep.component.scss'],
 })
-export class MainSweepComponent {
+export class MainSweepComponent implements OnChanges, AfterViewInit {
   @ViewChildren(BiasComponent) biasComponents!: QueryList<BiasComponent>;
   @ViewChildren(StepComponent) stepComponents!: QueryList<StepComponent>;
   @ViewChildren(SweepComponent) sweepComponents!: QueryList<SweepComponent>;
@@ -52,9 +58,9 @@ export class MainSweepComponent {
   activeComponent: 'bias' | 'step' | 'sweep' | null = null; // Tracks the active component
   activeIndex: number | null = null;
 
-  colorIndex: number = 0;
+  colorIndex = 0;
   colors: string[] = ['#F6F07D', '#7FBDC6', '#C95B66', '#91CE32', '#FF9832', '#2626BF', '#E254A6', '#00E09B']
-  colorMap: Map<string, string> = new Map();
+  colorMap = new Map<string, string>();
 
   setActiveComponent(
     component: 'bias' | 'step' | 'sweep',
@@ -72,7 +78,7 @@ export class MainSweepComponent {
   }
 
   showPopupBox = false;
-  showTiming: boolean = false;
+  showTiming = false;
   timingConfig: TimingConfig | undefined;
   deviceList: Device[] = [];
   stepGlobalParameters: StepGlobalParameters | undefined;
@@ -80,13 +86,13 @@ export class MainSweepComponent {
 
   sweepPoints: ParameterInt | undefined;
   sweepTimePerPoint: ParameterFloat | undefined;
-  list: boolean = false;
+  list = false;
 
   @Input() sweepConfig: SweepConfig | undefined;
 
-  isBiasExpanded: boolean = false;
-  isStepExpanded: boolean = false;
-  isSweepExpanded: boolean = false;
+  isBiasExpanded = false;
+  isStepExpanded = false;
+  isSweepExpanded = false;
   channelsExpanderState: Map<string, boolean> = new Map<string, boolean>();
 
   constructor(private webSocketService: WebSocketService) {}
@@ -256,9 +262,9 @@ export class MainSweepComponent {
   }
 
   updateSweepGlobalParameters() {
-    let sweepGlobalParams = new SweepGlobalParameters({
-      sweep_points: this.sweepPoints,
-      sweep_time_per_point: this.sweepTimePerPoint,
+    const sweepGlobalParams = new SweepGlobalParameters({
+      sweep_points: this.sweepPoints!,
+      sweep_time_per_point: this.sweepTimePerPoint!,
       list_sweep: this.list,
     });
     if (this.sweepConfig) {

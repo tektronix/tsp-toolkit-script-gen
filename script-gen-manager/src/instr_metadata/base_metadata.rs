@@ -1,7 +1,6 @@
+use phf::phf_map;
 use std::collections::HashMap;
 use std::fmt::Debug;
-
-use phf::phf_map;
 
 /// A static map that associates Trebuchet model numbers with their types.
 pub static MODEL_MAP: phf::Map<&'static str, &'static str> = phf_map! {
@@ -14,6 +13,7 @@ pub trait Metadata: Debug + Clone {
     fn get_option(&self, key: &str) -> Option<&Vec<&'static str>>;
     fn get_range(&self, key: &str) -> Option<(f64, f64)>;
     fn get_default(&self, key: &str) -> Option<&'static str>;
+    fn get_name(&self, key: &str) -> Option<&'static str>;
 }
 
 /// A struct that holds base metadata information common to all Trebuchet instruments.
@@ -22,6 +22,7 @@ pub struct BaseMetadata {
     options: HashMap<&'static str, Vec<&'static str>>,
     ranges: HashMap<String, (f64, f64)>,
     defaults: HashMap<&'static str, &'static str>,
+    names: HashMap<&'static str, &'static str>,
 }
 
 impl BaseMetadata {
@@ -42,6 +43,9 @@ impl BaseMetadata {
     pub const FUNCTION_VOLTAGE: &'static str = "Voltage";
     pub const FUNCTION_CURRENT: &'static str = "Current";
     pub const FUNCTION_IV: &'static str = "Current,Voltage";
+    pub const RANGE_FOLLOW_LIMITI: &'static str = "follow limiti";
+    pub const SENSE_MODE_TWO_WIRE: &'static str = "Two-wire";
+    pub const SENSE_MODE_FOUR_WIRE: &'static str = "Four-wire";
 
     pub const UNIT_VOLTS: &'static str = "V";
     pub const UNIT_AMPERES: &'static str = "A";
@@ -51,6 +55,7 @@ impl BaseMetadata {
         let mut options = HashMap::new();
         let ranges = HashMap::new();
         let defaults = HashMap::new();
+        let mut names = HashMap::new();
 
         //timing: source or measure delay type
         options.insert(
@@ -62,10 +67,14 @@ impl BaseMetadata {
             ],
         );
 
+        names.insert("sense=Two-wire", "SENSE_LOCAL");
+        names.insert("sense=Four-wire", "SENSE_REMOTE");
+
         BaseMetadata {
             options,
             ranges,
             defaults,
+            names,
         }
     }
 
@@ -95,6 +104,10 @@ impl Metadata for BaseMetadata {
 
     fn get_default(&self, key: &str) -> Option<&'static str> {
         self.defaults.get(key).cloned()
+    }
+
+    fn get_name(&self, key: &str) -> Option<&'static str> {
+        self.names.get(key).cloned()
     }
 }
 

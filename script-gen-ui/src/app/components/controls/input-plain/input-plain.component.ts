@@ -3,17 +3,20 @@ import {
   Input,
   Output,
   EventEmitter,
-  forwardRef,
+  forwardRef, OnInit,
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { parseScientificInput, parseToDecimal } from '../input-parser.util'; // Import the parser
-import { ParameterFloat } from '../../../model/sweep_data/TimingConfig';
+import { CommonModule } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
+import { BrowserModule } from '@angular/platform-browser';
 
 @Component({
-  selector: 'input-plain',
+  selector: 'app-input-plain',
   templateUrl: './input-plain.component.html',
   styleUrls: ['./input-plain.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -22,30 +25,30 @@ import { ParameterFloat } from '../../../model/sweep_data/TimingConfig';
     },
   ],
 })
-export class InputPlainComponent implements ControlValueAccessor {
+export class InputPlainComponent implements ControlValueAccessor, OnInit {
   @Input() label: string | undefined;
   @Input() unit: string | undefined;
   @Output() inputChange = new EventEmitter<number>();
 
   private _value: number | undefined;
-  private _displayValue: string = '';
-  private onChange: ((value: any) => void) | undefined;
+  private _displayValue = '';
+  private onChange: ((value: number) => void) | undefined;
 
   ngOnInit(): void {
-    //
+    console.log('InputPlainComponent initialized with unit:', this.unit);
   }
 
   // TODO: have to make the rounding off based on the resolution defined for each range
 
   get displayValue(): string {
     const parsedValue = parseScientificInput(`${this._value} ${this.unit}`);
-    // console.log('parsed value : ', parsedValue);
+    console.log('parsed value : ', parsedValue);
 
     // If parseScientificInput returns a valid value, update _displayValue
     if (parsedValue && parsedValue !== 'Invalid input') {
       this._displayValue = parsedValue;
     }
-    // console.log('displayvalue : ', this._displayValue);
+    console.log('displayvalue : ', this._displayValue);
     // Return the cached _displayValue or fallback to default
     return this._displayValue || (this._value !== undefined ? `${this._value} ${this.unit}` : '');
   }
@@ -67,20 +70,22 @@ export class InputPlainComponent implements ControlValueAccessor {
     }
   }
 
-  writeValue(value: any): void {
+  writeValue(value: number | undefined): void {
     if (value !== undefined) {
       this._value = value;
     }
   }
 
-  registerOnChange(fn: any): void {
+  registerOnChange(fn: ((value: number) => void) | undefined): void {
     this.onChange = fn;
   }
 
-  registerOnTouched(fn: any): void {}
-
-  setDisabledState?(isDisabled: boolean): void {
+  registerOnTouched(): void {
+    console.log('Input touched');
   }
+
+  // setDisabledState?(): void {
+  // }
 
   onInputChange(event: Event): void {
     const inputElement = event.target as HTMLInputElement;

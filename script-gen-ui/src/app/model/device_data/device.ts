@@ -1,3 +1,5 @@
+import { IDevice } from "../interface"
+
 export enum DeviceType {
     Smu,
     Psu,
@@ -13,7 +15,7 @@ export class Device {
     fw_version: string
     in_use: boolean
 
-    constructor(data: any) {
+    constructor(data: IDevice) {
         this.node_id = data.node_id
         this._id = data._id
         this.device_type = data.device_type

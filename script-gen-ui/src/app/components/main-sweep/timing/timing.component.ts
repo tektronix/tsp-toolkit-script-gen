@@ -1,12 +1,10 @@
 import {
   Component,
   EventEmitter,
-  input,
   Input,
   OnDestroy,
-  OnInit,
   Output,
-  SimpleChanges,
+  SimpleChanges, OnChanges,
 } from '@angular/core';
 import {
   ParameterFloat,
@@ -14,14 +12,22 @@ import {
   ParameterInt,
   TimingConfig,
 } from '../../../model/sweep_data/TimingConfig';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { BrowserModule } from '@angular/platform-browser';
+import { DropdownComponent } from '../../controls/dropdown/dropdown.component';
+import { InputNumericComponent } from '../../controls/input-numeric/input-numeric.component';
+import { InputPlainComponent } from '../../controls/input-plain/input-plain.component';
 
 @Component({
   selector: 'app-timing',
-  standalone: false,
+  standalone: true,
+  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, DropdownComponent, InputNumericComponent, InputPlainComponent],
   templateUrl: './timing.component.html',
   styleUrl: './timing.component.scss',
 })
-export class TimingComponent implements OnDestroy {
+export class TimingComponent implements OnDestroy, OnChanges {
   selectedWindow: 'window1' | 'window2' = 'window1';
 
   nplc: ParameterFloat | undefined;
@@ -36,7 +42,7 @@ export class TimingComponent implements OnDestroy {
   measureFilterType: ParameterString | undefined;
   measureFilterCount: ParameterInt | undefined;
   measureAnalogFilter: ParameterString | undefined;
-  msg1: number = 0.0;
+  msg1 = 0.0;
   msg2: number | undefined;
 
   timingOption: 'sameTiming' | 'highSpeedSampling' = 'sameTiming';
@@ -51,7 +57,7 @@ export class TimingComponent implements OnDestroy {
   @Output() ok = new EventEmitter<void>();
   @Output() emitTimingData = new EventEmitter<void>();
 
-  constructor() {}
+  // constructor() {}
 
   // ngOnInit(): void {
   //   this.updateAll();
@@ -102,9 +108,9 @@ export class TimingComponent implements OnDestroy {
     this.selectedWindow = window;
   }
 
-  handleNplcChange(event: Event) {
-    //
-  }
+  // handleNplcChange(event: Event) {
+  //   //
+  // }
 
   handleSourceDelayChange($event: number) {
     this.msg1 = $event;
@@ -118,24 +124,24 @@ export class TimingComponent implements OnDestroy {
 
   getTimingConfigFromComponent(): TimingConfig {
     return new TimingConfig({
-      nplc: this.nplc,
-      auto_zero: this.autoZero,
-      source_delay_type: this.sourceDelayType,
-      source_delay: this.sourceDelay,
-      measure_count: this.measureCount,
-      measure_delay_type: this.measureDelayType,
-      measure_delay: this.measureDelay,
-      measure_delay_factor: this.measureDelayFactor,
-      measure_filter_enable: this.measureFilterEnable,
-      measure_filter_type: this.measureFilterType,
-      measure_filter_count: this.measureFilterCount,
-      measure_analog_filter: this.measureAnalogFilter,
+      nplc: this.nplc!,
+      auto_zero: this.autoZero!,
+      source_delay_type: this.sourceDelayType!,
+      source_delay: this.sourceDelay!,
+      measure_count: this.measureCount!,
+      measure_delay_type: this.measureDelayType!,
+      measure_delay: this.measureDelay!,
+      measure_delay_factor: this.measureDelayFactor!,
+      measure_filter_enable: this.measureFilterEnable!,
+      measure_filter_type: this.measureFilterType!,
+      measure_filter_count: this.measureFilterCount!,
+      measure_analog_filter: this.measureAnalogFilter!,
       high_speed_sampling: this.timingOption === 'highSpeedSampling',
-      sampling_interval: this.samplingInterval,
-      sampling_count: this.samplingCount,
-      sampling_delay_type: this.samplingDelayType,
-      sampling_delay: this.samplingDelay,
-      sampling_analog_filter: this.samplingAnalogFilter,
+      sampling_interval: this.samplingInterval!,
+      sampling_count: this.samplingCount!,
+      sampling_delay_type: this.samplingDelayType!,
+      sampling_delay: this.samplingDelay!,
+      sampling_analog_filter: this.samplingAnalogFilter!,
     });
   }
 

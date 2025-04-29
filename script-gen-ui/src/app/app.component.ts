@@ -5,10 +5,17 @@ import { ServerData } from './model/serverData';
 import { SweepConfig } from './model/sweep_data/sweepConfig';
 import { SweepModel } from './model/sweep_data/sweepModel';
 import { IpcData } from './model/ipcData';
+import { MainSweepComponent } from './components/main-sweep/main-sweep.component';
+import { EmptyConfigComponent } from './components/empty-config/empty-config.component';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { BrowserModule } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-root',
-  standalone: false,
+  standalone: true,
+  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, MainSweepComponent, EmptyConfigComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
@@ -18,7 +25,7 @@ export class AppComponent implements OnInit, OnDestroy {
   parsedData: ServerData | undefined;
   sweepModel: SweepModel | undefined;
   sweepConfig: SweepConfig | undefined;
-  isMainSweepVisible: boolean = false;
+  isMainSweepVisible = false;
 
   constructor(private webSocketService: WebSocketService) {}
 

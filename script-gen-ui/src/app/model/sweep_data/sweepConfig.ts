@@ -2,13 +2,14 @@ import { BiasChannel } from '../chan_data/biasChannel';
 import { StepChannel } from '../chan_data/stepChannel';
 import { SweepChannel } from '../chan_data/sweepChannel';
 import { Device } from '../device_data/device';
+import { IBiasChannel, IDevice, IGlobalParameters, IStepChannel, ISweepChannel, ISweepConfig } from '../interface';
 import { StepGlobalParameters, SweepGlobalParameters } from './stepSweepConfig';
-import { ParameterFloat, ParameterInt, TimingConfig } from './TimingConfig';
+import { TimingConfig } from './TimingConfig';
 
 export class GlobalParameters {
   timing_config: TimingConfig;
 
-  constructor(data: any) {
+  constructor(data: IGlobalParameters) {
     this.timing_config = new TimingConfig(data.timing_config);
   }
 
@@ -28,16 +29,16 @@ export class SweepConfig {
   sweep_global_parameters: SweepGlobalParameters;
   device_list: Device[];
 
-  constructor(data: any) {
+  constructor(data: ISweepConfig) {
     this.global_parameters = new GlobalParameters(data.global_parameters);
     this.bias_channels = data.bias_channels.map(
-      (channel: any) => new BiasChannel(channel)
+      (channel: IBiasChannel) => new BiasChannel(channel)
     );
     this.step_channels = data.step_channels.map(
-      (channel: any) => new StepChannel(channel)
+      (channel: IStepChannel) => new StepChannel(channel)
     );
     this.sweep_channels = data.sweep_channels.map(
-      (channel: any) => new SweepChannel(channel)
+      (channel: ISweepChannel) => new SweepChannel(channel)
     );
     this.step_global_parameters = new StepGlobalParameters(
       data.step_global_parameters
@@ -46,7 +47,7 @@ export class SweepConfig {
       data.sweep_global_parameters
     );
     this.device_list = data.device_list.map(
-      (device: any) => new Device(device)
+      (device: IDevice) => new Device(device)
     );
   }
 

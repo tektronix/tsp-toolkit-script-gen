@@ -16,9 +16,9 @@ use super::{
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SweepConfig {
     global_parameters: GlobalParameters,
-    bias_channels: Vec<BiasChannel>,
-    step_channels: Vec<StepChannel>,
-    sweep_channels: Vec<SweepChannel>,
+    pub bias_channels: Vec<BiasChannel>,
+    pub step_channels: Vec<StepChannel>,
+    pub sweep_channels: Vec<SweepChannel>,
     #[serde(skip)]
     total_chan_count: usize,
     step_global_parameters: StepGlobalParameters,
@@ -112,7 +112,7 @@ impl SweepConfig {
         }
     }
 
-    fn update_channel_devices(&mut self) {
+    pub fn update_channel_devices(&mut self) {
         let device_map: HashMap<String, Device> = self
             .device_list
             .iter()

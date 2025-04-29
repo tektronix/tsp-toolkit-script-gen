@@ -2,9 +2,9 @@ use actix_files as fs;
 use actix_web::{web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use actix_ws::{Message, Session};
 use futures::StreamExt;
-use script_gen_manager::catalog::Catalog;
+use script_gen_manager::script_component::script::ScriptModel;
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::{broadcast, Mutex};
 
 use tokio::io::{self, AsyncBufReadExt};
 use tokio::signal;
@@ -18,13 +18,16 @@ use super::data_model::DataModel;
 pub struct AppState {
     pub session: Arc<Mutex<Option<Session>>>,
     pub data_model: Arc<Mutex<DataModel>>,
+    pub gen_script_tx: broadcast::Sender<()>,
 }
 
 impl AppState {
-    pub fn new(catalog: Catalog) -> Self {
+    pub fn new() -> Self {
+        let (gen_script_tx, _) = broadcast::channel(100); // Create a broadcast channel
         AppState {
             session: Arc::new(Mutex::new(None)),
-            data_model: Arc::new(Mutex::new(DataModel::new(catalog))),
+            data_model: Arc::new(Mutex::new(DataModel::new())),
+            gen_script_tx,
         }
     }
 }
@@ -41,6 +44,8 @@ async fn ws_index(
         let mut session_guard = app_state.session.lock().await;
         *session_guard = Some(session.clone());
     }
+
+    let gen_script_tx = app_state.gen_script_tx.clone();
 
     actix_web::rt::spawn(async move {
         while let Some(Ok(msg)) = msg_stream.next().await {
@@ -61,11 +66,19 @@ async fn ws_index(
                                 let response =
                                     data_model.process_data_from_client(ipc_data.json_value);
                                 println!("{}", response);
+                                // Send generate script signal
+                                if let Err(e) = gen_script_tx.send(()) {
+                                    eprintln!("Failed to send signal: {}", e);
+                                }
                                 session.text(response).await.unwrap();
                             } else if ipc_data.request_type == "reallocation" {
                                 let mut data_model = app_state.data_model.lock().await;
                                 let response = data_model.add_remove_channel(ipc_data);
                                 println!("{}", response);
+                                // Send generate script signal
+                                if let Err(e) = gen_script_tx.send(()) {
+                                    eprintln!("Failed to send signal: {}", e);
+                                }
                                 session.text(response).await.unwrap();
                             } else {
                                 println!("Unknown request type: {}", ipc_data.request_type);
@@ -75,9 +88,6 @@ async fn ws_index(
                             eprintln!("Failed to deserialize IpcData: {}", e);
                         }
                     }
-                    // let mut data_model = app_state.data_model.lock().await;
-                    // let response = data_model.process_data(msg.to_string());
-                    // session.text(response).await.unwrap();
                 }
                 Message::Close(reason) => {
                     println!("Connection closed: {:?}", reason);
@@ -121,11 +131,31 @@ pub async fn start_web_server(
     }
 }
 
-pub async fn start(catalog: Catalog) -> anyhow::Result<()> {
-    let app_state = Arc::new(AppState::new(catalog));
+pub async fn start(mut script_model: ScriptModel) -> anyhow::Result<()> {
+    let app_state = Arc::new(AppState::new());
 
     let (shutdown_tx, shutdown_rx) = watch::channel(());
     let server = start_web_server(app_state.clone(), shutdown_rx.clone());
+
+    // Clone the event receiver for generating script
+    let mut gen_script_rx = app_state.gen_script_tx.subscribe();
+
+    // Spawn a task to listen to generate script event
+    {
+        let app_state_clone = app_state.clone();
+        tokio::spawn(async move {
+            while let Ok(()) = gen_script_rx.recv().await {
+                println!("Signal received to start script generation!");
+                let data_model = app_state_clone.data_model.lock().await;
+                if let Some(sweep_model) = &data_model.sweep {
+                    let sweep_config = &sweep_model.sweep_config;
+                    script_model.to_script(sweep_config);
+                } else {
+                    println!("No SweepModel found in data_model.sweep");
+                }
+            }
+        });
+    }
 
     // Spawn a task to listen for shutdown signal (e.g., Ctrl+C)
     tokio::spawn({
@@ -143,6 +173,7 @@ pub async fn start(catalog: Catalog) -> anyhow::Result<()> {
         let mut reader = io::BufReader::new(stdin).lines();
 
         let app_state = app_state.clone();
+        //let gen_script_tx = app_state.gen_script_tx.clone();
 
         while let Some(line) = reader.next_line().await.unwrap() {
             println!("Received from stdin: {line}");
@@ -179,6 +210,10 @@ pub async fn start(catalog: Catalog) -> anyhow::Result<()> {
                 let mut data_model = app_state.data_model.lock().await;
                 let response = data_model.process_instr_info(json_str.to_string());
                 println!("{}", response);
+                // Send generate script signal
+                if let Err(e) = app_state.gen_script_tx.send(()) {
+                    eprintln!("Failed to send signal: {}", e);
+                }
                 let mut session = app_state.session.lock().await;
                 if let Some(session) = session.as_mut() {
                     session.text(response).await.unwrap();

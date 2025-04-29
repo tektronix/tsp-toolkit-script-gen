@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::instr_metadata::base_metadata::BaseMetadata;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChannelRange {
     pub range: Vec<String>,
@@ -73,7 +75,7 @@ impl ChannelRange {
         let numeric_value: f64 = numeric_part.parse().ok()?;
 
         // Extract the prefix (e.g., "m", "k")
-        let prefix = self.extract_prefix(&suffix_part)?;
+        let prefix = self.extract_prefix(&suffix_part);
 
         // Determine the scaling factor based on the prefix
         let scaling_factor = match prefix.as_str() {
@@ -93,20 +95,28 @@ impl ChannelRange {
     }
 
     /// Extracts the prefix from a suffix string (e.g., "mV" -> "m").
-    fn extract_prefix(&self, suffix: &str) -> Option<String> {
+    fn extract_prefix(&self, suffix: &str) -> String {
+        let mut res = String::new();
         if suffix.is_empty() {
-            return Some("".to_string()); // No prefix
+            return res;
         }
 
         // Check if the suffix ends with the expected unit
         if suffix.ends_with(&self.unit) {
             let prefix_length = suffix.len() - self.unit.len();
             let prefix = &suffix[..prefix_length]; // Extract the prefix
-            return Some(prefix.to_string());
+            res = prefix.to_string();
         }
 
-        // If the suffix does not match the expected unit, assume no prefix
-        Some("".to_string())
+        return res;
+    }
+
+    pub fn is_range_auto(&self) -> bool {
+        self.value == BaseMetadata::AUTO_VALUE
+    }
+
+    pub fn is_range_follow_limiti(&self) -> bool {
+        self.value == BaseMetadata::RANGE_FOLLOW_LIMITI
     }
 }
 

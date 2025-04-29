@@ -4,19 +4,22 @@ import {
   Input,
   Output,
   EventEmitter,
-  forwardRef,
+  forwardRef, OnInit,
 } from '@angular/core';
 import {
-  FormsModule,
   ControlValueAccessor,
+  FormsModule,
   NG_VALUE_ACCESSOR,
 } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { BrowserModule } from '@angular/platform-browser';
 
 @Component({
-  selector: 'dropdown',
+  selector: 'app-dropdown',
   templateUrl: './dropdown.component.html',
   styleUrls: ['./dropdown.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -25,14 +28,14 @@ import {
     },
   ],
 })
-export class DropdownComponent implements ControlValueAccessor {
+export class DropdownComponent implements ControlValueAccessor, OnInit {
   @Input() label: string | undefined;
   @Input() selected: string | undefined;
   @Input() options: string[] = [];
   // @Input() unit: string | undefined;
   @Output() selectedChange = new EventEmitter<string>();
 
-  private onChange: ((value: any) => void) | undefined;
+  private onChange: ((value: string) => void) | undefined;
 
   ngOnInit(): void {
     // Ensure selected is initialized
@@ -41,17 +44,19 @@ export class DropdownComponent implements ControlValueAccessor {
     }
   }
 
-  writeValue(value: any): void {
+  writeValue(value: string): void {
     this.selected = value;
   }
 
-  registerOnChange(fn: any): void {
+  registerOnChange(fn: ((value: string) => void) | undefined): void {
     this.onChange = fn;
   }
 
-  registerOnTouched(fn: any): void {}
+  registerOnTouched(): void {
+    console.log('Dropdown touched');
+  }
 
-  setDisabledState?(isDisabled: boolean): void {
+  setDisabledState?(): void {
     // Handle the disabled state if needed
   }
 

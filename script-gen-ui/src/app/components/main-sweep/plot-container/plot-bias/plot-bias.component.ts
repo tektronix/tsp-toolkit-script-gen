@@ -1,33 +1,35 @@
-import { Component, Input, AfterViewInit } from '@angular/core';
+import { Component, Input, AfterViewInit, OnInit, OnDestroy } from '@angular/core';
 import { BiasChannel } from '../../../../model/chan_data/biasChannel';
 import { ParameterFloat, ParameterString } from '../../../../model/sweep_data/TimingConfig';
 import { ChannelRange } from '../../../../model/chan_data/channelRange';
 import * as Plotly from 'plotly.js-dist';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { BrowserModule } from '@angular/platform-browser';
 
 @Component({
-  selector: 'plot-bias',
-  standalone: false,
+  selector: 'app-plot-bias',
+  standalone: true,
+  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule],
   templateUrl: './plot-bias.component.html',
   styleUrl: './plot-bias.component.scss'
 })
-export class PlotBiasComponent implements AfterViewInit {
+export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy {
   @Input() biasChannel: BiasChannel | undefined;
   // @Input() plotData: any;
   // @Input() plotLayout: any;
   @Input() plotDataX: number[] = [];
-  @Input() plotConfig: any;
-  plotDivID: string = '';
+  @Input() plotConfig: { staticPlot: boolean; } | undefined;
+  plotDivID = '';
 
-  @Input() isActive: boolean = false;
-  @Input() activeStyle: any = {}; // Accept activeStyle as an input
-  @Input() color: string = ''; // Accept color as an input
-  private mutationObserver: MutationObserver | undefined;
-
-  defaultStyle = {
-    backgroundColor: 'transparent',
-    color: 'white',
-    fontWeight: 'normal',
+  @Input() isActive = false;
+  @Input() activeStyle: {backgroundColor:string, color:string} = {
+    backgroundColor: '',
+    color: ''
   };
+  @Input() color = '';
+  private mutationObserver: MutationObserver | undefined;
 
   plotLayout =  {
     xaxis: {
@@ -159,7 +161,7 @@ export class PlotBiasComponent implements AfterViewInit {
       this.bias = this.biasChannel.bias;
 
       this.plotDivID = `plotDiv${this.biasChannel.common_chan_attributes.chan_name}`;
-      for(let i:number =0; i<11; i++){
+      for(let i =0; i<11; i++){
         this.plotData1.y[i] = this.bias?.value ?? 0;
       }
     }

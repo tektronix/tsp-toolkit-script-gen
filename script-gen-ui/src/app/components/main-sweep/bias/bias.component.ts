@@ -3,9 +3,8 @@ import {
   Input,
   Output,
   EventEmitter,
-  SimpleChanges,
+  SimpleChanges, OnChanges,
 } from '@angular/core';
-import { WebSocketService } from '../../../websocket.service';
 import { BiasChannel } from '../../../model/chan_data/biasChannel';
 import {
   ParameterFloat,
@@ -14,20 +13,28 @@ import {
 import { ChannelRange } from '../../../model/chan_data/channelRange';
 import { CommonChanAttributes } from '../../../model/chan_data/defaultChannel';
 import { Device } from '../../../model/device_data/device';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatIconModule } from '@angular/material/icon';
+import { BrowserModule } from '@angular/platform-browser';
+import { DropdownComponent } from '../../controls/dropdown/dropdown.component';
+import { InputPlainComponent } from '../../controls/input-plain/input-plain.component';
+import { InputToggleComponent } from '../../controls/input-toggle/input-toggle.component';
 
 @Component({
   selector: 'app-bias',
   templateUrl: './bias.component.html',
   styleUrls: ['./bias.component.scss'],
-  standalone: false,
+  standalone: true,
+  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, DropdownComponent, InputPlainComponent, InputToggleComponent],
 })
-export class BiasComponent {
+export class BiasComponent implements OnChanges {
   commonChanAttributes: CommonChanAttributes | undefined;
   chanName = '';
   deviceID = '';
   uuid = '';
   dropdownDeviceList: string[] = [];
-  @Input() isActive: boolean = false;
+  @Input() isActive = false;
 
   toggleActive() {
     this.isActive = !this.isActive;
@@ -43,7 +50,7 @@ export class BiasComponent {
   senseMode: ParameterString | undefined;
 
   @Input() biasChannel: BiasChannel | undefined;
-  @Input() isBiasChanExpanded: boolean = false;
+  @Input() isBiasChanExpanded = false;
   @Input() deviceList: Device[] = [];
   @Output() emitBiasChannelData = new EventEmitter<BiasChannel>();
   @Output() emitBiasExpanderState = new EventEmitter<{
@@ -56,14 +63,14 @@ export class BiasComponent {
     newChanId: string;
   }>();
 
-  @Input() color: string = '';
-  isFocused: boolean = false;
+  @Input() color = '';
+  isFocused = false;
 
   toggleFocus(state: boolean): void {
     this.isFocused = state;
   }
 
-  constructor() {}
+  // constructor() {}
 
   // ngOnInit(): void {
   //   this.updateAll();
@@ -114,41 +121,42 @@ export class BiasComponent {
   }
 
   getBiasChanConfigFromComponent(): BiasChannel {
+    //TODO: for all values that can be undefined throw an error as it's not a valid scenario
     return new BiasChannel({
       common_chan_attributes: {
         uuid: this.uuid,
         chan_name: this.chanName,
         device_id: this.deviceID,
-        source_function: this.sourceFunction,
-        source_range: this.sourceRange,
-        meas_function: this.measFunction,
-        meas_range: this.measRange,
-        source_limiti: this.sourceLimitI,
-        source_limitv: this.sourceLimitV,
+        source_function: this.sourceFunction!,
+        source_range: this.sourceRange!,
+        meas_function: this.measFunction!,
+        meas_range: this.measRange!,
+        source_limiti: this.sourceLimitI!,
+        source_limitv: this.sourceLimitV!,
         sense_mode: this.senseMode,
       },
-      bias: this.bias,
+      bias: this.bias!,
     });
   }
 
   submitBiasData() {
-    let biasChannel = this.getBiasChanConfigFromComponent();
+    const biasChannel = this.getBiasChanConfigFromComponent();
     this.emitBiasChannelData.emit(biasChannel);
   }
 
   onBiasValueChange() {
-    if (this.bias) {
-    }
     this.submitBiasData();
   }
 
   onRangeChange(event: Event): void {
     const target = event.target as HTMLSelectElement;
     const selectedRange = target.value;
+    console.log('Selected range:', selectedRange);
     this.submitBiasData();
   }
 
   onToggle(selectedOption: string) {
+    console.log('Selected option:', selectedOption);
     this.submitBiasData();
   }
 
@@ -158,6 +166,12 @@ export class BiasComponent {
         oldChanId: this.biasChannel.common_chan_attributes.device_id,
         newChanId: $event,
       });
+    }
+  }
+
+  handleKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault(); // Prevent default scrolling for Space key
     }
   }
 }

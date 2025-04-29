@@ -1,3 +1,4 @@
+import { IBiasChannel } from '../interface';
 import { ParameterFloat } from '../sweep_data/TimingConfig';
 import { CommonChanAttributes } from './defaultChannel';
 
@@ -5,7 +6,7 @@ export class BiasChannel {
   common_chan_attributes: CommonChanAttributes;
   bias: ParameterFloat;
 
-  constructor(data: any) {
+  constructor(data: IBiasChannel) {
     this.common_chan_attributes = new CommonChanAttributes(
       data.common_chan_attributes
     );

@@ -3,6 +3,8 @@ use std::any::Any;
 use script_aggregator::script_buffer::ScriptBuffer;
 use xml_handler::composite::CommonChunk;
 
+use crate::model::sweep_data::sweep_config::SweepConfig;
+
 pub trait FunctionModel: Send + Sync {
     fn as_any(&self) -> &dyn Any;
     /// Returns the underlying type of the function model (e.g., Initialize, Finalize, etc.)
@@ -14,7 +16,7 @@ pub trait FunctionModel: Send + Sync {
     /// Returns the metadata (parsed Group information) of the function model.
     fn get_metadata(&self) -> &xml_handler::group::Group;
     /// Converts the function model to a script.
-    fn to_script(&mut self, script_buffer: &mut ScriptBuffer);
+    fn to_script(&mut self, sweep_config: &SweepConfig, script_buffer: &mut ScriptBuffer);
 
     /// Converts a description string into a Lua comment format.
     ///

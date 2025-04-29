@@ -6,9 +6,11 @@ lazy_static! {
     static ref RESOURCE_MAP: HashMap<&'static str, &'static Resource> = {
         let mut m = HashMap::new();
         m.insert("DEFAULT_FUNC_METADATA", &DEFAULT_FUNC_METADATA);
+        m.insert("SWEEP_FUNC_METADATA", &SWEEP_FUNC_METADATA);
         m.insert("INITIALIZE_XML", &INITIALIZE_XML);
         m.insert("SUPPORT_XML", &SUPPORT_XML);
         m.insert("DEFAULT_LIMITS_XML", &DEFAULT_LIMITS_XML);
+        m.insert("MP5000_SWEEP_XML", &MP5000_SWEEP_XML);
         m.insert("DEFAULT_SWEEP_CHUNK_XML", &DEFAULT_SWEEP_CHUNK_XML);
         m.insert("DATA_REPORT_XML", &DATA_REPORT_XML);
         m.insert("FINALIZE_XML", &FINALIZE_XML);
@@ -25,6 +27,10 @@ const VERSION_REPLACE: &str = "!<!<VERSION>!>!";
 
 pub const DEFAULT_FUNC_METADATA: Resource = Resource {
     source: include_str!("./DefaultFunctionMetaData.xml"),
+};
+
+pub const SWEEP_FUNC_METADATA: Resource = Resource {
+    source: include_str!("./SweepFunctionMetaData.xml"),
 };
 
 pub const INITIALIZE_XML: Resource = Resource {
@@ -45,6 +51,10 @@ pub const FINALIZE_XML: Resource = Resource {
 
 pub const DEFAULT_LIMITS_XML: Resource = Resource {
     source: include_str!("./sweep/DefaultLimits.xml"),
+};
+
+pub const MP5000_SWEEP_XML: Resource = Resource {
+    source: include_str!("./sweep/MP5000Sweep.xml"),
 };
 
 pub const DEFAULT_SWEEP_CHUNK_XML: Resource = Resource {

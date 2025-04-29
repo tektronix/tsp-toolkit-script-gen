@@ -1,4 +1,4 @@
-export const SCIENTIFIC_PREFIXES: { [key: string]: string } = { //engineering prefix m,u,n  scientific prefix
+export const SCIENTIFIC_PREFIXES: Record<string, string> = { //engineering prefix m,u,n  scientific prefix
   '-12': 'p',
   '-9': 'n',
   '-6': 'µ',
@@ -10,7 +10,7 @@ export const SCIENTIFIC_PREFIXES: { [key: string]: string } = { //engineering pr
   '12': 'T',
 };
 
-export const REVERSE_PREFIXES: { [key: string]: number } = {
+export const REVERSE_PREFIXES: Record<string, number> = {
   'p': -12,
   'n': -9,
   'µ': -6,
@@ -31,7 +31,7 @@ export function parseScientificInput(input: string): string {
     return 'Invalid input';
   }
 
-  const [_, value, , exponent, prefix, baseUnit] = match;
+  const [, value, , exponent, prefix, baseUnit] = match;
 
   // Parse the numeric value
   let numericValue = parseFloat(value) * Math.pow(10, parseInt(exponent || '0'));
@@ -60,7 +60,7 @@ export function parseScientificInput(input: string): string {
   const newPrefix = finalExponent === 0 ? '' : SCIENTIFIC_PREFIXES[finalExponent] || `e${finalExponent}`;
 
   // Combine the rounded value, new prefix, and base unit
-  return `${roundedValue} ${newPrefix}${baseUnit}`;
+  return `${roundedValue} ${newPrefix}${baseUnit || ''}`;
 }
 
 export function parseToDecimal(input: string): number | null {
@@ -72,7 +72,7 @@ export function parseToDecimal(input: string): number | null {
     return null; // Invalid input
   }
 
-  const [_, value, , exponent, prefix, baseUnit] = match;
+  const [, value, , exponent, prefix] = match;
 
   // Parse the numeric value
   let numericValue = parseFloat(value) * Math.pow(10, parseInt(exponent || '0'));

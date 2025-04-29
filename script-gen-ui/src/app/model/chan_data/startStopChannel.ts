@@ -1,3 +1,4 @@
+import { IStartStopChannel } from "../interface";
 import { ParameterFloat, ParameterString } from "../sweep_data/TimingConfig"
 import { CommonChanAttributes } from "./defaultChannel";
 
@@ -7,7 +8,7 @@ export class StartStopChannel {
     stop: ParameterFloat
     style: ParameterString
 
-    constructor(data: any) {
+    constructor(data: IStartStopChannel) {
         this.common_chan_attributes = new CommonChanAttributes(data.common_chan_attributes);
         this.start = new ParameterFloat(data.start);
         this.stop = new ParameterFloat(data.stop);

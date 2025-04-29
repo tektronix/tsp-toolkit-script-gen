@@ -48,4 +48,8 @@ impl Metadata for Msmu60Metadata {
     fn get_default(&self, key: &str) -> Option<&'static str> {
         self.base.get_default(key)
     }
+
+    fn get_name(&self, key: &str) -> Option<&'static str> {
+        self.base.get_name(key)
+    }
 }

@@ -16,13 +16,13 @@ use super::channel_range::ChannelRange;
 pub struct CommonChanAttributes {
     pub uuid: String,
     pub chan_name: String,
-    source_function: ParameterString,
-    meas_function: ParameterString,
+    pub source_function: ParameterString,
+    pub meas_function: ParameterString,
     pub source_range: ChannelRange,
     meas_range: ChannelRange,
     source_limiti: ParameterFloat,
     source_limitv: ParameterFloat,
-    sense_mode: ParameterString,
+    pub sense_mode: Option<ParameterString>,
 
     #[serde(skip)]
     pub device: Device,
@@ -50,7 +50,7 @@ impl CommonChanAttributes {
                 0.0,
                 Some(BaseMetadata::UNIT_VOLTS.to_string()),
             ),
-            sense_mode: ParameterString::new("sense_mode"),
+            sense_mode: None,
 
             device,
             device_id: device_id.to_string(),
@@ -64,6 +64,7 @@ impl CommonChanAttributes {
                     BaseMetadata::FUNCTION_VOLTAGE.to_string(),
                     BaseMetadata::FUNCTION_CURRENT.to_string(),
                 ];
+                self.sense_mode = self.initialize_sense_mode();
             }
             DeviceType::Psu => {
                 self.source_function.range = vec![BaseMetadata::FUNCTION_VOLTAGE.to_string()];
@@ -96,13 +97,13 @@ impl CommonChanAttributes {
 
     fn evaluate_source_function(&mut self) {
         let device_metadata = self.device.get_metadata();
-        self.source_range.unit = self.determine_units(&self.source_function.value);
         self.set_source_range(&device_metadata);
         self.set_source_range_limits(&device_metadata);
         self.set_source_range_value();
     }
 
     fn set_source_range(&mut self, metadata: &MetadataEnum) {
+        self.source_range.unit = self.determine_units(&self.source_function.value);
         if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
             self.source_range.range = self.get_range(metadata, "source_meas.rangev");
         } else {
@@ -211,5 +212,25 @@ impl CommonChanAttributes {
             MetadataEnum::Msmu60(msmu60_metadata) => msmu60_metadata.get_default(key),
             MetadataEnum::Mpsu50(mpsu50_metadata) => mpsu50_metadata.get_default(key),
         }
+    }
+
+    pub fn get_name_for(&self, key: &str) -> Option<&'static str> {
+        let metadata = self.device.get_metadata();
+        match metadata {
+            MetadataEnum::Base(base_metadata) => base_metadata.get_name(key),
+            MetadataEnum::Msmu60(msmu60_metadata) => msmu60_metadata.get_name(key),
+            MetadataEnum::Mpsu50(mpsu50_metadata) => mpsu50_metadata.get_name(key),
+        }
+    }
+
+    /// Initializes the `sense_mode` parameter for SMU devices.
+    fn initialize_sense_mode(&self) -> Option<ParameterString> {
+        let mut sense_mode = ParameterString::new("sense_mode");
+        sense_mode.range = vec![
+            BaseMetadata::SENSE_MODE_TWO_WIRE.to_string(),
+            BaseMetadata::SENSE_MODE_FOUR_WIRE.to_string(),
+        ];
+        sense_mode.value = BaseMetadata::SENSE_MODE_TWO_WIRE.to_string();
+        Some(sense_mode)
     }
 }

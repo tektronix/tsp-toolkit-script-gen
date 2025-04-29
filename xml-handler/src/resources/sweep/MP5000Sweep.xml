@@ -1,0 +1,912 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+    This snippet of XML is included in DefaultFunctionMetadata.xml using the <include path="..." /> element
+    *************************************************************************************************
+    *** DO NOT FORMAT WITH IntelliJ (which discards indentation in text elements) ***
+    *************************************************************************************************
+ -->
+<!-- The ChunkModel (i.e. the script template) -->
+<composite name="Sweep" indent="default">
+	<!-- global substitutions -->
+	<substitute name="LINE-FREQUENCY">%LINE-FREQUENCY%</substitute>
+	<substitute name="EPSILON">%EPSILON%</substitute>
+	<substitute name="MASTER-NODE">%MASTER-NODE%</substitute>
+	<substitute name="STEP-MASTER">%STEP-MASTER%</substitute>
+	<substitute name="SWEEP-NODES">%SWEEP-NODES%</substitute>
+	<substitute name="SWEEP-SMUS">%SWEEP-SMUS%</substitute>
+	<substitute name="SWEEP-MASTER">%SWEEP-MASTER%</substitute>
+	<substitute name="SWEEP-SLAVE-NODES">,%SWEEP-SLAVE-NODES%</substitute>
+	<substitute name="SWEEP-SLAVE-SMUS">,%SWEEP-SLAVE-SMUS%</substitute>
+	<substitute name="MEASURE-COUNT">%MEASURE-COUNT%</substitute>
+	<substitute name="STEP-COUNT">%STEP-COUNT%</substitute>
+	<substitute name="STEP-TO-SWEEP-DELAY">%STEP-TO-SWEEP-DELAY%</substitute>
+	<substitute name="PULSE-WIDTH">%PULSE-WIDTH%</substitute>
+	<substitute name="SWEEP-POINTS">%SWEEP-POINTS%</substitute>
+	<substitute name="SWEEP-MASTER-PULSE">%SWEEP-MASTER-PULSE%</substitute>
+	<substitute name="SWEEP-PULSE">%SWEEP-PULSE%</substitute>
+	<substitute name="SWEEP-SLAVE-PULSE">,%SWEEP-SLAVE-PULSE%</substitute>
+	<substitute name="BIAS-NODES">%BIAS-NODES%</substitute>
+	<substitute name="BIAS-SMUS">%BIAS-SMUS%</substitute>
+	<substitute name="NPLC">%NPLC%</substitute>
+	<substitute name="SOURCE-DELAY">%SOURCE-DELAY%</substitute>
+	<substitute name="MEASURE-DELAY">%MEASURE-DELAY%</substitute>
+	<substitute name="MEASURE-POINT-TIME">%MEASURE-POINT-TIME%</substitute>
+	<substitute name="EFFECTIVE-FILTER-COUNT">%EFFECTIVE-FILTER-COUNT%</substitute>
+	<snippet>
+        --#region Util
+        CONSTANTS                   = {
+            AUTO = &quot;AUTO&quot;,
+            localnode = 0,
+            SENSE_2WIRE = 0,
+            SENSE_4WIRE = 1,
+            FUNC_DC_VOLTAGE = 2,
+            FUNC_DC_CURRENT = 3,
+            FUNC_DC_IV_COMBINED = 4,
+            FUNC_DC_OHMS = 5,
+            FUNC_DC_POWER = 6,
+            FILTER_MOVING_AVG = 7,
+            FILTER_MEDIAN = 8
+        }
+
+
+        ---@class LogValues
+        ---@field start number The start value of the sweep
+        ---@field stop number The stop value of the sweep
+        ---@field count number the number of steps to take in the sweep
+        ---@field asymptote number The asymptote of the logarithmic sweep
+
+        ---@class LinearValues
+        ---@field start number The start value of the sweep
+        ---@field stop number The stop value of the sweep
+        ---@field count number the number of steps to take in the sweep
+
+        ---@class ListValues
+        ---@field list number[] The list of values for this list sweep
+
+        ---@class ScalarValues
+        ---@field scaler number The value to source
+
+        ---@class Source
+        ---@field values ScalarValues | LogValues | LinearValues | ListValues The value or values to source
+        ---@field range number | `CONSTANTS.AUTO` The range to use, or Auto
+        ---@field limiti number The current limit
+        ---@field limitv number The voltage limit
+        ---@field delay number The time to delay before sourcing
+        ---@field func `self.slot.smu.FUNC_DC_VOLTAGE` | `self.slot.smu.FUNC_DC_CURRENT`
+
+        ---@class Buffer
+        ---@field buffer any An alias to the actual buffer
+        ---@field type `CONSTANTS.FUNC_DC_VOLTAGE` | `CONSTANTS.FUNC_DC_CURRENT` | `CONSTANTS.FUNC_DC_OHMS` | `CONSTANTS.FUNC_DC_POWER`
+
+        ---@class Measure
+        ---@field nplc number
+        ---@field count integer The number of measurments to take
+        ---@field filter_enable boolean Whether to enable the filter or not
+        ---@field filter_type any | nil The type of measure filter to use
+        ---@field delay number The time to delay before measuring
+        ---@field func `CONSTANTS.FUNC_DC_CURRENT` | `CONSTANTS.FUNC_DC_VOLTAGE` | `CONSTANTS.FUNC_DC_OHMS` | `CONSTANTS.FUNC_DC_POWER` | `CONSTANTS.FUNC_DC_IV_COMBINED`
+        ---@field buffers Buffer[] The buffers to read into.
+
+        ---@class DeviceDetails
+        ---@field node_idx integer The index of the TSP Link node in which the device is found, 0 for `localnode`
+        ---@field slot_idx integer The index of the slot in which the device is found.
+        ---@field channel_idx integer The index of the channel of the device.
+        ---@field model string this should be set to `node[x].slot[x].model`
+        ---@field sense `CONSTANTS.SENSE_2WIRE` | `CONSTANTS.SENSE_4WIRE` The sense mode of the device
+        ---@field source Source The desired source configuration of the device
+        ---@field measure Measure The desired measure configuration of the device
+
+        ---@class Device
+        ---@field node_name string The string version of `self.node`
+        ---@field node_idx integer The index of the TSP Link node in which the device is found, 0 for `localnode`
+        ---@field node any Computed value: An alias to `node[self.node_idx]` or `localnode`, if `self.node_idx` is `0`
+        ---@field slot_idx integer The index of the slot in which the device is found
+        ---@field slot any Computed value: An alias to `self.node.slot[self.slot_idx]`
+        ---@field channel_idx integer The index of the channel of the device
+        ---@field channel any Computed value: An alias to `self.slot.smu[self.channel_idx]` or `self.slot.psu[self.channel_idx]`, depending on `self.model`
+        ---@field model string The model string of the device. Found with `self.slot.model`.
+        ---@field trigger_model string|nil The name of the trigger model
+        ---@field sense `CONSTANTS.SENSE_2WIRE` | `CONSTANTS.SENSE_4WIRE` The sense mode of the device
+        ---@field source Source The source configuration of the device
+        ---@field measure Measure The measure configuration of the device
+        ---@field reset fun(self: Device) The function used to reset the device
+        ---@field config fun(self: Device) The function used to configure the device settings
+        ---@field trigger_model_setup fun(self: Device) The function used to set up the trigger model
+        ---@field trigger_model_initiate fun(self: Device) The function used to initiate the trigger model
+
+        ---@class Model
+        ---@field common nil | ModelComponent The model component used for all all device roles
+        ---@field bias nil | ModelComponent The model component used for only &quot;bias&quot; device roles
+        ---@field step nil | ModelComponent The model component used for only &quot;step&quot; device roles
+        ---@field sweep nil | ModelComponent The model component used for only &quot;sweep&quot; device roles
+
+        ---@class ModelComponent
+        ---@field reset fun(self: Device) The function used to reset the device
+        ---@field config fun(self: Device) The function used to configure the device settings
+        ---@field trigger_model_setup fun(self: Device) The function used to set up the trigger model
+        ---@field trigger_model_initiate fun(self: Device) The function used to initiate the trigger model
+
+        UTILITY                     = {
+
+            DEFAULT_MODEL = function(device) end,
+            --- Get a default model component that has an empty implementation for all necessary functions.
+            ---@return ModelComponent
+            DEFAULT_COMPONENT = function()
+                return {
+                    --- Default is to do nothing
+                    ---@param self Device
+                    reset = function(self)
+                    end,
+                    --- Default is to do nothing
+                    ---@param self Device
+                    config = function(self)
+                    end,
+                    --- Default is to do nothing
+                    ---@param self Device
+                    trigger_model_setup = function(self)
+                    end,
+                    --- Default is to do nothing
+                    ---@param self Device
+                    trigger_model_initiate = function(self)
+                    end,
+                }
+            end,
+
+            ---Insert the given `value` in the give table `t` and return the value
+            ---@param t table
+            ---@param value any
+            --
+            ---@return any value
+            insert = function(t, value)
+                table.insert(t, value)
+                return value
+            end,
+
+            make_waitall = function(tm, model, block_name, events)
+                local single_make_waitall = function(tm, model, block_name, events)
+                    if table.getn(events) == 1 then
+                        tm.addblock.wait(model, block_name, events[1])
+                        return nil
+                    elseif table.getn(events) &gt; 1 then
+                        local first = events[1]
+                        local next = {}
+                        local remainder = {}
+                        for i, v in ipairs(events) do
+                            if i &gt; 1 then
+                                next[table.getn(next)] = v
+                            elseif i &gt; 4 then
+                                remainder[table.getn(remainder)] = v
+                            end
+                        end
+                        tm.addblock.wait(model, block_name, first, trigger.CLEAR_NEVER, trigger.WAIT_AND, unpack(next))
+                        return remainder
+                    end
+                end
+                local iteration = 1
+                local remaining = events
+                while remaining ~= nil do
+                    remaining = single_make_waitall(tm, model, block_name .. iteration, remaining)
+                end
+            end,
+
+            ---Functions for the MSMU60-2 module for MP5000-series mainframes
+            ---@return Model
+            MSMU60_2 = function()
+                return {
+                    common = {
+                        --- Resets this MSMU60-2
+                        ---@param self Device
+                        reset = function(self)
+                            self.channel.reset()
+                            self.node.tsplink.trigger[1].reset()
+                            self.node.tsplink.trigger[2].reset()
+                            self.node.tsplink.trigger[3].reset()
+                            self.node.trigger.timer[1].reset()
+                            self.node.trigger.timer[2].reset()
+                            self.node.trigger.timer[3].reset()
+                            self.node.trigger.timer[4].reset()
+                            for _, v in ipairs(self.slot.trigger.model.table()) do
+                                self.slot.trigger.model.abort(v)
+                                self.slot.trigger.model.delete(v)
+                            end
+                        end,
+                        --- Configures this MSMU60-2
+                        ---@param self Device
+                        config = function(self)
+                            print(&quot;MSMU60_2.bias.config() &quot; .. self.model)
+                            self.channel.measure.count = self.measure.count
+                        end,
+
+                        --- Initiate this trigger model
+                        ---@param self Device
+                        trigger_model_initiate = function(self)
+                            if self.model then
+                                self.slot.trigger.model.initiate(self.model)
+                            end
+                        end,
+                    },
+                    bias = {
+                        --- Configures this MSMU60-2
+                        ---@param self Device
+                        config = function(self, measure_count)
+                            print(&quot;MSMU60_2.bias.config() &quot; .. self.model)
+                        end,
+                        --- Default is to do nothing
+                        ---@param self Device
+                        ---@param sweep_complete_event any The event ID associated with all the sweep steps completing (only one)
+                        ---@param bias_complete_events any[] | nil The event ID(s) associated with all other bias steps completing. Should only be passed to one bias channel.
+                        trigger_model_setup = function(self, sweep_complete_event, bias_complete_events)
+                            self.trigger_model = self.node_name .. &quot; Bias Trigger Model&quot;
+                            self.slot.trigger.model.create(self.trigger_model)
+                            local bias_block = self.node_name .. &quot; bias&quot;
+                            self.slot.trigger.model.addblock.source.action.bias(self.trigger_model, bias_block, self.channel_idx)
+
+                            if bias_complete_events then
+                                -- Add an optional wait for other sweep events only on the first bias-instrument
+                                UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
+                                    self.node_name .. &quot;bias_waitall_block_&quot;,
+                                    bias_complete_events)
+                            end
+
+                            local bias_done_notify_block = self.node_name .. &quot; bias_done&quot;
+                            self.slot.trigger.model.addblock.notify(self.trigger_model, bias_done_notify_block, self.event)
+                            local bias_wait_sweep_block = self.node_name .. &quot; bias_wait_sweep&quot;
+                            self.slot.trigger.model.addblock.wait(self.trigger_model, bias_wait_sweep_block, sweep_complete_event)
+                            local bias_measure_block = self.node_name .. &quot; bias_measure&quot;
+                            self.slot.trigger.model.addblock.measure(self.trigger_model, bias_measure_block, self.channel_idx)
+
+                            --TODO: Add notify for when measure completes
+                            --TODO: Add wait on step and sweep measure completes
+
+
+                            local bias_counter_block = self.node_name .. &quot; bias_counter&quot;
+                            self.slot.trigger.model.addblock.branch.counter(self.trigger_model, bias_counter_block,
+                                bias_wait_sweep_block,
+                                TOTAL_COUNT)
+                        end,
+                        --- Default is to do nothing
+                        ---@param self Device
+                        trigger_model_initiate = function(self)
+                        end,
+                    },
+                    step = {
+                        --- Configures this MSMU60-2
+                        ---@param self Device
+                        config = function(self)
+                            print(&quot;MSMU60_2.bias.config() &quot; .. self.model)
+                        end,
+                        --- Default is to do nothing
+                        ---@param self Device
+                        ---@param bias_complete_event any The event that indicates the biases are fully started.
+                        ---@param sweep_complete_event any The event that indicates the sweepsare fully started.
+                        ---@param step_complete_events any[] | nil The event ID(s) associated with all other steps completing. Should only be passed to one bias channel.
+                        trigger_model_setup = function(self, bias_complete_event, sweep_complete_event, step_complete_events)
+                            self.trigger_model = self.node_name .. &quot; Step Trigger Model&quot;
+                            self.slot.trigger.model.create(self.trigger_model)
+                            local step_wait_bias_block = self.node_name .. &quot; step_wait_bias&quot;
+                            self.slot.trigger.model.addblock.wait(self.trigger_model, step_wait_bias_block, bias_complete_event)
+                            local step_block = self.node_name .. &quot;step&quot;
+                            self.slot.trigger.model.addblock.source.action.step(self.trigger_model, step_block, self.channel_idx)
+
+                            if step_complete_events then
+                                -- Add an optional wait for other sweep events only on the first stepper
+                                UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
+                                    self.node_name .. &quot;step_waitall_block_&quot;,
+                                    step_complete_events)
+                            end
+
+                            local step_done_notify_block = self.node_name .. &quot;step_done&quot;
+                            self.slot.trigger.model.addblock.notify(self.trigger_model, step_done_notify_block, self.event)
+                            local step_wait_sweep_block = self.node_name .. &quot;step_wait_sweep&quot;
+                            self.slot.trigger.model.addblock.wait(self.trigger_model, step_wait_sweep_block, sweep_complete_event)
+                            local step_measure_block = self.node_name .. &quot;step_measure&quot;
+                            self.slot.trigger.model.addblock.measure(self.trigger_model, step_measure_block, self.channel_idx)
+
+                            --TODO: Add notify for when measure completes
+                            --TODO: Add wait on step and sweep measure completes
+
+                            local step_sweep_counter_block = self.node_name .. &quot;step_sweep_counter&quot;
+                            self.slot.trigger.model.addblock.branch.counter(self.trigger_model, step_sweep_counter_block,
+                                step_wait_sweep_block,
+                                TOTAL_COUNT)
+                            local step_counter_block = self.node_name .. &quot;step_counter&quot;
+                            self.slot.trigger.model.addblock.branch.counter(self.trigger_model, step_counter_block, step_block,
+                                STEP[3])
+                        end,
+                    },
+
+                    sweep = {
+                        trigger_model_setup = function(self, step_complete_event, sweep_complete_events)
+                            self.trigger_model = self.node_name .. &quot; Sweep Trigger Model&quot;
+                            self.slot.trigger.model.create(self.trigger_model)
+                            local sweep_wait_step_block = self.node_name .. &quot;sweep_wait_step&quot;
+                            self.slot.trigger.model.addblock.wait(self.trigger_model, sweep_wait_step_block, step_complete_event)
+                            local sweep_block = self.node_name .. &quot;sweep&quot;
+                            self.slot.trigger.model.addblock.source.action.step(self.trigger_model, sweep_block, self
+                                .channel_idx)
+
+                            if sweep_complete_events then
+                                -- Add an optional wait for other sweep events only on the first sweeper
+                                make_waitall(self.slot.trigger.model, self.trigger_model,
+                                    self.node_name .. &quot;sweep_waitall_block_&quot;,
+                                    sweep_complete_events)
+                            end
+
+                            local sweep_done_notify_block = self.node_name .. &quot;sweep_done&quot;
+                            self.slot.trigger.model.addblock.notify(self.trigger_model, sweep_done_notify_block, self.event)
+                            local sweep_measure_block = self.node_name .. &quot;sweep_measure&quot;
+                            self.slot.trigger.model.addblock.measure(self.trigger_model, sweep_measure_block, self.channel_idx)
+
+                            --TODO: Add notify for when measure completes
+                            --TODO: Add wait on step and sweep measure completes
+
+                            local sweep_counter_block = self.node_name &quot;sweep_counter&quot;
+                            self.slot.trigger.model.addblock.branch.counter(self.trigger_model, sweep_counter_block, sweep_block,
+                                SWEEP[3])
+                            local sweep_step_counter_block = self.node_name .. &quot;sweep_step_counter&quot;
+                            self.slot.trigger.model.addblock.branch.counter(self.trigger_model, sweep_step_counter_block,
+                                sweep_wait_step_block,
+                                STEP[3])
+                        end,
+
+                    }
+                }
+            end,
+
+            ---Functions for the MPSU-2ST module for MP5000-series mainframes
+            ---@return Model
+            MPSU50_2ST = function()
+                return {
+                    common = {
+                        --- Resets this MSMU60-2
+                        ---@param self Device
+                        reset = function(self)
+                            self.channel.reset()
+                            self.node.tsplink.trigger[1].reset()
+                            self.node.tsplink.trigger[2].reset()
+                            self.node.tsplink.trigger[3].reset()
+                            self.node.trigger.timer[1].reset()
+                            self.node.trigger.timer[2].reset()
+                            self.node.trigger.timer[3].reset()
+                            self.node.trigger.timer[4].reset()
+                            for _, v in ipairs(self.slot.trigger.model.table()) do
+                                self.slot.trigger.model.abort(v)
+                                self.slot.trigger.model.delete(v)
+                            end
+                        end,
+                        --- Configures this MSMU60-2
+                        ---@param self Device
+                        config = function(self)
+                            print(&quot;MSMU60_2.bias.config() &quot; .. self.model)
+                        end,
+                    },
+                }
+            end,
+
+            ---Gets the proper model implementation based on the model string of the device
+            ---@param device DeviceDetails
+            ---@return Model | nil, &quot;smu&quot; | &quot;psu&quot; | nil
+            get_model_from_device = function(device)
+                if device.model == &quot;MSMU60-2&quot; then
+                    return UTILITY.MSMU60_2(), &quot;smu&quot;
+                end
+                if device.model == &quot;MPSU50-2ST&quot; then
+                    return UTILITY.MPSU50_2ST(), &quot;psu&quot;
+                end
+                return nil, nil
+            end,
+
+            ---comment
+            ---@param details DeviceDetails The details of the given device
+            ---@param role &quot;bias&quot; | &quot;step&quot; | &quot;sweep&quot; The role the given device should take
+            ---@return Device
+            makedevice = function(details, role)
+                local mt = {}
+                -- get the proper model from the given device
+                local model, ty = UTILITY.get_model_from_device(details)
+
+                -- if the model couldn&apos;t be determined, throw an error
+                if model == nil then error([[Unable to determine device model]], 2) end
+                -- get the default component to ensure the proper functions are implemented
+                mt.functions = UTILITY.DEFAULT_COMPONENT()
+                -- if they are defined, set the common functions
+                if model.common ~= nil then
+                    for k, f in pairs(model.common) do
+                        mt.functions[k] = f
+                    end
+                end
+                -- Replace any common functions with those specifically implemented for being an instrument with the given role
+                if model[role] ~= nil then
+                    for k, f in pairs(model[role]) do
+                        mt.functions[k] = f
+                    end
+                end
+
+                -- __index is called when trying to access members of this object.
+                mt.__index = function(self, k)
+                    -- when accessing functions, check the `functions` table
+                    return mt.functions[k]
+                end
+                -- This should be a read-only table. Error if there is a call to set something new on the table.
+                mt.__newindex = function() error([[Cannot modify read-only table]], 2) end
+
+                -- Set this metatable with the new functions on the given device
+                local device = setmetatable(details, mt) --[[@as Device]]
+
+                -- Compute the values
+                if details.node_idx == 0 then
+                    device.node_name = &quot;localnode&quot;
+                    device.node = localnode
+                elseif details.node_idx &gt; 0 and details.node_idx &lt;= 63 then
+                    device.node_name = &quot;node[&quot; .. device.node_idx .. &quot;]&quot;
+                    device.node = node[device.node_idx]
+                else
+                    error(&quot;The given node index &apos;&quot; .. device.node_idx .. &quot;&apos; is not a valid node index&quot;)
+                end
+
+                device.slot = device.node.slot[device.slot_idx]
+
+                if ty == &quot;smu&quot; then
+                    device.channel = device.slot.smu[device.channel_idx]
+                elseif ty == &quot;psu&quot; then
+                    device.channel = device.slot.psu[device.channel_idx]
+                else
+                    error(&quot;Unable to determine type of device&quot;)
+                end
+
+                if details.model ~= device.slot.model then
+                    error(
+                        &quot;The actual model of the given slot &apos;&quot; ..
+                        device.slot.model ..
+                        &quot;&apos; does not match the expected model &apos;&quot; ..
+                        details.model ..
+                        &quot;&apos;. Please check your configuration.&quot;
+                    )
+                end
+                return device
+            end,
+
+            ---Create a new bias device using the given device
+            ---@param details DeviceDetails
+            ---@return Device
+            makebias = function(details)
+                return UTILITY.makedevice(details, &quot;bias&quot;)
+            end,
+
+            ---Create a new step device using the given device
+            ---@param details DeviceDetails
+            ---@return Device
+            makestep = function(details)
+                return UTILITY.makedevice(details, &quot;step&quot;)
+            end,
+
+            ---Create a new sweep device using the given device
+            ---@param details DeviceDetails
+            ---@return Device
+            makesweep = function(details)
+                return UTILITY.makedevice(details, &quot;sweep&quot;)
+            end
+        }
+
+        -- --- Determine which nodes should be master nodes.
+        -- ---@param nodes NodesDef
+        -- ---@return Device masterNode, Device masterSweepSmu, Device|nil masterStepSmu
+        -- local GetMasterNodes        = function(nodes)
+        --     local masterNode = nodes.steps[1]
+        --     if masterNode == nil then
+        --         masterNode = nodes.sweeps[1]
+        --     end
+
+        --     local masterStepSmu = nodes.steps[1]
+
+        --     return masterNode, nodes.sweeps[1], masterStepSmu
+        -- end
+
+        -- --- This function tests for overruns in any of the system smus&apos; trigger models.
+        -- --- It returns an error to the application that will be displayed in a
+        -- --- dialog box if an overrun occurs.
+        -- ---@param nodes NodesDef
+        -- local _Overruncheck         = function(nodes) end
+
+        -- --- Checks smus for voltage or current compliance.
+        -- --- If a compliance event occurs, the message dialog box is presented to the
+        -- --- user.
+        -- ---@param nodes NodesDef
+        -- local _ComplianceCheck      = function(nodes) end
+
+        -- --- This function waits up to a specified period for the sweeps to complete.
+        -- --- If the delay parameter is -1, then the timeout is infinite. It returns true
+        -- --- if all sweeping actions are complete. Otherwise, the return value is false.
+        -- ---
+        -- ---@param nodes NodesDef
+        -- ---@param interval number Maximum time to wait (in seconds)
+        -- ---@return boolean complete `true` if all sweeping actions are complete, `false` otherwise
+        -- local _WaitForComplete      = function(nodes, interval)
+        --     local pollInterval = 0.1 --seconds
+        --     ---comment
+        --     ---@param nodes NodesDef
+        --     ---@return boolean complete `true` if actions complete, `false` otherwise
+        --     local IsSweepingComplete = function(nodes)
+        --         for _, role --[=[@as Device[]]=] in pairs(nodes) do
+        --             for _, device --[=[@as Device]=] in ipairs(role) do
+        --                 if device.node.status.operation.slot.status.condition ~= 0 then
+        --                     return false
+        --                 end
+        --             end
+        --         end
+        --         return true
+        --     end
+
+        --     local notimeout = false
+        --     if interval &lt; 0 then
+        --         notimeout = true
+        --         interval = 1
+        --     end
+
+        --     while interval &gt; 0 do
+        --         if errorqueue.count &gt; 0 then
+        --             return false
+        --         end
+
+        --         _Overruncheck(nodes)
+        --         _ComplianceCheck(nodes)
+
+        --         if IsSweepingComplete(nodes) then
+        --             return true
+        --         end
+
+        --         delay(pollInterval)
+        --         if ~notimeout then
+        --             interval = interval - pollInterval
+        --         end
+        --     end
+
+        --     if IsSweepingComplete(nodes) then
+        --         return true
+        --     end
+        --     return false
+        -- end
+
+        ---Resets all components that may be used in the test
+        ---@param nodes NodesDef
+        local Reset                 = function(nodes)
+            for _, n in ipairs(nodes.biases) do
+                n:reset()
+            end
+
+            for _, n in ipairs(nodes.steps) do
+                n:reset()
+            end
+
+            for _, n in ipairs(nodes.sweeps) do
+                n:reset()
+            end
+        end
+
+        local ConfigureChannels     = function(nodes)
+            for _, n in ipairs(nodes.biases) do
+                n:config()
+            end
+
+            for _, n in ipairs(nodes.steps) do
+                n:config()
+            end
+
+            for _, n in ipairs(nodes.sweeps) do
+                n:config()
+            end
+        end
+
+        ---This function configures the trigger line interaction between the smus.
+        ---@param nodes NodesDef
+        local ConfigureTriggerLines = function(nodes)
+
+        end
+
+        local AUTO = CONSTANTS.AUTO
+
+        --#endregion Util
+
+        --------------------------------------------------------------------------------
+        -- Test start ------------------------------------------------------------------
+        --------------------------------------------------------------------------------
+
+        local errorTag              = &quot;[{error}]&quot;
+
+        local measurePointTime      = %MEASURE-POINT-TIME%
+
+        local numberOfSteps         = %STEP-COUNT%
+        local numberOfSweeps        = %SWEEP-POINTS%
+
+        local stepToSweepDelay      = %STEP-TO-SWEEP-DELAY%
+
+        local nplc                  = %NPLC%
+        local lineFrequency         = %LINE-FREQUENCY%
+
+        local source_delay          = %SOURCE-DELAY%
+        local measure_delay         = %MEASURE-DELAY%
+        local measure_count         = %MEASURE-COUNT%
+
+
+
+        ---@class NodesDef
+        ---@field biases Device[]
+        ---@field steps Device[]
+        ---@field sweeps Device[]
+        local nodes = {
+            biases = {},
+            steps = {},
+            sweeps = {},
+        }
+    </snippet>
+
+    <composite repeat="BIAS-DEVICE">
+        <substitute name="BIAS-DEVICE:">%MUX%</substitute>
+        <substitute name="BIAS-DEVICE:NODE">%NODE%</substitute>
+        <substitute name="BIAS-DEVICE:NODE-IDX">%NODE-IDX%</substitute>
+        <substitute name="BIAS-DEVICE:SLOT-IDX">%SLOT-IDX%</substitute>
+        <substitute name="BIAS-DEVICE:CHANNEL-IDX">%CHANNEL-IDX%</substitute>
+        <substitute name="BIAS-DEVICE:MODEL">%MODEL%</substitute>
+        <substitute name="BIAS-DEVICE:SFUNCTION">%SFUNCTION%</substitute>
+        <substitute name="BIAS-DEVICE:SRANGE">%SRANGE%</substitute>
+        <substitute name="BIAS-DEVICE:BIAS">%BIAS%</substitute>
+        <substitute name="BIAS-DEVICE:MFUNCTION">%MFUNCTION%</substitute>
+        <substitute name="BIAS-DEVICE:SENSE">%SENSE%</substitute>
+        <substitute name="BIAS-DEVICE:LIMITI">%LIMITI%</substitute>
+        <substitute name="BIAS-DEVICE:LIMITV">%LIMITV%</substitute>
+        <snippet>
+            local %MUX% = UTILITY.insert(nodes.biases, UTILITY.makebias({
+                node_idx = %NODE-IDX%,
+                slot_idx = %SLOT-IDX%,
+                channel_idx = %CHANNEL-IDX%,
+                model = &quot;%MODEL%&quot;,
+                sense = CONSTANTS[&quot;%SENSE%&quot;],
+                source = {
+                    values = { scalar = %BIAS% },
+                    range = %SRANGE%,
+                    offmode = CONSTANTS.OUTPUT_NORMAL,
+                    offfunc = CONSTANTS[&quot;%MFUNCTION%&quot;],
+                    offlimiti = 1e-3, -- fixed constant
+                    offlimitv = 40, -- fixed constant
+                    limiti = %LIMITI%, 
+                    limitv = %LIMITV%,
+                    delay = source_delay,
+                    func = CONSTANTS[&quot;%SFUNCTION%&quot;],
+                },
+                measure = {
+                    nplc = nplc,
+                    count = measure_count,
+                    delay = measure_delay,
+                    func = CONSTANTS[&quot;%MFUNCTION%&quot;],
+                    buffers = {
+        </snippet>
+        <composite name = "Current Measurement (for bias)">
+            <condition name="BIAS-DEVICE:MFUNCTION">current</condition>
+            <snippet>        
+                {
+                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                    type = CONSTANTS.FUNC_DC_CURRENT
+                },
+            </snippet>
+        </composite>
+        <composite name = "Voltage Measurement (for bias)">
+            <condition name="BIAS-DEVICE:MFUNCTION">voltage</condition>
+            <snippet>
+                {
+                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                    type = CONSTANTS.FUNC_DC_VOLTAGE
+                },
+            </snippet>
+        </composite>
+        <composite name = "IV Measurement (for bias)">
+            <condition name="BIAS-DEVICE:MFUNCTION">current,voltage</condition>
+            <snippet>
+                {
+                    buffer = %NODE%.slot[%BIAS-DEVICE:SLOT-IDX%].smu[%BIAS-DEVICE:CHANNEL-IDX%].defbuffer1,
+                    type = CONSTANTS.FUNC_DC_CURRENT
+                },
+                {
+                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer2,
+                    type = CONSTANTS.FUNC_DC_VOLTAGE
+                },
+            </snippet>
+        </composite>
+        <snippet>
+                    },
+                },
+            }))
+        </snippet>
+    </composite>
+
+    <composite repeat="STEP-DEVICE">
+        <substitute name="STEP-DEVICE:">%MUX%</substitute>
+        <substitute name="STEP-DEVICE:NODE">%NODE%</substitute>
+        <substitute name="STEP-DEVICE:NODE-IDX">%NODE-IDX%</substitute>
+        <substitute name="STEP-DEVICE:SLOT-IDX">%SLOT-IDX%</substitute>
+        <substitute name="STEP-DEVICE:CHANNEL-IDX">%CHANNEL-IDX%</substitute>
+        <substitute name="STEP-DEVICE:MODEL">%MODEL%</substitute>
+        <substitute name="STEP-DEVICE:SFUNCTION">%SFUNCTION%</substitute>
+        <substitute name="STEP-DEVICE:SRANGE">%SRANGE%</substitute>
+        <substitute name="STEP-DEVICE:START">%START%</substitute>
+        <substitute name="STEP-DEVICE:STOP">%STOP%</substitute>
+        <substitute name="STEP-DEVICE:ASYMPTOTE">%ASYMPTOTE%</substitute>
+        <substitute name="STEP-DEVICE:STEP-POINTS">%STEP-POINTS%</substitute>
+        <substitute name="STEP-DEVICE:LIST">%LIST%</substitute>
+        <substitute name="STEP-DEVICE:MFUNCTION">%MFUNCTION%</substitute>
+        <substitute name="STEP-DEVICE:SENSE">%SENSE%</substitute>
+        <substitute name="STEP-DEVICE:LIMITI">%LIMITI%</substitute>
+        <substitute name="STEP-DEVICE:LIMITV">%LIMITV%</substitute>
+        <snippet>
+            local %STEP-DEVICE% = UTILITY.insert(nodes.steps, UTILITY.makestep({
+                node_idx = %NODE-IDX%,
+                slot_idx = %SLOT-IDX%,
+                channel_idx = %CHANNEL-IDX%,
+                model = &quot;%MODEL%&quot;,
+                sense = CONSTANTS[&quot;%SENSE%&quot;],
+                source = {
+
+                    -- IF linear sweep --
+                    values = { start = %START%, stop = %STOP%, count = %STEP-POINTS% },
+
+                    --IF log sweep --
+                    values = { start = %START%, stop = %STOP%, count = %STEP-POINTS%, asymptote = %ASYMPTOTE%},
+
+                    --IF LIST --
+                    values = { list = {%LIST%}},
+
+                    range = %SRANGE%,
+                    limiti = %LIMITI%,
+                    limitv = %LIMITV%,
+                    delay = source_delay,
+                    func = CONSTANTS[&quot;%SFUNCTION%&quot;],
+                },
+                measure = {
+                    nplc = nplc,
+                    count = measure_count,
+                    delay = measure_delay,
+                    func = CONSTANTS[&quot;%MFUNCTION%&quot;],
+                    buffers = {
+        </snippet>
+        <composite name="Current Measurement (for step)">
+            <condition name="STEP-DEVICE:MFUNCTION">current</condition>
+            <snippet>        
+                {
+                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                    type = CONSTANTS.FUNC_DC_CURRENT
+                },
+            </snippet>
+        </composite>
+        <composite name="Voltage Measurement (for step)">
+            <condition name="STEP-DEVICE:MFUNCTION">voltage</condition>
+            <snippet>
+                {
+                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                    type = CONSTANTS.FUNC_DC_VOLTAGE
+                },
+            </snippet>
+        </composite>
+        <composite name="IV Measurement (for step)">
+            <condition name="STEP-DEVICE:MFUNCTION">current,voltage</condition>
+            <snippet>
+                {
+                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                    type = CONSTANTS.FUNC_DC_CURRENT
+                },
+                {
+                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer2,
+                    type = CONSTANTS.FUNC_DC_VOLTAGE
+                },
+            </snippet>
+        </composite>
+        <snippet>
+                    },
+                },
+            }))
+        </snippet>
+    </composite>
+
+    <composite repeat="SWEEP-DEVICE">
+        <substitute name="SWEEP-DEVICE:">%MUX%</substitute>
+        <substitute name="SWEEP-DEVICE:NODE">%NODE%</substitute>
+        <substitute name="SWEEP-DEVICE:NODE-IDX">%NODE-IDX%</substitute>
+        <substitute name="SWEEP-DEVICE:SLOT-IDX">%SLOT-IDX%</substitute>
+        <substitute name="SWEEP-DEVICE:CHANNEL-IDX">%CHANNEL-IDX%</substitute>
+        <substitute name="SWEEP-DEVICE:MODEL">%MODEL%</substitute>
+        <substitute name="SWEEP-DEVICE:SFUNCTION">%SFUNCTION%</substitute>
+        <substitute name="SWEEP-DEVICE:SRANGE">%SRANGE%</substitute>
+        <substitute name="SWEEP-DEVICE:START">%START%</substitute>
+        <substitute name="SWEEP-DEVICE:STOP">%STOP%</substitute>
+        <substitute name="SWEEP-DEVICE:ASYMPTOTE">%ASYMPTOTE%</substitute>
+        <substitute name="SWEEP-DEVICE:SWEEP-POINTS">%SWEEP-POINTS%</substitute>
+        <substitute name="SWEEP-DEVICE:LIST">%LIST%</substitute>
+        <substitute name="SWEEP-DEVICE:MFUNCTION">%MFUNCTION%</substitute>
+        <substitute name="SWEEP-DEVICE:SENSE">%SENSE%</substitute>
+        <substitute name="SWEEP-DEVICE:LIMITI">%LIMITI%</substitute>
+        <substitute name="SWEEP-DEVICE:LIMITV">%LIMITV%</substitute>
+        <snippet>
+            local my_sweep1 = UTILITY.insert(nodes.sweeps, UTILITY.makesweep({
+                node_idx = %NODE-IDX%,
+                slot_idx = %SLOT-IDX%,
+                channel_idx = %CHANNEL-IDX%,
+                model = &quot;%MODEL%&quot;,
+                sense = CONSTANTS[&quot;%SENSE%&quot;],
+                source = {
+
+                    --IF linear sweep
+                    values = { start = %START%, stop = %STOP%, count = %SWEEP-POINTS% },
+
+                    --IF log sweep
+                    values = { start = %START%, stop = %STOP%, count = %SWEEP-POINTS%, asymptote = %ASYMPTOTE%},
+
+                    --IF LIST
+                    values = { list = {%LIST%}},
+
+                    range = %SRANGE%,
+                    limiti = %LIMITI%,
+                    limitv = %LIMITV%,
+                    delay = source_delay,
+                    func = CONSTANTS[&quot;%SFUNCTION%&quot;],
+                },
+                measure = {
+                    nplc = nplc,
+                    count = measure_count,
+                    delay = measure_delay,
+                    func = CONSTANTS[&quot;%MFUNCTION%&quot;],
+                    buffers = {
+        </snippet>
+        <composite name="Current Measurement (for sweep)">
+            <condition name="SWEEP-DEVICE:MFUNCTION">current</condition>
+            <snippet>        
+                {
+                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                    type = CONSTANTS.FUNC_DC_CURRENT
+                },
+            </snippet>
+        </composite>
+        <composite name="Voltage Measurement (for sweep)">
+            <condition name="SWEEP-DEVICE:MFUNCTION">voltage</condition>
+            <snippet>
+                {
+                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                    type = CONSTANTS.FUNC_DC_VOLTAGE
+                },
+            </snippet>
+        </composite>
+        <composite name="IV Measurement (for sweep)">
+            <condition name="SWEEP-DEVICE:MFUNCTION">current,voltage</condition>
+            <snippet>
+                {
+                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                    type = CONSTANTS.FUNC_DC_CURRENT
+                },
+                {
+                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer2,
+                    type = CONSTANTS.FUNC_DC_VOLTAGE
+                },
+            </snippet>
+        </composite>
+        <snippet>
+                    },
+                },
+            }))
+        </snippet>
+    </composite>
+
+    <snippet>
+        -- _WaitForComplete(nodes, -1)
+        Reset(nodes)
+        ConfigureChannels(nodes)
+        -- ConfigureTriggerLines()
+        -- StoreReadingBufferIndexes()
+        -- TurnSmusOn()
+        -- MeasureBiasChannels()
+
+        -- InitiateSmus()
+        -- StartSweep()
+
+        -- resetAllDevices(nodes)
+        -- configureAllDevices(nodes)
+
+	</snippet>
+</composite>

@@ -21,7 +21,7 @@
   </div>
   <div *ngIf="expandedStepChannels[chanName]" class="input-group">
     <div>
-      <dropdown
+      <app-dropdown
         [(ngModel)]="deviceID"
         [label]="'ID'"
         [selected]="deviceID"
@@ -29,44 +29,44 @@
         (selectedChange)="onDeviceIDChange($event)"
         *ngIf="deviceID"
         name="deviceID"
-      ></dropdown>
+      ></app-dropdown>
     </div>
     <div class="numeric-control">
-      <input-numeric
+      <app-input-numeric
         [(ngModel)]="stepPoints.value"
         [label]="'Number of Steps'"
         *ngIf="stepPoints"
         name="stepPoints"
         (inputChange)="submitStepGlobalParamsData()"
-      ></input-numeric>
+      ></app-input-numeric>
     </div>
     <div>
-      <input-plain
+      <app-input-plain
         [(ngModel)]="stepToSweepDelay.value"
         [label]="'Step-to-Sweep Delay'"
         [unit]="stepToSweepDelay.unit"
         *ngIf="stepToSweepDelay"
         name="stepToSweepDelay"
         (inputChange)="submitStepGlobalParamsData()"
-      ></input-plain>
+      ></app-input-plain>
     </div>
     <div class="start-stop-container">
-      <input-plain
+      <app-input-plain
         [(ngModel)]="start.value"
         [label]="'Start'"
         [unit]="start.unit"
         *ngIf="start"
         name="start"
         (inputChange)="onEnter()"
-      ></input-plain>
-      <input-plain
+      ></app-input-plain>
+      <app-input-plain
         [(ngModel)]="stop.value"
         [label]="'Stop'"
         [unit]="stop.unit"
         *ngIf="stop"
         name="stepStop"
         (inputChange)="onEnter()"
-      ></input-plain>
+      ></app-input-plain>
     </div>
     <div>
       <app-input-toggle
@@ -79,7 +79,7 @@
       ></app-input-toggle>
     </div>
     <div>
-      <dropdown
+      <app-dropdown
         [(ngModel)]="sourceRange.value"
         [label]="'Source Range'"
         [selected]="sourceRange.value"
@@ -87,10 +87,10 @@
         *ngIf="sourceRange"
         name="sourceRange"
         (selectedChange)="submitStepData()"
-      ></dropdown>
+      ></app-dropdown>
     </div>
     <div>
-      <dropdown
+      <app-dropdown
         [(ngModel)]="measFunction.value"
         [label]="'Meas. Function'"
         [selected]="measFunction.value"
@@ -98,10 +98,10 @@
         *ngIf="measFunction"
         name="measFunction"
         (selectedChange)="submitStepData()"
-      ></dropdown>
+      ></app-dropdown>
     </div>
     <div>
-      <dropdown
+      <app-dropdown
         [(ngModel)]="measRange.value"
         [label]="'Meas. Range'"
         [selected]="measRange.value"
@@ -109,7 +109,7 @@
         *ngIf="measRange"
         name="measRange"
         (selectedChange)="submitStepData()"
-      ></dropdown>
+      ></app-dropdown>
     </div>
     <div>
       <app-input-toggle
@@ -131,6 +131,17 @@
         (selectionchange)="submitStepGlobalParamsData()"
       />
       <button class="timing">Edit</button>
+    </div>
+    <div>
+      <app-dropdown
+        [(ngModel)]="senseMode.value"
+        [label]="'Sense Mode'"
+        [selected]="senseMode.value"
+        [options]="senseMode.range"
+        *ngIf="senseMode"
+        name="senseMode"
+        (selectedChange)="submitStepData()"
+      ></app-dropdown>
     </div>
   </div>
 </div>

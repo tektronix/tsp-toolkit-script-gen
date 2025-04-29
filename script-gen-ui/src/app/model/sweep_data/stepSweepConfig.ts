@@ -1,3 +1,4 @@
+import { IStepGlobalParameters, ISweepGlobalParameters } from '../interface';
 import { ParameterFloat, ParameterInt } from './TimingConfig';
 
 export class StepGlobalParameters {
@@ -5,7 +6,7 @@ export class StepGlobalParameters {
   step_to_sweep_delay: ParameterFloat;
   list_step: boolean;
 
-  constructor(data: any) {
+  constructor(data: IStepGlobalParameters) {
     this.step_points = new ParameterInt(data.step_points);
     this.step_to_sweep_delay = new ParameterFloat(data.step_to_sweep_delay);
     this.list_step = data.list_step;
@@ -25,7 +26,7 @@ export class SweepGlobalParameters {
   sweep_time_per_point: ParameterFloat;
   list_sweep: boolean;
 
-  constructor(data: any) {
+  constructor(data: ISweepGlobalParameters) {
     this.sweep_points = new ParameterInt(data.sweep_points);
     this.sweep_time_per_point = new ParameterFloat(data.sweep_time_per_point);
     this.list_sweep = data.list_sweep;

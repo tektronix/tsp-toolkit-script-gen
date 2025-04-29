@@ -1,8 +1,10 @@
+import { IParameterFloat, IParameterInt, IParameterString, ITimingConfig } from "../interface";
+
 export class ParameterInt {
   id: string;
   value: number;
 
-  constructor(data: any) {
+  constructor(data: IParameterInt) {
     this.id = data.id;
     this.value = data.value;
   }
@@ -20,7 +22,7 @@ export class ParameterFloat {
   value: number;
   unit: string;
 
-  constructor(data: any) {
+  constructor(data: IParameterFloat) {
     this.id = data.id;
     this.value = data.value;
     this.unit = data.unit;
@@ -40,7 +42,7 @@ export class ParameterString {
   value: string;
   range: string[];
 
-  constructor(data: any) {
+  constructor(data: IParameterString) {
     this.id = data.id;
     this.value = data.value;
     this.range = data.range;
@@ -76,7 +78,7 @@ export class TimingConfig {
   sampling_delay: ParameterFloat;
   sampling_analog_filter: ParameterString;
 
-  constructor(data: any) {
+  constructor(data: ITimingConfig) {
     this.nplc = new ParameterFloat(data.nplc);
     this.auto_zero = new ParameterString(data.auto_zero);
     this.source_delay_type = new ParameterString(data.source_delay_type);

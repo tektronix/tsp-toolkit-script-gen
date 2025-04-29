@@ -97,3 +97,18 @@
     margin-bottom: 5px;
     padding-right: 5px;
   }
+
+  .chan-name-input {
+    border: 1px solid var(--vscode-editorWidget-border);
+    border-radius: 5px;
+    padding: 4px;
+    font-size: 1.2em;
+    font-family: var(--vscode-font-family);
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    width: 100%; /* Adjust width as needed */
+  }
+
+  .chan-name-input:focus {
+    outline: 2px solid var(--vscode-focusBorder);
+  }

@@ -11,7 +11,7 @@
       <mat-icon (click)="toggleSweepChannel(chanName)" class="h3">
         {{ expandedSweepChannels[chanName] ? 'expand_more' : 'chevron_right' }}
       </mat-icon>
-      <h3 (click)="toggleSweepChannel(chanName)">
+      <h3 tabindex="0" (click)="toggleSweepChannel(chanName)" (keydown)="handleKeydown($event)">
         {{ chanName }}
       </h3>
     </div>
@@ -23,7 +23,7 @@
   </div>
   <div *ngIf="expandedSweepChannels[chanName]" class="input-group">
     <div>
-      <dropdown
+      <app-dropdown
         [(ngModel)]="deviceID"
         [label]="'ID'"
         [selected]="deviceID"
@@ -31,25 +31,25 @@
         *ngIf="deviceID"
         name="deviceID"
         (selectedChange)="onDeviceIDChange($event)"
-      ></dropdown>
+      ></app-dropdown>
     </div>
     <div class="start-stop-container">
-      <input-plain
+      <app-input-plain
         [(ngModel)]="start.value"
         [label]="'Start'"
         [unit]="start.unit"
         *ngIf="start"
         name="start"
         (inputChange)="onEnter()"
-      ></input-plain>
-      <input-plain
+      ></app-input-plain>
+      <app-input-plain
         [(ngModel)]="stop.value"
         [label]="'Stop'"
         [unit]="stop.unit"
         *ngIf="stop"
         name="stop"
         (inputChange)="onEnter()"
-      ></input-plain>
+      ></app-input-plain>
     </div>
     <div>
       <app-input-toggle
@@ -62,7 +62,7 @@
       ></app-input-toggle>
     </div>
     <div>
-      <dropdown
+      <app-dropdown
         [(ngModel)]="sourceRange.value"
         [label]="'Source Range'"
         [selected]="sourceRange.value"
@@ -70,10 +70,10 @@
         *ngIf="sourceRange"
         name="sourceRange"
         (selectedChange)="submitSweepData()"
-      ></dropdown>
+      ></app-dropdown>
     </div>
     <div>
-      <dropdown
+      <app-dropdown
         [(ngModel)]="measFunction.value"
         [label]="'Meas. Function'"
         [selected]="measFunction.value"
@@ -81,10 +81,10 @@
         *ngIf="measFunction"
         name="measFunction"
         (selectedChange)="submitSweepData()"
-      ></dropdown>
+      ></app-dropdown>
     </div>
     <div>
-      <dropdown
+      <app-dropdown
         [(ngModel)]="measRange.value"
         [label]="'Meas. Range'"
         [selected]="measRange.value"
@@ -92,7 +92,7 @@
         *ngIf="measRange"
         name="measRange"
         (selectedChange)="submitSweepData()"
-      ></dropdown>
+      ></app-dropdown>
     </div>
     <div>
       <app-input-toggle
@@ -103,6 +103,17 @@
         name="style"
         (toggleOptionChange)="onToggle($event)"
       ></app-input-toggle>
+    </div>
+    <div>
+      <app-dropdown
+        [(ngModel)]="senseMode.value"
+        [label]="'Sense Mode'"
+        [selected]="senseMode.value"
+        [options]="senseMode.range"
+        *ngIf="senseMode"
+        name="senseMode"
+        (selectedChange)="submitSweepData()"
+      ></app-dropdown>
     </div>
   </div>
 </div>

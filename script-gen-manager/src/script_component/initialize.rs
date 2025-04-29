@@ -3,6 +3,8 @@ use std::{any::Any, collections::HashMap};
 use script_aggregator::script_buffer::ScriptBuffer;
 use xml_handler::{composite::CommonChunk, group::Group};
 
+use crate::model::sweep_data::sweep_config::SweepConfig;
+
 use super::function::FunctionModel;
 
 /// InitializeModel is an aggregation of FunctionModel that represents the _Intialize() function of the script.
@@ -36,7 +38,7 @@ impl FunctionModel for InitializeModel {
         &self.metadata
     }
 
-    fn to_script(&mut self, script_buffer: &mut ScriptBuffer) {
+    fn to_script(&mut self, sweep_config: &SweepConfig, script_buffer: &mut ScriptBuffer) {
         self.val_replacement_map
             .insert(String::from("MAX-NODES"), String::from("64"));
         self.val_replacement_map

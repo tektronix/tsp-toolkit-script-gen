@@ -9,7 +9,7 @@ use crate::{
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BiasChannel {
     pub common_chan_attributes: CommonChanAttributes,
-    bias: ParameterFloat,
+    pub bias: ParameterFloat,
 }
 
 impl BiasChannel {

@@ -1,5 +1,5 @@
 use script_gen_manager::{
-    catalog::Catalog, device_manager::DeviceManager, model::sweep_data::sweep_model::SweepModel,
+    device_manager::DeviceManager, model::sweep_data::sweep_model::SweepModel,
 };
 use serde_json::json;
 
@@ -8,15 +8,15 @@ use crate::back_end::ipc_data::IpcData;
 #[derive(Clone)]
 pub struct DataModel {
     pub data: String,
-    catalog: Catalog,
+    pub sweep: Option<SweepModel>,
     pub device_manager: DeviceManager,
 }
 
 impl DataModel {
-    pub fn new(catalog: Catalog) -> Self {
+    pub fn new() -> Self {
         DataModel {
             data: String::new(),
-            catalog,
+            sweep: None,
             device_manager: DeviceManager::new(),
         }
     }
@@ -29,9 +29,29 @@ impl DataModel {
         sweep_model.sweep_config.device_list = self.device_manager.device_list.clone();
         sweep_model.sweep_config.auto_configure();
 
+        self.sweep = Some(sweep_model.clone());
         self.serialize_sweep_model(&sweep_model, "initial_response", "Initialized sweep model")
     }
 
+    /// Processes data received from the client by deserializing it into a `SweepModel`,
+    /// evaluating its configuration, and serializing the result into a response.
+    ///
+    /// # Arguments
+    /// * `data` - A JSON string representing the `SweepModel` to be processed.
+    ///
+    /// # Returns
+    /// A JSON string containing the serialized response. If the deserialization or processing
+    /// fails, an error response is returned.
+    ///
+    /// # Behavior
+    /// 1. Attempts to deserialize the input JSON string into a `SweepModel`.
+    /// 2. If successful:
+    ///    - Evaluates the sweep configuration.
+    ///    - Updates the `sweep` field of the `DataModel` with the processed `SweepModel`.
+    ///    - Serializes the processed `SweepModel` into a response.
+    /// 3. If deserialization fails:
+    ///    - Logs the error.
+    ///    - Returns an error response.
     pub fn process_data_from_client(&mut self, data: String) -> String {
         // Deserialize the JSON string into a serde_json::Value
         match serde_json::from_str::<SweepModel>(&data) {
@@ -42,6 +62,8 @@ impl DataModel {
                 );
                 sweep_model.sweep_config.evaluate();
 
+                //update sweep variable - required for actual script generation
+                self.sweep = Some(sweep_model.clone());
                 self.serialize_sweep_model(
                     &sweep_model,
                     "evaluated_response",
@@ -55,6 +77,40 @@ impl DataModel {
         }
     }
 
+    /// Adds, removes, or updates a channel in the `SweepModel` based on the provided `ipc_data`.
+    ///
+    /// # Arguments
+    /// * `ipc_data` - An `IpcData` object containing the JSON representation of the `SweepModel`
+    ///   and additional information specifying the operation to perform.
+    ///
+    /// # Returns
+    /// A JSON string containing the serialized response. If the deserialization or processing
+    /// fails, an error response is returned.
+    ///
+    /// # Behavior
+    /// 1. Attempts to deserialize the `ipc_data.json_value` into a `SweepModel`.
+    /// 2. If successful:
+    ///    - Parses the `ipc_data.additional_info` to determine the operation:
+    ///      - `"remove"`: Removes a channel specified by the third value in `additional_info`.
+    ///      - `"add"`: Adds a channel specified by the second value in `additional_info`.
+    ///      - `"update"`: Updates a channel using the second, third, and fourth values in `additional_info`.
+    ///    - Updates the `sweep` field of the `DataModel` with the modified `SweepModel`.
+    ///    - Serializes the modified `SweepModel` into a response.
+    /// 3. If deserialization fails:
+    ///    - Logs the error.
+    ///    - Returns an error response.
+    ///
+    /// # Example
+    /// ```
+    /// let mut data_model = DataModel::new(catalog);
+    /// let ipc_data = IpcData {
+    ///     request_type: "reallocation".to_string(),
+    ///     additional_info: "update,bias,old_chan_id,new_chan_id".to_string(),
+    ///     json_value: r#"{"sweep_model": {...}}"#.to_string(),
+    /// };
+    /// let response = data_model.add_remove_channel(ipc_data);
+    /// println!("{}", response);
+    /// ```
     pub fn add_remove_channel(&mut self, ipc_data: IpcData) -> String {
         match serde_json::from_str::<SweepModel>(ipc_data.json_value.as_str()) {
             Ok(mut sweep_model) => {
@@ -63,6 +119,7 @@ impl DataModel {
                     sweep_model
                 );
 
+                sweep_model.sweep_config.update_channel_devices();
                 let res: Vec<&str> = ipc_data.additional_info.split(',').collect();
                 if res[0] == "remove" {
                     sweep_model.sweep_config.remove_channel(res[2].to_string());
@@ -74,10 +131,9 @@ impl DataModel {
                         res[2].to_string(),
                         res[3].to_string(),
                     );
-                } else {
-                    println!("Unknown request type: {}", res[0]);
                 }
 
+                self.sweep = Some(sweep_model.clone());
                 self.serialize_sweep_model(
                     &sweep_model,
                     "evaluated_response",

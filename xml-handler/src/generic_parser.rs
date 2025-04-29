@@ -3,9 +3,9 @@ use quick_xml::reader::Reader;
 
 use crate::error::{Result, XMLHandlerError};
 use crate::group::Group;
-use crate::resources::DEFAULT_FUNC_METADATA;
+use crate::resources::SWEEP_FUNC_METADATA;
 
-/// Parses the XML data from the DefaultFunctionMetaData.xml file and returns a vector of `Group` objects.
+/// Parses the XML data from the SweepFunctionMetaData.xml file and returns a vector of `Group` objects.
 ///
 /// # Errors
 ///
@@ -19,7 +19,7 @@ use crate::resources::DEFAULT_FUNC_METADATA;
 /// - `Ok(Vec<Group>)` containing a vector of `Group` objects if parsing is successful.
 /// - `Err(XMLHandlerError)` if there is an error during parsing.
 pub fn parse_xml() -> Result<Vec<Group>> {
-    let binding = DEFAULT_FUNC_METADATA.to_string();
+    let binding = SWEEP_FUNC_METADATA.to_string();
     let mut reader = Reader::from_str(binding.as_str());
     //reader.config_mut().trim_text(true);
 

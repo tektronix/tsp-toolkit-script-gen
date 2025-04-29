@@ -11,7 +11,7 @@
       <mat-icon (click)="toggleBiasChannel()" class="h3">
         {{ isBiasChanExpanded ? "expand_more" : "chevron_right" }}
       </mat-icon>
-      <h3 (click)="toggleBiasChannel()">
+      <h3 tabindex="0" (click)="toggleBiasChannel()" (keydown)="handleKeydown($event)">
         {{ chanName }}
       </h3>
     </div>
@@ -21,7 +21,7 @@
   </div>
   <div *ngIf="isBiasChanExpanded" class="input-group">
     <div>
-      <dropdown
+      <app-dropdown
         [(ngModel)]="deviceID"
         [label]="'ID'"
         [selected]="deviceID"
@@ -29,17 +29,17 @@
         (selectedChange)="onDeviceIDChange($event)"
         *ngIf="deviceID"
         name="deviceID"
-      ></dropdown>
+      ></app-dropdown>
     </div>
     <div>
-      <input-plain
+      <app-input-plain
         [(ngModel)]="bias.value"
         [label]="'Source Value'"
         [unit]="bias.unit"
         *ngIf="bias"
         name="bias"
         (inputChange)="onBiasValueChange()"
-      ></input-plain>
+      ></app-input-plain>
     </div>
     <div>
       <app-input-toggle
@@ -52,7 +52,7 @@
       ></app-input-toggle>
     </div>
     <div>
-      <dropdown
+      <app-dropdown
         [(ngModel)]="sourceRange.value"
         [label]="'Source Range'"
         [selected]="sourceRange.value"
@@ -60,10 +60,10 @@
         *ngIf="sourceRange"
         name="sourceRange"
         (change)="onRangeChange($event)"
-      ></dropdown>
+      ></app-dropdown>
     </div>
     <div>
-      <dropdown
+      <app-dropdown
         [(ngModel)]="measFunction.value"
         [label]="'Meas. Function'"
         [selected]="measFunction.value"
@@ -71,10 +71,10 @@
         *ngIf="measFunction"
         name="measFunction"
         (selectedChange)="submitBiasData()"
-      ></dropdown>
+      ></app-dropdown>
     </div>
     <div>
-      <dropdown
+      <app-dropdown
         [(ngModel)]="measRange.value"
         [label]="'Meas. Range'"
         [selected]="measRange.value"
@@ -82,7 +82,18 @@
         *ngIf="measRange"
         name="measRange"
         (selectedChange)="submitBiasData()"
-      ></dropdown>
+      ></app-dropdown>
+    </div>
+    <div>
+      <app-dropdown
+        [(ngModel)]="senseMode.value"
+        [label]="'Sense Mode'"
+        [selected]="senseMode.value"
+        [options]="senseMode.range"
+        *ngIf="senseMode"
+        name="senseMode"
+        (selectedChange)="submitBiasData()"
+      ></app-dropdown>
     </div>
   </div>
 </div>

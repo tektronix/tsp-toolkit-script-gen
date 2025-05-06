@@ -1,0 +1,28 @@
+{
+    "name": "@tek-engineering/script-gen",
+    "version": "0.1.0",
+    "main": "index.js",
+    "bin": {
+        "windows-kic-script-gen": "./bin/kic-script-gen.exe",
+        "linux-kic-script-gen": "./bin/kic-script-gen"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/tek-engineering/tsp-toolkit-script-gen.git"
+    },
+    "typings": "index.d.ts",
+    "files": [
+        "index.d.ts",
+        "index.js",
+        "bin/*"
+    ],
+    "scripts": {},
+    "devDependencies": {
+        "@cyclonedx/cyclonedx-npm": "^1.10.0",
+        "@types/vscode": "^1.87.0",
+        "license-checker": "^25.0.1",
+        "source-map-support": "^0.5.21",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.3"
+    }
+}

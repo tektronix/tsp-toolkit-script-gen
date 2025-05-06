@@ -106,13 +106,31 @@ pub async fn start_web_server(
     mut shutdown_rx: watch::Receiver<()>,
 ) -> std::io::Result<()> {
     let server = HttpServer::new(move || {
+        let exe_path =
+            std::env::current_exe().expect("should be able to get path of server executable");
+        let exe_dir = exe_path
+            .parent()
+            .expect("should be able to get directory of server executable");
         App::new()
-        .app_data(web::Data::new(app_state.clone()))
-            .route("/", web::get().to(|| async {
-                fs::NamedFile::open("C:\\git\\TekSpecific\\tsp-toolkit-script-gen\\script-gen-ui\\dist\\script-gen-ui\\browser\\index.html")
-            }))
+            .app_data(web::Data::new(app_state.clone()))
+            .route(
+                "/",
+                web::get().to(|| async {
+                    let exe_path = std::env::current_exe()?;
+                    let Some(exe_dir) = exe_path.parent() else {
+                        return Err(std::io::Error::other(
+                            "Unable to get directory of server executable",
+                        ));
+                    };
+                    fs::NamedFile::open(format!("{}/browser/index.html", exe_dir.display()))
+                }),
+            )
             .route("/ws", web::get().to(ws_index))
-            .service(fs::Files::new("/", "C:\\git\\TekSpecific\\tsp-toolkit-script-gen\\script-gen-ui\\dist\\script-gen-ui\\browser").index_file("index.html"))            .wrap(
+            .service(
+                fs::Files::new("/", format!("{}/browser", exe_dir.display()))
+                    .index_file("index.html"),
+            )
+            .wrap(
                 actix_cors::Cors::default()
                     .allow_any_origin()
                     .allowed_methods(vec!["GET", "POST"])
@@ -188,7 +206,7 @@ pub async fn start(mut script_model: ScriptModel) -> anyhow::Result<()> {
                         {
                             "name": "localnode",
                             "model": "MP5103",
-                            "slot": 
+                            "slot":
                             [
                                 {
                                     "name": "slot[1]",

@@ -16,6 +16,7 @@ tsp-toolkit-kic-lib = { git = "https://github.com/tektronix/tsp-toolkit-kic-lib.
 
 [workspace.lints.rust]
 warnings = "deny"
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage_nightly)', 'cfg(coverage)'] }
 
 [workspace.lints.clippy]
 pedantic = { level = "deny", priority = -1 }

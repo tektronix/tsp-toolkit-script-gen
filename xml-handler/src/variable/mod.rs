@@ -205,6 +205,7 @@ impl Depend {
 }
 
 #[cfg(test)]
+#[cfg_attr(coverage_nightly, coverage(off))]
 mod tests {
     use super::*;
 
@@ -240,7 +241,7 @@ mod tests {
                                         <min>1</min>
                                         <max>100</max>
                                     </constraints>
-                            </variable> 
+                            </variable>
                         </variables>"#;
 
         let result = parse_variable_from_xml(invalid_xml);
@@ -261,7 +262,7 @@ mod tests {
                                         <min>1</min>
                                         <max>100</max>
                                     </constraints>
-                            </variable> 
+                            </variable>
                         </variables>"#;
 
         match parse_variable_from_xml(xml) {

@@ -1,0 +1,13 @@
+[store]
+dir = "test-results"
+
+[profile.default]
+status-level = "all"
+final-status-level = "flaky"
+failure-output = "immediate-final"
+fail-fast = false
+
+[profile.default.junit]
+path = "script-gen-rust.junit.xml"
+report-name = "script-gen-rust"
+store-failure-output = true

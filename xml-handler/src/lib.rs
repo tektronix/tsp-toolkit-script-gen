@@ -1,3 +1,5 @@
+#![feature(coverage_attribute)]
+
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub mod generic_parser;

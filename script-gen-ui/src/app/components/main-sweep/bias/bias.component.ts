@@ -4,6 +4,7 @@ import {
   Output,
   EventEmitter,
   SimpleChanges, OnChanges,
+  ElementRef,
 } from '@angular/core';
 import { BiasChannel } from '../../../model/chan_data/biasChannel';
 import {
@@ -20,6 +21,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { DropdownComponent } from '../../controls/dropdown/dropdown.component';
 import { InputPlainComponent } from '../../controls/input-plain/input-plain.component';
 import { InputToggleComponent } from '../../controls/input-toggle/input-toggle.component';
+
 
 @Component({
   selector: 'app-bias',
@@ -70,7 +72,7 @@ export class BiasComponent implements OnChanges {
     this.isFocused = state;
   }
 
-  // constructor() {}
+  constructor(public elementRef: ElementRef) {}
 
   // ngOnInit(): void {
   //   this.updateAll();
@@ -122,6 +124,7 @@ export class BiasComponent implements OnChanges {
 
   getBiasChanConfigFromComponent(): BiasChannel {
     //TODO: for all values that can be undefined throw an error as it's not a valid scenario
+    //TODO: for all values that can be undefined throw an error as it's not a valid scenario
     return new BiasChannel({
       common_chan_attributes: {
         uuid: this.uuid,
@@ -152,10 +155,12 @@ export class BiasComponent implements OnChanges {
     const target = event.target as HTMLSelectElement;
     const selectedRange = target.value;
     console.log('Selected range:', selectedRange);
+    console.log('Selected range:', selectedRange);
     this.submitBiasData();
   }
 
   onToggle(selectedOption: string) {
+    console.log('Selected option:', selectedOption);
     console.log('Selected option:', selectedOption);
     this.submitBiasData();
   }
@@ -174,4 +179,5 @@ export class BiasComponent implements OnChanges {
       event.preventDefault(); // Prevent default scrolling for Space key
     }
   }
+
 }

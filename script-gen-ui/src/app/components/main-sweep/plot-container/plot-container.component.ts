@@ -18,7 +18,6 @@ import { BrowserModule } from '@angular/platform-browser';
   imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, PlotBiasComponent, PlotStepComponent, PlotSweepComponent],
   templateUrl: './plot-container.component.html',
   styleUrls: ['./plot-container.component.scss'],
-
 })
 export class PlotContainerComponent implements OnInit, AfterViewInit {
   @ViewChild('plotContainer', { static: false }) plotContainer!: ElementRef;
@@ -142,13 +141,13 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
       },
     ],
   };
-  plotConfig: { staticPlot: boolean; } | undefined;
+  plotConfig: { staticPlot: boolean; responsive: boolean} | undefined;
 
   // constructor() {}
 
   ngOnInit(): void {
     this.plotDataX = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    this.plotConfig = { staticPlot: true };
+    this.plotConfig = { staticPlot: true, responsive: true };
 
     if (this.stepGlobalParameters) {
       this.numberOfSteps = this.stepGlobalParameters.step_points; // Assuming step_points has a 'value' property containing the number
@@ -180,5 +179,25 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
       backgroundColor: isActive ? backgroundColor : 'var(--vscode-activityBar-border)',
       color: isActive ? 'black' : 'white',
     };
+  }
+
+  scrollToPlot(componentType: 'bias' | 'step' | 'sweep', index: number): void {
+    let plotComponent: PlotBiasComponent | PlotStepComponent | PlotSweepComponent | undefined;
+
+    if (componentType === 'bias') {
+      plotComponent = this.plotBiasComponents.toArray()[index];
+    } else if (componentType === 'step') {
+      plotComponent = this.plotStepComponents.toArray()[index];
+    } else if (componentType === 'sweep') {
+      plotComponent = this.plotSweepComponents.toArray()[index];
+    }
+
+    if (plotComponent) {
+      const element = (plotComponent).elementRef.nativeElement; // Access the DOM element
+      element.scrollIntoView({
+        behavior: 'smooth', // Smooth scrolling
+        block: 'center',    // Align to the center of the viewport
+      });
+    }
   }
 }

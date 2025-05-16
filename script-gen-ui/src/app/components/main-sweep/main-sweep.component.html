@@ -1,13 +1,18 @@
 <div class="parent-container">
-  <div class="input-container">
+  <div class="input-container" style="overflow: auto; max-height: 100vh;">
     <div class="timing-autorangebox">
-      <button class="timing" (click)="enableTiming()">Timing</button>
-      <app-timing
-        *ngIf="showTiming"
-        [sweepTimingConfig]="sweepTimingConfig"
-        (emitTimingData)="updateTimingConfig()"
-        (ok)="closeTimingDialog()"
-      ></app-timing>
+      <div>
+        <button class="timing" (click)="enableTiming()">Timing</button>
+        <app-timing
+          *ngIf="showTiming"
+          [sweepTimingConfig]="sweepTimingConfig"
+          (emitTimingData)="updateTimingConfig()"
+          (ok)="closeTimingDialog()"
+        ></app-timing>
+      </div>
+      <div>
+        <button class="fetch-script" (click)="fetchScript()" >Fetch Script</button>
+      </div>
     </div>
 
     <div class="expander">
@@ -37,7 +42,7 @@
           (emitBiasChannelIdChange)="updateBiasChannelId($event)"
           [color]="getBiasColor(biasChannel)"
           [isActive]="activeComponent === 'bias' && activeIndex === i"
-          (click)="setActiveComponent('bias', i)"
+          (click)="setActiveComponent('bias', i); scrollToInstance('bias', i); scrollToPlotInPlotContainer('bias', i)"
         ></app-bias>
       </div>
     </div>
@@ -63,7 +68,7 @@
             (emitStepChannelIdChange)="updateStepChannelId($event)"
             [color]="getStepColor(stepChannel)"
             [isActive]="activeComponent === 'step' && activeIndex === i"
-            (click)="setActiveComponent('step', i)"
+            (click)="setActiveComponent('step', i); scrollToInstance('step', i); scrollToPlotInPlotContainer('step', i)"
           ></app-step>
         </div>
       </div>
@@ -108,14 +113,14 @@
             (emitSweepChannelIdChange)="updateSweepChannelId($event)"
             [color]="getSweepColor(sweepChannel)"
             [isActive]="activeComponent === 'sweep' && activeIndex === i"
-            (click)="setActiveComponent('sweep', i)"
+            (click)="setActiveComponent('sweep', i); scrollToInstance('sweep', i); scrollToPlotInPlotContainer('sweep', i)"
           ></app-sweep>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="plot-container">
+  <div class="plot-container" style="overflow: auto; max-height: 100vh;">
     <app-plot-container
       [biasChannels]="biasChannels"
       [stepChannels]="stepChannels"

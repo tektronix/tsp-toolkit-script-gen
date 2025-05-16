@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Input, OnDestroy, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { SweepChannel } from '../../../../model/chan_data/sweepChannel';
 import { CommonChanAttributes } from '../../../../model/chan_data/defaultChannel';
 import { ChannelRange } from '../../../../model/chan_data/channelRange';
@@ -17,7 +17,7 @@ import { BrowserModule } from '@angular/platform-browser';
   templateUrl: './plot-sweep.component.html',
   styleUrl: './plot-sweep.component.scss'
 })
-export class PlotSweepComponent implements AfterViewInit, OnInit{
+export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnChanges {
   @Input() sweepChannel: SweepChannel | undefined;
   @Input() sweepGlobalParameters: SweepGlobalParameters | undefined;
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
@@ -25,11 +25,14 @@ export class PlotSweepComponent implements AfterViewInit, OnInit{
   @Input() plotConfig: { staticPlot: boolean; } | undefined;
 
   @Input() isActive = false;
+
   @Input() activeStyle: {backgroundColor:string, color:string} = {
     backgroundColor: '',
     color: ''
   };
   @Input() color = '';
+  private mutationObserver: MutationObserver | undefined;
+  private originalBackgroundColor = '';
 
   sweepDivID = '';
 
@@ -54,7 +57,7 @@ export class PlotSweepComponent implements AfterViewInit, OnInit{
       ticksuffix: ' s',
       rangemode: 'nonnegative',
       separatethousands: false,
-      tickfont: { family: 'Times New Roman', color: 'white', size: 9 },
+      tickfont: { family: 'Roboto, "Helvetica Neue", sans-serif', color: 'white', size: 9 },
       dtick: 1,
       tick0: 0,
       showtickprefix: 'none',
@@ -95,7 +98,7 @@ export class PlotSweepComponent implements AfterViewInit, OnInit{
     yaxis: {
       visible: true,
       range: [0, 1],
-      tickfont: { family: 'Times New Roman', color: 'white', size: 9 },
+      tickfont: { family: 'Roboto, "Helvetica Neue", sans-serif', color: 'white', size: 9 },
       dtick: 0.25,
       tick0: 0,
       tickwidth: 0,
@@ -110,7 +113,7 @@ export class PlotSweepComponent implements AfterViewInit, OnInit{
       griddash: 'dot',
     },
     yaxis2: {
-      tickfont: {family: 'Times New Roman', color: 'white', size: 9},
+      tickfont: {family: 'Roboto, "Helvetica Neue", sans-serif', color: 'white', size: 9},
       anchor: 'x',
       overlaying: 'y',
       side: 'left',
@@ -124,7 +127,7 @@ export class PlotSweepComponent implements AfterViewInit, OnInit{
       showtickprefix: 'all',
       showticksuffix: 'all',
       tickwidth: 0,
-      linecolor: 'black',
+      linecolor: 'transparent',
       linewidth: 1,
     },
     border_radius: 10,
@@ -159,6 +162,8 @@ export class PlotSweepComponent implements AfterViewInit, OnInit{
   };
   private plotData = [this.plotData1, this.plotData2];
 
+  constructor(public elementRef: ElementRef){}
+
   ngOnInit() {
     if (this.sweepChannel && this.sweepGlobalParameters && this.stepGlobalParameters) {
       this.commonChanAttributes =
@@ -177,42 +182,40 @@ export class PlotSweepComponent implements AfterViewInit, OnInit{
       this.style = this.sweepChannel.start_stop_channel.style;
 
       this.numPoints = this.sweepGlobalParameters?.sweep_points;
-      this.numSteps = this.stepGlobalParameters?.step_points.value; // Assuming step_points has a 'value' property containing the number of steps
+      this.numSteps = this.stepGlobalParameters?.step_points.value;
 
-      this.sweepDivID = this.commonChanAttributes.device_id;
+      this.sweepDivID = this.sweepChannel.start_stop_channel.common_chan_attributes.uuid;
+      console.log('sweepDivID', this.sweepDivID);
     }
     console.log(this.plotDataX, this.plotData);
     this.plotData1.x = this.plotDataX;
-    // this.numberOfSteps = this.stepGlobalParameters.step_points.value; // Assuming step_points has a 'value' property containing the number
-
-
-    this.sweepValues();
-    // const stepSize = this.numberOfSteps ?? 1; // Default to 1 if undefined
-    // const sweepValues = Array.from({ length: 10 }, (_, i) => 0 + i * stepSize);
-    // this.plotData1.y = Array.from({ length: 10 }, () => sweepValues).flat();
-    // this.plotData1.x = Array.from({ length: 10 }, (_, i) => Array.from({ length: 10 }, (_, j) => i + j / 10)).flat();
-    // this.plotData1.line.color = this.color;
-    // console.log('plot data', this.plotData1.x, this.plotData1.y, this.numberOfSteps, this.numPoints);
+    this.plotData1.line.color = this.color;
     this.updatePlotLayout();
+    this.initializePlot();
+    this.observeThemeChanges();
+    this.sweepValues();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['isActive'] && !changes['isActive'].isFirstChange()) {
+      console.log('isActive changed:', changes['isActive'].currentValue);
+      this.renderPlot(); // Re-render the plot when isActive changes
+    }
   }
 
   sweepValues(){
     if (this.start && this.stop && this.numSteps && this.numPoints) {
-      const numberOfPoints = this.numPoints.value; // Default to 10 if undefined
-      // const numberOfSteps = this.numberOfSteps; // Default to 10 if undefined
-      const startValue = this.start.value; // Assuming `start` has a `value` property
-      const stopValue = this.stop.value;   // Assuming `stop` has a `value` property
+      const numberOfPoints = this.numPoints.value;
+      const startValue = this.start.value;
+      const stopValue = this.stop.value;
 
-      // Calculate the step size based on the range (stop - start) and the number of steps
       const stepSize = (stopValue - startValue) / (numberOfPoints - 1);
 
-      // Generate y values starting from `startValue` and ending at `stopValue`
       const sweepValues = Array.from(
         { length: numberOfPoints },
         (_, i) => startValue + i * stepSize
       ).flat();
 
-      // Populate y data for the plot
       this.plotData1.y = Array.from(
         { length: this.numSteps },
         () => sweepValues
@@ -229,11 +232,20 @@ export class PlotSweepComponent implements AfterViewInit, OnInit{
   }
 
   ngAfterViewInit(): void{
+    // setTimeout(() => {
+    //   if (this.plotDataX && this.plotConfig) {
+    //     this.sweepValues();
+    //     this.renderPlot();
+    //     Plotly.newPlot('divStep', this.plotData, this.plotLayout, this.plotConfig);
+    //   }
+    //   this.renderPlot();
+    // }, 0);
     if (this.plotDataX && this.plotConfig) {
       this.sweepValues();
       Plotly.newPlot(this.sweepDivID, this.plotData, this.plotLayout, this.plotConfig);
       console.log('sweep data', this.plotData, this.plotLayout, this.plotConfig);
     }
+    this.renderPlot();
   }
 
   private updatePlotLayout(): void {
@@ -250,5 +262,86 @@ export class PlotSweepComponent implements AfterViewInit, OnInit{
     //   const dtick = maxRange / 4;
     //   this.plotLayout.yaxis.dtick = dtick;
     // }
+  }
+
+  private initializePlot(): void {
+    if (this.sweepChannel && this.sweepChannel.start_stop_channel.common_chan_attributes.uuid) {
+      this.sweepDivID = `plotDiv${this.sweepChannel.start_stop_channel.common_chan_attributes.uuid}`;
+    } else {
+      console.error('SweepChannel or UUID is undefined. Cannot set sweepDivID.');
+      this.sweepDivID = ''; // Set to an empty string to avoid undefined errors
+    }
+
+    const backgroundColor = this.getCssVariableValue('--vscode-editor-background');
+    const backgroundColorHex = backgroundColor.startsWith('rgb')
+      ? this.rgbToHex(backgroundColor)
+      : backgroundColor;
+
+    this.originalBackgroundColor = backgroundColorHex;
+    this.plotLayout.paper_bgcolor = backgroundColorHex;
+    this.plotLayout.plot_bgcolor = backgroundColorHex;
+
+    console.log('Initial background color:', backgroundColorHex);
+  }
+
+  getCssVariableValue(variableName: string): string {
+    const root = document.documentElement;
+    const value = getComputedStyle(root).getPropertyValue(variableName).trim();
+    console.log(`CSS variable ${variableName}:`, value);
+    return value;
+  }
+
+  rgbToHex(rgb: string): string {
+    const match = rgb.match(/\d+/g);
+    if (!match) return rgb;
+
+    const [r, g, b] = match.map(Number);
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+  }
+
+  private renderPlot(): void {
+    if (this.plotDataX && this.plotConfig) {
+      // Set both plot_bgcolor and paper_bgcolor to black when active
+      if (this.isActive) {
+        this.plotLayout.plot_bgcolor = 'black';
+        this.plotLayout.paper_bgcolor = 'black';
+      } else {
+        this.plotLayout.paper_bgcolor = this.originalBackgroundColor;
+        this.plotLayout.plot_bgcolor = this.originalBackgroundColor;
+      }
+      // Render the plot with the updated layout
+      Plotly.newPlot(this.sweepDivID, this.plotData, this.plotLayout, this.plotConfig);
+    }
+  }
+
+  private observeThemeChanges(): void {
+    const root = document.documentElement;
+
+    this.mutationObserver = new MutationObserver(() => {
+      const backgroundColor = this.getCssVariableValue('--vscode-editor-background');
+      const backgroundColorHex = backgroundColor.startsWith('rgb')
+        ? this.rgbToHex(backgroundColor)
+        : backgroundColor;
+
+      this.plotLayout.paper_bgcolor = backgroundColorHex;
+      this.plotLayout.plot_bgcolor = backgroundColorHex;
+
+      console.log('Theme changed, new background color:', backgroundColorHex);
+
+      // Re-render the plot with the updated background color
+      this.renderPlot();
+    });
+
+    this.mutationObserver.observe(root, {
+      attributes: true,
+      attributeFilter: ['style'], // Listen for changes to the "style" attribute
+    });
+  }
+
+  ngOnDestroy(): void {
+    // Disconnect the MutationObserver when the component is destroyed
+    if (this.mutationObserver) {
+      this.mutationObserver.disconnect();
+    }
   }
 }

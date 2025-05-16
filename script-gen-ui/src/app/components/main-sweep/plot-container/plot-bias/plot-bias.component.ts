@@ -1,4 +1,4 @@
-import { Component, Input, AfterViewInit, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, AfterViewInit, OnInit, OnDestroy, ElementRef, OnChanges, SimpleChanges } from '@angular/core';
 import { BiasChannel } from '../../../../model/chan_data/biasChannel';
 import { ParameterFloat, ParameterString } from '../../../../model/sweep_data/SweepTimingConfig';
 import { ChannelRange } from '../../../../model/chan_data/channelRange';
@@ -15,7 +15,7 @@ import { BrowserModule } from '@angular/platform-browser';
   templateUrl: './plot-bias.component.html',
   styleUrl: './plot-bias.component.scss'
 })
-export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy {
+export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy, OnChanges {
   @Input() biasChannel: BiasChannel | undefined;
   // @Input() plotData: any;
   // @Input() plotLayout: any;
@@ -30,6 +30,7 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy {
   };
   @Input() color = '';
   private mutationObserver: MutationObserver | undefined;
+  private originalBackgroundColor = '';
 
   plotLayout =  {
     xaxis: {
@@ -37,7 +38,7 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy {
       ticksuffix: ' s',
       rangemode: 'nonnegative',
       separatethousands: false,
-      tickfont: { family: 'Times New Roman', color: 'white', size: 9 },
+      tickfont: { family: 'Roboto, "Helvetica Neue", sans-serif', color: 'white', size: 9 },
       dtick: 1,
       tick0: 0,
       showtickprefix: 'none',
@@ -77,7 +78,7 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy {
     yaxis: {
       visible: true,
       range: [0, 2],
-      tickfont: { family: 'Times New Roman', color: 'white', size: 9 },
+      tickfont: { family: 'Roboto, "Helvetica Neue", sans-serif', color: 'white', size: 9 },
       dtick: 0.5,
       tick0: 0,
       tickwidth: 0,
@@ -92,7 +93,7 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy {
       griddash: 'dot',
     },
     yaxis2: {
-      tickfont: {family: 'Times New Roman', color: 'white', size: 9},
+      tickfont: {family: 'Roboto, "Helvetica Neue", sans-serif', color: 'white', size: 9},
       anchor: 'x',
       overlaying: 'y',
       side: 'left',
@@ -149,6 +150,8 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy {
   measRange: ChannelRange | undefined;
   bias: ParameterFloat | undefined;
 
+  constructor(public elementRef: ElementRef){}
+
   ngOnInit(): void {
     if (this.biasChannel) {
       this.chanName = this.biasChannel.common_chan_attributes.chan_name;
@@ -161,6 +164,7 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy {
       this.bias = this.biasChannel.bias;
 
       this.plotDivID = `plotDiv${this.biasChannel.common_chan_attributes.chan_name}`;
+      console.log("plotDivID", this.plotDivID);
       for(let i =0; i<11; i++){
         this.plotData1.y[i] = this.bias?.value ?? 0;
       }
@@ -175,6 +179,13 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy {
 
     // Plotly.newPlot(this.plotDivID, this.plotData, this.plotLayout, this.plotConfig);
     console.log('bias data', this.plotDivID, this.plotData, this.plotLayout, this.plotConfig);
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['isActive'] && !changes['isActive'].isFirstChange()) {
+      console.log('isActive changed:', changes['isActive'].currentValue);
+      this.renderPlot(); // Re-render the plot when isActive changes
+    }
   }
 
   ngAfterViewInit(): void{
@@ -233,6 +244,7 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy {
       ? this.rgbToHex(backgroundColor)
       : backgroundColor;
 
+    this.originalBackgroundColor = backgroundColorHex; // Store the original background color
     this.plotLayout.paper_bgcolor = backgroundColorHex;
     this.plotLayout.plot_bgcolor = backgroundColorHex;
 
@@ -241,6 +253,16 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy {
 
   private renderPlot(): void {
     if (this.plotDataX && this.plotConfig) {
+      // Set both plot_bgcolor and paper_bgcolor based on isActive
+      if (this.isActive) {
+        this.plotLayout.plot_bgcolor = 'black';
+        this.plotLayout.paper_bgcolor = 'black';
+      } else {
+        this.plotLayout.plot_bgcolor = this.originalBackgroundColor;
+        this.plotLayout.paper_bgcolor = this.originalBackgroundColor;
+      }
+
+      // Render the plot with the updated layout
       Plotly.newPlot(this.plotDivID, this.plotData, this.plotLayout, this.plotConfig);
     }
   }

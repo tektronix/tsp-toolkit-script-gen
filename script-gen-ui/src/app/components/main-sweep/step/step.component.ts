@@ -4,6 +4,7 @@ import {
   Output,
   EventEmitter,
   SimpleChanges, OnChanges,
+  ElementRef,
 } from '@angular/core';
 import {
   ParameterInt,
@@ -79,7 +80,7 @@ export class StepComponent implements OnChanges {
 
   expandedStepChannels: Record<string, boolean> = {};
 
-  // constructor() {}
+  constructor(public elementRef: ElementRef) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['stepChannel']) {

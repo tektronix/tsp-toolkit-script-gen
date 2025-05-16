@@ -47,6 +47,7 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
   @ViewChildren(StepComponent) stepComponents!: QueryList<StepComponent>;
   @ViewChildren(SweepComponent) sweepComponents!: QueryList<SweepComponent>;
   @ViewChild(TimingComponent) timingComponent!: TimingComponent;
+  @ViewChild(PlotContainerComponent) plotContainer!: PlotContainerComponent;
 
   // console.log('biasComponents:', this.biasComponents);
   biasChannels: BiasChannel[] = [];
@@ -116,6 +117,36 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
 
   getSweepColor(sweepChannel: SweepChannel): string {
     return this.colorMap.get(sweepChannel.start_stop_channel.common_chan_attributes.uuid) || 'gray';
+  }
+
+  scrollToInstance(componentType: 'bias' | 'step' | 'sweep', index: number): void {
+    let component: BiasComponent | StepComponent | SweepComponent | undefined;
+
+    if (componentType === 'bias') {
+      component = this.biasComponents.toArray()[index];
+    } else if (componentType === 'step') {
+      component = this.stepComponents.toArray()[index];
+    } else if (componentType === 'sweep') {
+      component = this.sweepComponents.toArray()[index];
+    }
+
+    if (component) {
+      const element = (component).elementRef.nativeElement; // Access the DOM element
+      element.scrollIntoView({
+        behavior: 'smooth', // Smooth scrolling
+        block: 'center',    // Align to the center of the viewport
+      });
+    }
+
+    // if (this.plotContainer) {
+    //   this.plotContainer.scrollToPlot(componentType, index);
+    // }
+  }
+
+  scrollToPlotInPlotContainer(componentType: 'bias' | 'step' | 'sweep', index: number): void {
+    if (this.plotContainer) {
+      this.plotContainer.scrollToPlot(componentType, index);
+    }
   }
 
   updateAll() {
@@ -212,6 +243,10 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
       this.sweepConfig.global_parameters.sweep_timing_config = sweepTimingConfig;
       this.submitSweepConfigAsJson('evaluate_data', '');
     }
+  }
+
+  fetchScript(){
+    // TODO: fetching script
   }
 
   updateBiasChannelsConfig(updatedBiasChannel: BiasChannel) {

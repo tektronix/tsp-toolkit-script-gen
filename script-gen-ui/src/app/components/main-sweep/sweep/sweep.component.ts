@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, SimpleChanges, OnChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, SimpleChanges, OnChanges, ElementRef } from '@angular/core';
 import { ChannelRange } from '../../../model/chan_data/channelRange';
 import {
   ParameterFloat,
@@ -74,7 +74,7 @@ export class SweepComponent implements OnChanges {
 
   expandedSweepChannels: Record<string, boolean> = {};
 
-  // constructor() {}
+  constructor(public elementRef: ElementRef) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['sweepChannel']) {

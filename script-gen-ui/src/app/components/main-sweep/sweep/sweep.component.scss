@@ -24,6 +24,15 @@
     padding: 12px;
   }
 
+  @media (max-width: 120vh) {
+    .input-group {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px 20px;
+      padding: 12px;
+    }
+  }
+
   .input-group label {
     display: block;
     margin-bottom: 5px;
@@ -111,4 +120,22 @@
 
   .chan-name-input:focus {
     outline: 2px solid var(--vscode-focusBorder);
+  }
+
+  .delete-button-icon {
+    background-color: transparent;
+    color: currentColor;
+    padding: 0;
+    border: none;
+    padding-top: 5px;
+  }
+
+  .delete-button-icon mat-icon {
+    -webkit-user-select: none;
+    user-select: none;
+    background-repeat: no-repeat;
+    display: inline-block;
+    fill: currentColor;
+    font-size: 20px;
+    overflow: hidden;
   }

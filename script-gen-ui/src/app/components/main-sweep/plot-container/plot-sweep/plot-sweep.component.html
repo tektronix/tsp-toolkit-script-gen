@@ -4,13 +4,16 @@
     [ngStyle]="{
       border: isActive
         ? '1px solid ' + activeStyle.backgroundColor
-        : '1px solid var(--vscode-editorWidget-border)'
+        : '1px solid var(--vscode-editorWidget-border)',
+      backgroundColor: isActive
+        ? 'black'
+        : 'var(--vscode-editor-background)'
         }"
     >
     <div class="plot-info" [ngStyle]="activeStyle">
-      <p>Name: <strong>{{ chanName }}</strong></p>
+      <p>{{ chanName }}</p>
       <span class="vertical-line"></span>
-      <p>ID: <strong>{{ deviceID }}</strong></p>
+      <p>{{ deviceID }}</p>
       <!-- <span class="vertical-line"></span>
       <p> Model:<strong>{{ deviceID }}</strong></p> -->
     </div>

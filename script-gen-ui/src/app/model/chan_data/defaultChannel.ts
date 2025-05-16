@@ -1,5 +1,5 @@
 import { ICommonChanAttributes } from '../interface';
-import { ParameterFloat, ParameterString } from '../sweep_data/TimingConfig';
+import { ParameterFloat, ParameterString } from '../sweep_data/SweepTimingConfig';
 import { ChannelRange } from './channelRange';
 
 export class CommonChanAttributes {

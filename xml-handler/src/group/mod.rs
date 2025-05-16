@@ -225,7 +225,7 @@ mod tests {
 
     //#[test]
     fn test_parse_group_with_valid_attributes() {
-        let xml = r#"<group gg= id="test_group" type="example_type"></group>"#;
+        let xml = r#"<group id="test_group" type="example_type"></group>"#;
 
         match parse_groups_from_xml(xml) {
             Ok(groups) => {

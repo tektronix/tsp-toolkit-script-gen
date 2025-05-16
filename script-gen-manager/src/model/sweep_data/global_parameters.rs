@@ -1,20 +1,20 @@
 use serde::{Deserialize, Serialize};
 
-use super::timing_config::TimingConfig;
+use super::sweep_timing_config::SweepTimingConfig;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GlobalParameters {
-    pub timing_config: TimingConfig,
+    pub sweep_timing_config: SweepTimingConfig,
 }
 
 impl GlobalParameters {
     pub fn new() -> Self {
         GlobalParameters {
-            timing_config: TimingConfig::new(),
+            sweep_timing_config: SweepTimingConfig::new(),
         }
     }
 
     pub fn evaluate(&mut self) {
-        self.timing_config.evaluate();
+        self.sweep_timing_config.evaluate();
     }
 }

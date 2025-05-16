@@ -4,18 +4,18 @@ import { SweepChannel } from '../chan_data/sweepChannel';
 import { Device } from '../device_data/device';
 import { IBiasChannel, IDevice, IGlobalParameters, IStepChannel, ISweepChannel, ISweepConfig } from '../interface';
 import { StepGlobalParameters, SweepGlobalParameters } from './stepSweepConfig';
-import { TimingConfig } from './TimingConfig';
+import { SweepTimingConfig } from './SweepTimingConfig';
 
 export class GlobalParameters {
-  timing_config: TimingConfig;
+  sweep_timing_config: SweepTimingConfig;
 
   constructor(data: IGlobalParameters) {
-    this.timing_config = new TimingConfig(data.timing_config);
+    this.sweep_timing_config = new SweepTimingConfig(data.sweep_timing_config);
   }
 
   toJSON() {
     return {
-      timing_config: this.timing_config.toJSON(),
+      sweep_timing_config: this.sweep_timing_config.toJSON(),
     };
   }
 }

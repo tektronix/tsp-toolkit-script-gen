@@ -95,5 +95,16 @@
         (selectedChange)="submitBiasData()"
       ></app-dropdown>
     </div>
+    <div>
+      <app-dropdown
+        [(ngModel)]="senseMode.value"
+        [label]="'Sense Mode'"
+        [selected]="senseMode.value"
+        [options]="senseMode.range"
+        *ngIf="senseMode"
+        name="senseMode"
+        (selectedChange)="submitBiasData()"
+      ></app-dropdown>
+    </div>
   </div>
 </div>

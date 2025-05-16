@@ -9,7 +9,7 @@ import { BiasChannel } from '../../../model/chan_data/biasChannel';
 import {
   ParameterFloat,
   ParameterString,
-} from '../../../model/sweep_data/TimingConfig';
+} from '../../../model/sweep_data/SweepTimingConfig';
 import { ChannelRange } from '../../../model/chan_data/channelRange';
 import { CommonChanAttributes } from '../../../model/chan_data/defaultChannel';
 import { Device } from '../../../model/device_data/device';

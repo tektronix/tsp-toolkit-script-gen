@@ -25,7 +25,6 @@ impl DataModel {
         self.device_manager.create_device_list(instr_info);
 
         let mut sweep_model = SweepModel::new();
-        sweep_model.sweep_config.update_timing_parameters();
         sweep_model.sweep_config.device_list = self.device_manager.device_list.clone();
         sweep_model.sweep_config.auto_configure();
 
@@ -99,18 +98,6 @@ impl DataModel {
     /// 3. If deserialization fails:
     ///    - Logs the error.
     ///    - Returns an error response.
-    ///
-    /// # Example
-    /// ```
-    /// let mut data_model = DataModel::new(catalog);
-    /// let ipc_data = IpcData {
-    ///     request_type: "reallocation".to_string(),
-    ///     additional_info: "update,bias,old_chan_id,new_chan_id".to_string(),
-    ///     json_value: r#"{"sweep_model": {...}}"#.to_string(),
-    /// };
-    /// let response = data_model.add_remove_channel(ipc_data);
-    /// println!("{}", response);
-    /// ```
     pub fn add_remove_channel(&mut self, ipc_data: IpcData) -> String {
         match serde_json::from_str::<SweepModel>(ipc_data.json_value.as_str()) {
             Ok(mut sweep_model) => {

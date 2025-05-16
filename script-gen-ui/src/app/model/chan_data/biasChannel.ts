@@ -1,5 +1,5 @@
 import { IBiasChannel } from '../interface';
-import { ParameterFloat } from '../sweep_data/TimingConfig';
+import { ParameterFloat } from '../sweep_data/SweepTimingConfig';
 import { CommonChanAttributes } from './defaultChannel';
 
 export class BiasChannel {

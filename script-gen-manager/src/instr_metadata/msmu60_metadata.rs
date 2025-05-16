@@ -18,7 +18,7 @@ impl Msmu60Metadata {
             "source_meas.rangei",
             vec![
                 "AUTO", "100 nA", "1 uA", "10 uA", "100 uA", "1 mA", "10 mA", "100 mA", "1 A",
-                "1.5 A", "10 A",
+                "1.5 A",
             ],
         );
 
@@ -27,7 +27,7 @@ impl Msmu60Metadata {
 
         // Add ranges
         base.add_range("source.levelv".to_string(), -60.0, 60.0);
-        base.add_range("source.leveli".to_string(), -10.0, 10.0);
+        base.add_range("source.leveli".to_string(), -1.5, 1.5);
 
         Msmu60Metadata {
             base,

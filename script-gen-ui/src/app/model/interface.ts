@@ -1,4 +1,4 @@
-import { DeviceType } from "./device_data/device";
+import { DeviceType } from './device_data/device';
 
 export interface IIpcDataInterface {
   request_type: string;
@@ -28,30 +28,28 @@ export interface IChannelRange {
   value: string;
 }
 
-export interface ITimingConfig {
+export interface ISmuTiming {
   nplc: IParameterFloat;
-  auto_zero: IParameterString;
-  source_delay_type: IParameterString;
+  aperture: IParameterFloat;
+  source_auto_delay: IParameterString;
   source_delay: IParameterFloat;
-  measure_count: IParameterInt;
-  measure_delay_type: IParameterString;
+  measure_auto_delay: IParameterString;
   measure_delay: IParameterFloat;
-  measure_delay_factor: IParameterFloat;
-  measure_filter_enable: IParameterString;
-  measure_filter_type: IParameterString;
-  measure_filter_count: IParameterInt;
-  measure_analog_filter: IParameterString;
+  nplc_type: IParameterString;
+}
 
-  high_speed_sampling: boolean;
-  sampling_interval: IParameterFloat;
-  sampling_count: IParameterInt;
-  sampling_delay_type: IParameterString;
-  sampling_delay: IParameterFloat;
-  sampling_analog_filter: IParameterString;
+export interface IPsuTiming {
+  rate: IParameterString;
+}
+
+export interface ISweepTimingConfig {
+  measure_count: IParameterInt;
+  smu_timing: ISmuTiming;
+  psu_timing: IPsuTiming;
 }
 
 export interface IGlobalParameters {
-  timing_config: ITimingConfig;
+  sweep_timing_config: ISweepTimingConfig;
 }
 
 export interface ICommonChanAttributes {
@@ -95,7 +93,6 @@ export interface IStepGlobalParameters {
 
 export interface ISweepGlobalParameters {
   sweep_points: IParameterInt;
-  sweep_time_per_point: IParameterFloat;
   list_sweep: boolean;
 }
 
@@ -120,9 +117,9 @@ export interface ISweepConfig {
 }
 
 export interface ISweepModel {
-    sweep_config: ISweepConfig;
+  sweep_config: ISweepConfig;
 }
 
 export interface IServerData {
-    sweep_model: ISweepModel;
+  sweep_model: ISweepModel;
 }

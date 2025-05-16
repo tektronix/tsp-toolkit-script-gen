@@ -9,7 +9,7 @@ import {
   ParameterInt,
   ParameterFloat,
   ParameterString,
-} from '../../../model/sweep_data/TimingConfig';
+} from '../../../model/sweep_data/SweepTimingConfig';
 import { ChannelRange } from '../../../model/chan_data/channelRange';
 import { StepChannel } from '../../../model/chan_data/stepChannel';
 import { CommonChanAttributes } from '../../../model/chan_data/defaultChannel';

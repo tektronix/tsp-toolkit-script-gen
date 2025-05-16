@@ -4,14 +4,17 @@ import {
   Input,
   OnDestroy,
   Output,
-  SimpleChanges, OnChanges,
+  SimpleChanges,
+  OnChanges,
 } from '@angular/core';
 import {
   ParameterFloat,
   ParameterString,
   ParameterInt,
-  TimingConfig,
-} from '../../../model/sweep_data/TimingConfig';
+  SweepTimingConfig,
+  SmuTiming,
+  PsuTiming,
+} from '../../../model/sweep_data/SweepTimingConfig';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,11 +22,21 @@ import { BrowserModule } from '@angular/platform-browser';
 import { DropdownComponent } from '../../controls/dropdown/dropdown.component';
 import { InputNumericComponent } from '../../controls/input-numeric/input-numeric.component';
 import { InputPlainComponent } from '../../controls/input-plain/input-plain.component';
+import { InputToggleComponent } from '../../controls/input-toggle/input-toggle.component';
 
 @Component({
   selector: 'app-timing',
   standalone: true,
-  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, DropdownComponent, InputNumericComponent, InputPlainComponent],
+  imports: [
+    FormsModule,
+    BrowserModule,
+    CommonModule,
+    MatIconModule,
+    DropdownComponent,
+    InputNumericComponent,
+    InputPlainComponent,
+    InputToggleComponent,
+  ],
   templateUrl: './timing.component.html',
   styleUrl: './timing.component.scss',
 })
@@ -31,29 +44,20 @@ export class TimingComponent implements OnDestroy, OnChanges {
   selectedWindow: 'window1' | 'window2' = 'window1';
 
   nplc: ParameterFloat | undefined;
-  autoZero: ParameterString | undefined;
-  sourceDelayType: ParameterString | undefined;
+  aperture: ParameterFloat | undefined;
+  sourceAutoDelay: ParameterString | undefined;
   sourceDelay: ParameterFloat | undefined;
-  measureCount: ParameterInt | undefined;
-  measureDelayType: ParameterString | undefined;
+  measureAutoDelay: ParameterString | undefined;
   measureDelay: ParameterFloat | undefined;
-  measureDelayFactor: ParameterFloat | undefined;
-  measureFilterEnable: ParameterString | undefined;
-  measureFilterType: ParameterString | undefined;
-  measureFilterCount: ParameterInt | undefined;
-  measureAnalogFilter: ParameterString | undefined;
-  msg1 = 0.0;
-  msg2: number | undefined;
+  nplcType: ParameterString | undefined;
 
-  timingOption: 'sameTiming' | 'highSpeedSampling' = 'sameTiming';
+  rate: ParameterString | undefined;
 
-  samplingInterval: ParameterFloat | undefined;
-  samplingCount: ParameterInt | undefined;
-  samplingDelayType: ParameterString | undefined;
-  samplingDelay: ParameterFloat | undefined;
-  samplingAnalogFilter: ParameterString | undefined;
+  measureCount: ParameterInt | undefined;
 
-  @Input() timingConfig: TimingConfig | undefined;
+  timingOption: 'smuTiming' | 'psuTiming' = 'smuTiming';
+
+  @Input() sweepTimingConfig: SweepTimingConfig | undefined;
   @Output() ok = new EventEmitter<void>();
   @Output() emitTimingData = new EventEmitter<void>();
 
@@ -64,38 +68,29 @@ export class TimingComponent implements OnDestroy, OnChanges {
   // }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['timingConfig']) {
+    if (changes['sweepTimingConfig']) {
       // Handle the change in timingConfig here if needed
       this.updateAll();
-      console.log('timingConfig updated:', this.timingConfig);
+      console.log('sweepTimingConfig updated:', this.sweepTimingConfig);
     }
   }
 
   updateAll() {
-    if (this.timingConfig) {
+    if (this.sweepTimingConfig) {
       console.log('component initiated');
-      this.nplc = this.timingConfig.nplc;
-      this.autoZero = this.timingConfig.auto_zero;
-      this.sourceDelayType = this.timingConfig.source_delay_type;
-      this.sourceDelay = this.timingConfig.source_delay;
-      this.measureCount = this.timingConfig.measure_count;
-      this.measureDelayType = this.timingConfig.measure_delay_type;
-      this.measureDelay = this.timingConfig.measure_delay;
-      this.measureDelayFactor = this.timingConfig.measure_delay_factor;
-      this.measureFilterEnable = this.timingConfig.measure_filter_enable;
-      this.measureFilterType = this.timingConfig.measure_filter_type;
-      this.measureFilterCount = this.timingConfig.measure_filter_count;
-      this.measureAnalogFilter = this.timingConfig.measure_analog_filter;
+      this.nplc = this.sweepTimingConfig.smu_timing.nplc;
+      this.aperture = this.sweepTimingConfig.smu_timing.aperture;
+      this.sourceAutoDelay =
+        this.sweepTimingConfig.smu_timing.source_auto_delay;
+      this.sourceDelay = this.sweepTimingConfig.smu_timing.source_delay;
+      this.measureAutoDelay =
+        this.sweepTimingConfig.smu_timing.measure_auto_delay;
+      this.measureDelay = this.sweepTimingConfig.smu_timing.measure_delay;
+      this.nplcType = this.sweepTimingConfig.smu_timing.nplc_type;
 
-      this.timingOption = this.timingConfig.high_speed_sampling
-        ? 'highSpeedSampling'
-        : 'sameTiming';
+      this.rate = this.sweepTimingConfig.psu_timing.rate;
 
-      this.samplingInterval = this.timingConfig.sampling_interval;
-      this.samplingCount = this.timingConfig.sampling_count;
-      this.samplingDelayType = this.timingConfig.sampling_delay_type;
-      this.samplingDelay = this.timingConfig.sampling_delay;
-      this.samplingAnalogFilter = this.timingConfig.sampling_analog_filter;
+      this.measureCount = this.sweepTimingConfig.measure_count;
     }
   }
 
@@ -108,40 +103,27 @@ export class TimingComponent implements OnDestroy, OnChanges {
     this.selectedWindow = window;
   }
 
-  // handleNplcChange(event: Event) {
-  //   //
-  // }
-
-  handleSourceDelayChange($event: number) {
-    this.msg1 = $event;
-    this.msg2 = this.sourceDelay?.value;
-    this.submitTimingData();
-  }
-
   submitTimingData() {
     this.emitTimingData.emit();
   }
 
-  getTimingConfigFromComponent(): TimingConfig {
-    return new TimingConfig({
+  getSweepTimingConfigFromComponent(): SweepTimingConfig {
+    const smu_timing = new SmuTiming({
       nplc: this.nplc!,
-      auto_zero: this.autoZero!,
-      source_delay_type: this.sourceDelayType!,
+      aperture: this.aperture!,
+      source_auto_delay: this.sourceAutoDelay!,
       source_delay: this.sourceDelay!,
-      measure_count: this.measureCount!,
-      measure_delay_type: this.measureDelayType!,
+      measure_auto_delay: this.measureAutoDelay!,
       measure_delay: this.measureDelay!,
-      measure_delay_factor: this.measureDelayFactor!,
-      measure_filter_enable: this.measureFilterEnable!,
-      measure_filter_type: this.measureFilterType!,
-      measure_filter_count: this.measureFilterCount!,
-      measure_analog_filter: this.measureAnalogFilter!,
-      high_speed_sampling: this.timingOption === 'highSpeedSampling',
-      sampling_interval: this.samplingInterval!,
-      sampling_count: this.samplingCount!,
-      sampling_delay_type: this.samplingDelayType!,
-      sampling_delay: this.samplingDelay!,
-      sampling_analog_filter: this.samplingAnalogFilter!,
+      nplc_type: this.nplcType!,
+    });
+    const psu_timing = new PsuTiming({
+      rate: this.rate!,
+    });
+    return new SweepTimingConfig({
+      measure_count: this.measureCount!,
+      smu_timing: smu_timing,
+      psu_timing: psu_timing,
     });
   }
 

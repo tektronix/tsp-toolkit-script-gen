@@ -4,7 +4,7 @@
       <button class="timing" (click)="enableTiming()">Timing</button>
       <app-timing
         *ngIf="showTiming"
-        [timingConfig]="timingConfig"
+        [sweepTimingConfig]="sweepTimingConfig"
         (emitTimingData)="updateTimingConfig()"
         (ok)="closeTimingDialog()"
       ></app-timing>
@@ -89,15 +89,6 @@
             *ngIf="sweepPoints"
             name="sweepPoints"
           ></app-input-numeric>
-        </div>
-        <div>
-          <app-input-plain
-            [(ngModel)]="sweepTimePerPoint.value"
-            [label]="'Time/Point'"
-            [unit]="sweepTimePerPoint.unit"
-            *ngIf="sweepTimePerPoint"
-            name="sweepTimePerPoint"
-          ></app-input-plain>
         </div>
         <!-- <div>
         </div> -->

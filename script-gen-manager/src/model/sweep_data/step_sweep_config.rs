@@ -29,7 +29,6 @@ impl StepGlobalParameters {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SweepGlobalParameters {
     pub sweep_points: ParameterInt,
-    pub sweep_time_per_point: ParameterFloat,
     pub list_sweep: bool,
 }
 
@@ -37,11 +36,6 @@ impl SweepGlobalParameters {
     pub fn new() -> Self {
         SweepGlobalParameters {
             sweep_points: ParameterInt::new("sweep_points", 10),
-            sweep_time_per_point: ParameterFloat::new(
-                "sweep_time_per_point",
-                0.05,
-                Some(BaseMetadata::UNIT_SECONDS.to_string()),
-            ),
             list_sweep: false,
         }
     }

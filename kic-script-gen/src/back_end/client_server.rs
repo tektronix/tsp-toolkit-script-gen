@@ -10,9 +10,10 @@ use tokio::io::{self, AsyncBufReadExt};
 use tokio::signal;
 use tokio::sync::watch;
 
-use crate::back_end::ipc_data::IpcData;
+use std::fs as other_fs;
 
 use super::data_model::DataModel;
+use crate::back_end::ipc_data::IpcData;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -101,6 +102,48 @@ async fn ws_index(
     Ok(response)
 }
 
+async fn serve_index_html() -> Result<HttpResponse, Error> {
+    // Get the path of the executable
+    let exe_path =
+        std::env::current_exe().expect("should be able to get path of server executable");
+
+    // Get the directory of the executable (this will be `target/debug`)
+    let exe_dir = exe_path
+        .parent()
+        .expect("should be able to get directory of server executable");
+
+    // Navigate to the `target` level
+    let target_dir = exe_dir
+        .parent()
+        .expect("Failed to get parent directory of target/debug");
+
+    // Navigate to the `bin` folder at the same level as `target`
+    let bin_dir = target_dir
+        .parent()
+        .expect("Failed to get project root directory")
+        .join("bin");
+
+    // Path to the HTML file
+    let html_path = format!("{}/browser/index.html", bin_dir.display());
+
+    // Read the HTML file
+    let html_content = other_fs::read_to_string(&html_path).map_err(|e| {
+        eprintln!("Failed to read HTML file: {}", e);
+        actix_web::error::ErrorInternalServerError("Failed to load HTML")
+    })?;
+
+    // Rewrite resource URLs
+    let base_url = "http://127.0.0.1:8080";
+    let modified_html = html_content
+        .replace("src=\"", &format!("src=\"{}/", base_url))
+        .replace("href=\"", &format!("href=\"{}/", base_url));
+
+    // Return the modified HTML
+    Ok(HttpResponse::Ok()
+        .content_type("text/html; charset=utf-8")
+        .body(modified_html))
+}
+
 pub async fn start_web_server(
     app_state: Arc<AppState>,
     mut shutdown_rx: watch::Receiver<()>,
@@ -111,23 +154,20 @@ pub async fn start_web_server(
         let exe_dir = exe_path
             .parent()
             .expect("should be able to get directory of server executable");
+        let target_dir = exe_dir
+            .parent()
+            .expect("Failed to get parent directory of target/debug");
+        let bin_dir = target_dir
+            .parent()
+            .expect("Failed to get project root directory")
+            .join("bin");
+        //println!("Path to bin folder: {}", bin_dir.display());
         App::new()
             .app_data(web::Data::new(app_state.clone()))
-            .route(
-                "/",
-                web::get().to(|| async {
-                    let exe_path = std::env::current_exe()?;
-                    let Some(exe_dir) = exe_path.parent() else {
-                        return Err(std::io::Error::other(
-                            "Unable to get directory of server executable",
-                        ));
-                    };
-                    fs::NamedFile::open(format!("{}/browser/index.html", exe_dir.display()))
-                }),
-            )
+            .route("/", web::get().to(serve_index_html))
             .route("/ws", web::get().to(ws_index))
             .service(
-                fs::Files::new("/", format!("{}/browser", exe_dir.display()))
+                fs::Files::new("/", format!("{}/browser", bin_dir.display()))
                     .index_file("index.html"),
             )
             .wrap(

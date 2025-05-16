@@ -6,7 +6,7 @@ import { StepGlobalParameters, SweepGlobalParameters } from '../../../model/swee
 import { PlotBiasComponent } from './plot-bias/plot-bias.component';
 import { PlotStepComponent } from './plot-step/plot-step.component';
 import { PlotSweepComponent } from './plot-sweep/plot-sweep.component';
-import { ParameterInt } from '../../../model/sweep_data/TimingConfig';
+import { ParameterInt } from '../../../model/sweep_data/SweepTimingConfig';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';

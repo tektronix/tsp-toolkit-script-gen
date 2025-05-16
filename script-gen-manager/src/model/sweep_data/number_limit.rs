@@ -125,57 +125,65 @@ impl NumberLimit {
 }
 
 #[derive(Debug, Clone)]
-pub struct TimingLimit {
-    pub nplc_limits: NumberLimit,
-    pub source_delay_limits: NumberLimit,
+pub struct CommonTimingLimit {
     pub measure_count_limits: NumberLimit,
-    pub measure_filter_count_limits: NumberLimit,
-    pub measure_delay_limits: NumberLimit,
-    pub measure_delay_factor_limits: NumberLimit,
-
-    pub sampling_interval_limits: NumberLimit,
-    pub sampling_count_limits: NumberLimit,
-    pub sampling_delay_limits: NumberLimit,
 }
 
-impl TimingLimit {
+impl CommonTimingLimit {
     pub fn new() -> Self {
-        TimingLimit {
-            nplc_limits: NumberLimit::new(0.0, 0.0, true, None),
-            source_delay_limits: NumberLimit::new(0.0, 0.0, true, None),
-            measure_count_limits: NumberLimit::new(0.0, 0.0, true, None),
-            measure_filter_count_limits: NumberLimit::new(0.0, 0.0, true, None),
-            measure_delay_limits: NumberLimit::new(0.0, 0.0, true, None),
-            measure_delay_factor_limits: NumberLimit::new(0.0, 0.0, true, None),
-            sampling_interval_limits: NumberLimit::new(0.0, 0.0, true, None),
-            sampling_count_limits: NumberLimit::new(0.0, 0.0, true, None),
-            sampling_delay_limits: NumberLimit::new(0.0, 0.0, true, None),
+        //TODO: verify if limit values are correct
+        CommonTimingLimit {
+            measure_count_limits: NumberLimit::new(1.0, 60000.0, true, None),
         }
     }
+}
 
-    pub fn update_timing_limits(&mut self) {
-        self.nplc_limits.set_min(1e-3);
-        self.nplc_limits.set_max(25.0);
-
-        self.source_delay_limits.set_min(0.0);
-        self.source_delay_limits.set_max(4294.0);
-
-        self.measure_count_limits.set_min(1.0);
-        self.measure_count_limits.set_max(60000.0);
-
-        self.measure_filter_count_limits.set_min(1.0);
-        self.measure_filter_count_limits.set_max(100.0);
-
-        self.measure_delay_limits.set_min(0.0);
-        self.measure_delay_limits.set_max(4294.0);
-
-        self.measure_delay_factor_limits.set_min(0.0);
-        self.measure_delay_factor_limits.set_max(1000.0);
+impl Default for CommonTimingLimit {
+    fn default() -> Self {
+        CommonTimingLimit::new()
     }
 }
 
-impl Default for TimingLimit {
+#[derive(Debug, Clone)]
+pub struct SmuTimingLimit {
+    pub nplc_limits: NumberLimit,
+    pub aperture_limits: NumberLimit,
+    pub source_delay_limits: NumberLimit,
+    pub measure_delay_limits: NumberLimit,
+}
+
+impl SmuTimingLimit {
+    pub fn new() -> Self {
+        //TODO: verify if limit values are correct
+        SmuTimingLimit {
+            nplc_limits: NumberLimit::new(5e-5, 30.0, true, None),
+            aperture_limits: NumberLimit::new(1e-6, 500e-3, true, None),
+            source_delay_limits: NumberLimit::new(0.0, 4294.0, true, None),
+            measure_delay_limits: NumberLimit::new(0.0, 4294.0, true, None),
+        }
+    }
+}
+
+impl Default for SmuTimingLimit {
     fn default() -> Self {
-        TimingLimit::new()
+        SmuTimingLimit::new()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PsuTimingLimit {
+    //
+}
+
+impl PsuTimingLimit {
+    pub fn new() -> Self {
+        //TODO: verify if limit values are correct
+        PsuTimingLimit {}
+    }
+}
+
+impl Default for PsuTimingLimit {
+    fn default() -> Self {
+        PsuTimingLimit::new()
     }
 }

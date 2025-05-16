@@ -14,10 +14,9 @@ import {
   SweepConfig,
 } from '../../model/sweep_data/sweepConfig';
 import {
-  ParameterFloat,
   ParameterInt,
-  TimingConfig,
-} from '../../model/sweep_data/TimingConfig';
+  SweepTimingConfig,
+} from '../../model/sweep_data/SweepTimingConfig';
 import { BiasChannel } from '../../model/chan_data/biasChannel';
 import { StepChannel } from '../../model/chan_data/stepChannel';
 import { SweepChannel } from '../../model/chan_data/sweepChannel';
@@ -35,12 +34,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { BrowserModule } from '@angular/platform-browser';
 import { PlotContainerComponent } from './plot-container/plot-container.component';
 import { InputNumericComponent } from '../controls/input-numeric/input-numeric.component';
-import { InputPlainComponent } from '../controls/input-plain/input-plain.component';
 
 @Component({
   selector: 'app-main-sweep',
   standalone: true,
-  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, InputNumericComponent, InputPlainComponent, BiasComponent, StepComponent, SweepComponent, TimingComponent, PlotContainerComponent],
+  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, InputNumericComponent, BiasComponent, StepComponent, SweepComponent, TimingComponent, PlotContainerComponent],
   templateUrl: './main-sweep.component.html',
   styleUrls: ['./main-sweep.component.scss'],
 })
@@ -79,13 +77,12 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
 
   showPopupBox = false;
   showTiming = false;
-  timingConfig: TimingConfig | undefined;
+  sweepTimingConfig: SweepTimingConfig | undefined;
   deviceList: Device[] = [];
   stepGlobalParameters: StepGlobalParameters | undefined;
   sweepGlobalParameters: SweepGlobalParameters | undefined;
 
   sweepPoints: ParameterInt | undefined;
-  sweepTimePerPoint: ParameterFloat | undefined;
   list = false;
 
   @Input() sweepConfig: SweepConfig | undefined;
@@ -123,7 +120,7 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
 
   updateAll() {
     if (this.sweepConfig) {
-      this.timingConfig = this.sweepConfig.global_parameters.timing_config;
+      this.sweepTimingConfig = this.sweepConfig.global_parameters.sweep_timing_config;
       this.deviceList = this.sweepConfig.device_list;
       this.biasChannels = this.sweepConfig.bias_channels;
       this.stepChannels = this.sweepConfig.step_channels;
@@ -132,7 +129,6 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
       this.sweepGlobalParameters = this.sweepConfig.sweep_global_parameters;
 
       this.sweepPoints = this.sweepGlobalParameters.sweep_points;
-      this.sweepTimePerPoint = this.sweepGlobalParameters.sweep_time_per_point;
 
       this.biasChannels.forEach((biasChannel) => {
         const uuid = biasChannel.common_chan_attributes.uuid;
@@ -211,9 +207,9 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
   }
 
   updateTimingConfig() {
-    const timingConfig = this.timingComponent.getTimingConfigFromComponent();
+    const sweepTimingConfig = this.timingComponent.getSweepTimingConfigFromComponent();
     if (this.sweepConfig && this.sweepConfig.global_parameters) {
-      this.sweepConfig.global_parameters.timing_config = timingConfig;
+      this.sweepConfig.global_parameters.sweep_timing_config = sweepTimingConfig;
       this.submitSweepConfigAsJson('evaluate_data', '');
     }
   }
@@ -264,7 +260,6 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
   updateSweepGlobalParameters() {
     const sweepGlobalParams = new SweepGlobalParameters({
       sweep_points: this.sweepPoints!,
-      sweep_time_per_point: this.sweepTimePerPoint!,
       list_sweep: this.list,
     });
     if (this.sweepConfig) {

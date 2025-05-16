@@ -1,5 +1,5 @@
 import { IStartStopChannel } from "../interface";
-import { ParameterFloat, ParameterString } from "../sweep_data/TimingConfig"
+import { ParameterFloat, ParameterString } from "../sweep_data/SweepTimingConfig"
 import { CommonChanAttributes } from "./defaultChannel";
 
 export class StartStopChannel {

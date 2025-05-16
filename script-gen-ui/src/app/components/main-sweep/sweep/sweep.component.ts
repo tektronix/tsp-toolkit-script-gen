@@ -4,7 +4,7 @@ import {
   ParameterFloat,
   ParameterInt,
   ParameterString,
-} from '../../../model/sweep_data/TimingConfig';
+} from '../../../model/sweep_data/SweepTimingConfig';
 import { SweepChannel } from '../../../model/chan_data/sweepChannel';
 import { CommonChanAttributes } from '../../../model/chan_data/defaultChannel';
 import { Device } from '../../../model/device_data/device';

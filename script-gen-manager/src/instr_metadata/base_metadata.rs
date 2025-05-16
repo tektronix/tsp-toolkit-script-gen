@@ -32,6 +32,8 @@ impl BaseMetadata {
     pub const EPSILON: f64 = 1e-9;
     //TODO: verify this value for Trebuchet
     pub const MIN_LOG_VALUE: f64 = 1e-12;
+    //TODO: verify this value for Trebuchet
+    pub const MIN_BUFFER_TIME: f64 = 60e-6;
 
     pub const OFF_VALUE: &'static str = "OFF";
     pub const ON_VALUE: &'static str = "ON";
@@ -46,6 +48,8 @@ impl BaseMetadata {
     pub const RANGE_FOLLOW_LIMITI: &'static str = "follow limiti";
     pub const SENSE_MODE_TWO_WIRE: &'static str = "Two-wire";
     pub const SENSE_MODE_FOUR_WIRE: &'static str = "Four-wire";
+    pub const RATE_NORMAL: &'static str = "Normal";
+    pub const RATE_FAST: &'static str = "Fast";
 
     pub const UNIT_VOLTS: &'static str = "V";
     pub const UNIT_AMPERES: &'static str = "A";

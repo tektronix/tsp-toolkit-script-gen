@@ -1,6 +1,6 @@
 import { Component, Input, AfterViewInit, OnInit, OnDestroy } from '@angular/core';
 import { BiasChannel } from '../../../../model/chan_data/biasChannel';
-import { ParameterFloat, ParameterString } from '../../../../model/sweep_data/TimingConfig';
+import { ParameterFloat, ParameterString } from '../../../../model/sweep_data/SweepTimingConfig';
 import { ChannelRange } from '../../../../model/chan_data/channelRange';
 import * as Plotly from 'plotly.js-dist';
 import { CommonModule } from '@angular/common';

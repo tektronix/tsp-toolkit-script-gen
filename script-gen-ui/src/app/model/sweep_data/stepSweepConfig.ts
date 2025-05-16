@@ -1,5 +1,5 @@
 import { IStepGlobalParameters, ISweepGlobalParameters } from '../interface';
-import { ParameterFloat, ParameterInt } from './TimingConfig';
+import { ParameterFloat, ParameterInt } from './SweepTimingConfig';
 
 export class StepGlobalParameters {
   step_points: ParameterInt;
@@ -23,19 +23,16 @@ export class StepGlobalParameters {
 
 export class SweepGlobalParameters {
   sweep_points: ParameterInt;
-  sweep_time_per_point: ParameterFloat;
   list_sweep: boolean;
 
   constructor(data: ISweepGlobalParameters) {
     this.sweep_points = new ParameterInt(data.sweep_points);
-    this.sweep_time_per_point = new ParameterFloat(data.sweep_time_per_point);
     this.list_sweep = data.list_sweep;
   }
 
   toJSON() {
     return {
       sweep_points: this.sweep_points.toJSON(),
-      sweep_time_per_point: this.sweep_time_per_point.toJSON(),
       list_sweep: this.list_sweep,
     };
   }

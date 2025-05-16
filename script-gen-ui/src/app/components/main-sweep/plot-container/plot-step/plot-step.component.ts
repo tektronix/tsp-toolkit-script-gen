@@ -1,7 +1,7 @@
 import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
 import { StepChannel } from '../../../../model/chan_data/stepChannel';
 import { ChannelRange } from '../../../../model/chan_data/channelRange';
-import { ParameterFloat, ParameterInt, ParameterString } from '../../../../model/sweep_data/TimingConfig';
+import { ParameterFloat, ParameterInt, ParameterString } from '../../../../model/sweep_data/SweepTimingConfig';
 import { StepGlobalParameters } from '../../../../model/sweep_data/stepSweepConfig';
 import { CommonChanAttributes } from '../../../../model/chan_data/defaultChannel';
 import * as Plotly from 'plotly.js-dist';

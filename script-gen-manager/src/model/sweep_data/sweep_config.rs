@@ -15,14 +15,14 @@ use super::{
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SweepConfig {
-    global_parameters: GlobalParameters,
+    pub global_parameters: GlobalParameters,
     pub bias_channels: Vec<BiasChannel>,
     pub step_channels: Vec<StepChannel>,
     pub sweep_channels: Vec<SweepChannel>,
     #[serde(skip)]
     total_chan_count: usize,
-    step_global_parameters: StepGlobalParameters,
-    sweep_global_parameters: SweepGlobalParameters,
+    pub step_global_parameters: StepGlobalParameters,
+    pub sweep_global_parameters: SweepGlobalParameters,
     pub device_list: Vec<Device>,
     // #[serde(skip)]
     // line_frequency: i32,
@@ -42,10 +42,6 @@ impl SweepConfig {
             sweep_global_parameters: SweepGlobalParameters::new(),
             device_list: Vec::new(),
         }
-    }
-
-    pub fn update_timing_parameters(&mut self) {
-        self.global_parameters.timing_config.set_defaults();
     }
 
     pub fn auto_configure(&mut self) {

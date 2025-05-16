@@ -3,7 +3,7 @@ use std::convert::Into;
 use serde::{Deserialize, Serialize};
 
 use super::{
-    number_limit::TimingLimit,
+    number_limit::NumberLimit,
     parameters::{ParameterFloat, ParameterInt, ParameterString},
 };
 use crate::instr_metadata::base_metadata::{BaseMetadata, Metadata};
@@ -551,5 +551,61 @@ impl TimingConfig {
 impl Default for TimingConfig {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TimingLimit {
+    pub nplc_limits: NumberLimit,
+    pub source_delay_limits: NumberLimit,
+    pub measure_count_limits: NumberLimit,
+    pub measure_filter_count_limits: NumberLimit,
+    pub measure_delay_limits: NumberLimit,
+    pub measure_delay_factor_limits: NumberLimit,
+
+    pub sampling_interval_limits: NumberLimit,
+    pub sampling_count_limits: NumberLimit,
+    pub sampling_delay_limits: NumberLimit,
+}
+
+impl TimingLimit {
+    pub fn new() -> Self {
+        TimingLimit {
+            nplc_limits: NumberLimit::new(0.0, 0.0, true, None),
+            source_delay_limits: NumberLimit::new(0.0, 0.0, true, None),
+            measure_count_limits: NumberLimit::new(0.0, 0.0, true, None),
+            measure_filter_count_limits: NumberLimit::new(0.0, 0.0, true, None),
+            measure_delay_limits: NumberLimit::new(0.0, 0.0, true, None),
+            measure_delay_factor_limits: NumberLimit::new(0.0, 0.0, true, None),
+            sampling_interval_limits: NumberLimit::new(0.0, 0.0, true, None),
+            sampling_count_limits: NumberLimit::new(0.0, 0.0, true, None),
+            sampling_delay_limits: NumberLimit::new(0.0, 0.0, true, None),
+        }
+    }
+
+    pub fn update_timing_limits(&mut self) {
+        self.nplc_limits.set_min(1e-3);
+        self.nplc_limits.set_max(25.0);
+
+        self.source_delay_limits.set_min(0.0);
+        self.source_delay_limits.set_max(4294.0);
+
+        self.measure_count_limits.set_min(1.0);
+        self.measure_count_limits.set_max(60000.0);
+
+        self.measure_filter_count_limits.set_min(1.0);
+        self.measure_filter_count_limits.set_max(100.0);
+
+        self.measure_delay_limits.set_min(0.0);
+        self.measure_delay_limits.set_max(4294.0);
+
+        self.measure_delay_factor_limits.set_min(0.0);
+        self.measure_delay_factor_limits.set_max(1000.0);
+    }
+}
+
+impl Default for TimingLimit {
+    fn default() -> Self {
+        TimingLimit::new()
     }
 }

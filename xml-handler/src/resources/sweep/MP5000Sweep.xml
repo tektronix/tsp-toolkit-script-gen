@@ -731,14 +731,13 @@
         <substitute name="STEP-DEVICE:START">%START%</substitute>
         <substitute name="STEP-DEVICE:STOP">%STOP%</substitute>
         <substitute name="STEP-DEVICE:ASYMPTOTE">%ASYMPTOTE%</substitute>
-        <substitute name="STEP-DEVICE:STEP-POINTS">%STEP-POINTS%</substitute>
         <substitute name="STEP-DEVICE:LIST">%LIST%</substitute>
         <substitute name="STEP-DEVICE:MFUNCTION">%MFUNCTION%</substitute>
         <substitute name="STEP-DEVICE:SENSE">%SENSE%</substitute>
         <substitute name="STEP-DEVICE:LIMITI">%LIMITI%</substitute>
         <substitute name="STEP-DEVICE:LIMITV">%LIMITV%</substitute>
         <snippet>
-            local %STEP-DEVICE% = UTILITY.insert(nodes.steps, UTILITY.makestep({
+            local %MUX% = UTILITY.insert(nodes.steps, UTILITY.makestep({
                 node_idx = %NODE-IDX%,
                 slot_idx = %SLOT-IDX%,
                 channel_idx = %CHANNEL-IDX%,
@@ -747,10 +746,10 @@
                 source = {
 
                     -- IF linear sweep --
-                    values = { start = %START%, stop = %STOP%, count = %STEP-POINTS% },
+                    values = { start = %START%, stop = %STOP%, count = %%STEP-COUNT%% },
 
                     --IF log sweep --
-                    values = { start = %START%, stop = %STOP%, count = %STEP-POINTS%, asymptote = %ASYMPTOTE%},
+                    values = { start = %START%, stop = %STOP%, count = %%STEP-COUNT%%, asymptote = %ASYMPTOTE%},
 
                     --IF LIST --
                     values = { list = {%LIST%}},
@@ -825,7 +824,7 @@
         <substitute name="SWEEP-DEVICE:LIMITI">%LIMITI%</substitute>
         <substitute name="SWEEP-DEVICE:LIMITV">%LIMITV%</substitute>
         <snippet>
-            local my_sweep1 = UTILITY.insert(nodes.sweeps, UTILITY.makesweep({
+            local %MUX% = UTILITY.insert(nodes.sweeps, UTILITY.makesweep({
                 node_idx = %NODE-IDX%,
                 slot_idx = %SLOT-IDX%,
                 channel_idx = %CHANNEL-IDX%,

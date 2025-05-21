@@ -1,4 +1,12 @@
-import { Component, Input, Output, EventEmitter, SimpleChanges, OnChanges, ElementRef } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  SimpleChanges,
+  OnChanges,
+  ElementRef,
+} from '@angular/core';
 import { ChannelRange } from '../../../model/chan_data/channelRange';
 import {
   ParameterFloat,
@@ -21,7 +29,15 @@ import { InputToggleComponent } from '../../controls/input-toggle/input-toggle.c
   templateUrl: './sweep.component.html',
   styleUrls: ['./sweep.component.scss'],
   standalone: true,
-  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, DropdownComponent, InputPlainComponent, InputToggleComponent],
+  imports: [
+    FormsModule,
+    BrowserModule,
+    CommonModule,
+    MatIconModule,
+    DropdownComponent,
+    InputPlainComponent,
+    InputToggleComponent,
+  ],
 })
 export class SweepComponent implements OnChanges {
   commonChanAttributes: CommonChanAttributes | undefined;
@@ -121,13 +137,6 @@ export class SweepComponent implements OnChanges {
     this.emitSweepChannelDelete.emit(this.deviceID);
   }
 
-  onToggle(selectedOption: string): void {
-    console.log('Selected option:', selectedOption);
-    this.submitSweepData();
-    // this.sourceFunction?.value = selectedOption;
-    // this.measFunction = selectedOption === 'Voltage' ? 'Current' : 'Voltage';
-  }
-
   getSweepChanConfigFromComponent(): SweepChannel {
     return new SweepChannel({
       start_stop_channel: {
@@ -140,7 +149,7 @@ export class SweepComponent implements OnChanges {
           source_range: this.sourceRange!,
           meas_range: this.measRange!,
           source_limiti: this.sourceLimitI!,
-          source_limitv: this.sourceLimitV!,
+          source_limitv: this.sourceLimitV,
           sense_mode: this.senseMode,
         },
         start: this.start!,
@@ -154,14 +163,11 @@ export class SweepComponent implements OnChanges {
     this.emitSweepData.emit(this.getSweepChanConfigFromComponent());
   }
 
-  onEnter() {
-    this.submitSweepData();
-  }
-
   onDeviceIDChange($event: string) {
     if (this.sweepChannel) {
       this.emitSweepChannelIdChange.emit({
-        oldChanId: this.sweepChannel.start_stop_channel.common_chan_attributes.device_id,
+        oldChanId:
+          this.sweepChannel.start_stop_channel.common_chan_attributes.device_id,
         newChanId: $event,
       });
     }
@@ -170,8 +176,6 @@ export class SweepComponent implements OnChanges {
   onChanNameChange(newName: string): void {
     console.log('Channel name changed to:', newName);
   }
-  //TODO: Remove this function once plot is updated from main-sweep.component.ts
-  // updatePlot() {}
 
   handleKeydown(event: KeyboardEvent): void {
     if (event.key === 'Enter' || event.key === ' ') {

@@ -61,7 +61,7 @@ export interface ICommonChanAttributes {
   source_range: IChannelRange;
   meas_range: IChannelRange;
   source_limiti: IParameterFloat;
-  source_limitv: IParameterFloat;
+  source_limitv?: IParameterFloat;
   sense_mode?: IParameterString;
 }
 

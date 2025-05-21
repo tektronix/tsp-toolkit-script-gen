@@ -108,7 +108,7 @@ impl ChannelRange {
             res = prefix.to_string();
         }
 
-        return res;
+        res
     }
 
     pub fn is_range_auto(&self) -> bool {

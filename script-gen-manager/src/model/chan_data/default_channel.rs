@@ -10,7 +10,7 @@ use crate::{
     model::sweep_data::parameters::{ParameterFloat, ParameterString},
 };
 
-use super::channel_range::ChannelRange;
+use super::{channel_range::ChannelRange, region_map::RegionMapMetadata};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommonChanAttributes {
@@ -20,8 +20,8 @@ pub struct CommonChanAttributes {
     pub meas_function: ParameterString,
     pub source_range: ChannelRange,
     meas_range: ChannelRange,
-    source_limiti: ParameterFloat,
-    source_limitv: ParameterFloat,
+    pub source_limiti: ParameterFloat,
+    pub source_limitv: Option<ParameterFloat>,
     pub sense_mode: Option<ParameterString>,
 
     #[serde(skip)]
@@ -42,14 +42,10 @@ impl CommonChanAttributes {
             meas_range: ChannelRange::new(),
             source_limiti: ParameterFloat::new(
                 "source_limiti",
-                0.0,
+                1e-1,
                 Some(BaseMetadata::UNIT_AMPERES.to_string()),
             ),
-            source_limitv: ParameterFloat::new(
-                "source_limitv",
-                0.0,
-                Some(BaseMetadata::UNIT_VOLTS.to_string()),
-            ),
+            source_limitv: None,
             sense_mode: None,
 
             device,
@@ -65,6 +61,11 @@ impl CommonChanAttributes {
                     BaseMetadata::FUNCTION_CURRENT.to_string(),
                 ];
                 self.sense_mode = self.initialize_sense_mode();
+                self.source_limitv = Some(ParameterFloat::new(
+                    "source_limitv",
+                    20.0,
+                    Some(BaseMetadata::UNIT_VOLTS.to_string()),
+                ));
             }
             DeviceType::Psu => {
                 self.source_function.range = vec![BaseMetadata::FUNCTION_VOLTAGE.to_string()];
@@ -223,6 +224,14 @@ impl CommonChanAttributes {
         }
     }
 
+    pub fn get_region_map(&self, metadata: &MetadataEnum, key: &str) -> Option<RegionMapMetadata> {
+        match metadata {
+            MetadataEnum::Base(base_metadata) => base_metadata.get_region_map(key),
+            MetadataEnum::Msmu60(msmu60_metadata) => msmu60_metadata.get_region_map(key),
+            MetadataEnum::Mpsu50(mpsu50_metadata) => mpsu50_metadata.get_region_map(key),
+        }
+    }
+
     /// Initializes the `sense_mode` parameter for SMU devices.
     fn initialize_sense_mode(&self) -> Option<ParameterString> {
         let mut sense_mode = ParameterString::new("sense_mode");
@@ -232,5 +241,104 @@ impl CommonChanAttributes {
         ];
         sense_mode.value = BaseMetadata::SENSE_MODE_TWO_WIRE.to_string();
         Some(sense_mode)
+    }
+
+    pub fn update_region_constraints(&mut self, min_value: f64, max_value: f64) -> bool {
+        let mut changed = false;
+        let mut region_id = -1;
+
+        match self.device.device_type {
+            DeviceType::Smu => {
+                if let Some(region_map) =
+                    self.get_region_map(&self.device.get_metadata(), "smu.region")
+                {
+                    let mut value = 0.0;
+                    if self.source_range.is_range_auto()
+                        || self.source_range.is_range_follow_limiti()
+                    {
+                        value = if min_value.abs() > max_value.abs() {
+                            min_value
+                        } else {
+                            max_value
+                        };
+                    } else {
+                        if let Some(res) = self.source_range.get_scaled_value() {
+                            value = res
+                        }
+                    }
+
+                    let old_id = region_id;
+                    let old_limiti = self.source_limiti.value;
+                    let old_limitv = self
+                        .source_limitv
+                        .as_ref()
+                        .map(|v| v.value)
+                        .unwrap_or(f64::NAN);
+
+                    if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
+                        let source_limit_ilimits = region_map.get_current_limit(value);
+                        self.source_limiti.value =
+                            source_limit_ilimits.limit(self.source_limiti.value);
+                        region_id = region_map.find_region(value, self.source_limiti.value);
+                    } else {
+                        let source_limit_vlimits = region_map.get_voltage_limit(value);
+                        if let Some(ref mut limitv) = self.source_limitv {
+                            limitv.value = source_limit_vlimits.limit(limitv.value);
+                            region_id = region_map.find_region(limitv.value, value);
+                        }
+                    }
+
+                    if (region_id != old_id)
+                        || (old_limiti != self.source_limiti.value)
+                        || (old_limitv
+                            != self
+                                .source_limitv
+                                .as_ref()
+                                .map(|v| v.value)
+                                .unwrap_or(f64::NAN))
+                    {
+                        changed = true;
+                    }
+                }
+            }
+            DeviceType::Psu => {
+                if let Some(region_map) =
+                    self.get_region_map(&self.device.get_metadata(), "psu.region")
+                {
+                    let mut value = 0.0;
+                    if self.source_range.is_range_auto()
+                        || self.source_range.is_range_follow_limiti()
+                    {
+                        value = if min_value.abs() > max_value.abs() {
+                            min_value
+                        } else {
+                            max_value
+                        };
+                    } else {
+                        if let Some(res) = self.source_range.get_scaled_value() {
+                            value = res
+                        }
+                    }
+
+                    let old_id = region_id;
+                    let old_limiti = self.source_limiti.value;
+
+                    if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
+                        let source_limit_ilimits = region_map.get_current_limit(value);
+                        self.source_limiti.value =
+                            source_limit_ilimits.limit(self.source_limiti.value);
+                        region_id = region_map.find_region(value, self.source_limiti.value);
+                    }
+
+                    if (region_id != old_id) || (old_limiti != self.source_limiti.value) {
+                        changed = true;
+                    }
+                }
+            }
+            DeviceType::Unknown => {
+                //todo: handle error
+            }
+        }
+        changed
     }
 }

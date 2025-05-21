@@ -2,11 +2,16 @@
   class="component-box"
   [ngClass]="{ active: isActive }"
   [style.border]="isActive ? '1px solid ' + color : null"
-  [style.background-color]="isActive ? 'var(--vscode-activityErrorBadge-foreground)' : null"
+  [style.background-color]="
+    isActive ? 'var(--vscode-activityErrorBadge-foreground)' : null
+  "
 >
-  <div class="expander"
-  [style.background-color]="isActive ? 'var(--vscode-activityBar-background)' : 'transparent'"
-    >
+  <div
+    class="expander"
+    [style.background-color]="
+      isActive ? 'var(--vscode-activityBar-background)' : 'transparent'
+    "
+  >
     <div style="display: flex">
       <mat-icon (click)="toggleStepChannel(chanName)" class="h3">
         {{ expandedStepChannels[chanName] ? "expand_more" : "chevron_right" }}
@@ -57,7 +62,7 @@
         [unit]="start.unit"
         *ngIf="start"
         name="start"
-        (inputChange)="onEnter()"
+        (inputChange)="submitStepData()"
       ></app-input-plain>
       <app-input-plain
         [(ngModel)]="stop.value"
@@ -65,7 +70,7 @@
         [unit]="stop.unit"
         *ngIf="stop"
         name="stepStop"
-        (inputChange)="onEnter()"
+        (inputChange)="submitStepData()"
       ></app-input-plain>
     </div>
     <div>
@@ -75,7 +80,7 @@
         [options]="sourceFunction.range"
         *ngIf="sourceFunction"
         name="sourceFunction"
-        (toggleOptionChange)="onToggle($event)"
+        (toggleOptionChange)="submitStepData()"
       ></app-input-toggle>
     </div>
     <div>
@@ -118,7 +123,7 @@
         [options]="style.range"
         *ngIf="style"
         name="style"
-        (toggleOptionChange)="onToggle($event)"
+        (toggleOptionChange)="submitStepData()"
       ></app-input-toggle>
     </div>
     <div class="checkbox">
@@ -142,6 +147,26 @@
         name="senseMode"
         (selectedChange)="submitStepData()"
       ></app-dropdown>
+    </div>
+    <div>
+      <app-input-plain
+        [(ngModel)]="sourceLimitI.value"
+        [label]="'Source Limit I'"
+        [unit]="sourceLimitI.unit"
+        *ngIf="sourceLimitI"
+        name="sourceLimitI"
+        (inputChange)="submitStepData()"
+      ></app-input-plain>
+    </div>
+    <div>
+      <app-input-plain
+        [(ngModel)]="sourceLimitV.value"
+        [label]="'Source Limit V'"
+        [unit]="sourceLimitV.unit"
+        *ngIf="sourceLimitV"
+        name="sourceLimitV"
+        (inputChange)="submitStepData()"
+      ></app-input-plain>
     </div>
   </div>
 </div>

@@ -2,23 +2,30 @@
   class="component-box"
   [ngClass]="{ active: isActive }"
   [style.border]="isActive ? '1px solid ' + color : null"
-  [style.background-color]="isActive ? 'var(--vscode-activityErrorBadge-foreground)' : null"
+  [style.background-color]="
+    isActive ? 'var(--vscode-activityErrorBadge-foreground)' : null
+  "
 >
-  <div class="expander"
-  [style.background-color]="isActive ? 'var(--vscode-activityBar-background)' : 'transparent'"
+  <div
+    class="expander"
+    [style.background-color]="
+      isActive ? 'var(--vscode-activityBar-background)' : 'transparent'
+    "
   >
-    <div style="display: flex;">
+    <div style="display: flex">
       <mat-icon (click)="toggleSweepChannel(chanName)" class="h3">
-        {{ expandedSweepChannels[chanName] ? 'expand_more' : 'chevron_right' }}
+        {{ expandedSweepChannels[chanName] ? "expand_more" : "chevron_right" }}
       </mat-icon>
-      <h3 tabindex="0" (click)="toggleSweepChannel(chanName)" (keydown)="handleKeydown($event)">
+      <h3
+        tabindex="0"
+        (click)="toggleSweepChannel(chanName)"
+        (keydown)="handleKeydown($event)"
+      >
         {{ chanName }}
       </h3>
     </div>
-    <button class="delete-button-icon"
-      (click)="removeSweep()"
-    >
-    <mat-icon>delete</mat-icon>
+    <button class="delete-button-icon" (click)="removeSweep()">
+      <mat-icon>delete</mat-icon>
     </button>
   </div>
   <div *ngIf="expandedSweepChannels[chanName]" class="input-group">
@@ -40,7 +47,7 @@
         [unit]="start.unit"
         *ngIf="start"
         name="start"
-        (inputChange)="onEnter()"
+        (inputChange)="submitSweepData()"
       ></app-input-plain>
       <app-input-plain
         [(ngModel)]="stop.value"
@@ -48,7 +55,7 @@
         [unit]="stop.unit"
         *ngIf="stop"
         name="stop"
-        (inputChange)="onEnter()"
+        (inputChange)="submitSweepData()"
       ></app-input-plain>
     </div>
     <div>
@@ -58,7 +65,7 @@
         [options]="sourceFunction.range"
         *ngIf="sourceFunction"
         name="sourceFunction"
-        (toggleOptionChange)="onToggle($event)"
+        (toggleOptionChange)="submitSweepData()"
       ></app-input-toggle>
     </div>
     <div>
@@ -101,7 +108,7 @@
         [options]="style.range"
         *ngIf="style"
         name="style"
-        (toggleOptionChange)="onToggle($event)"
+        (toggleOptionChange)="submitSweepData()"
       ></app-input-toggle>
     </div>
     <div>
@@ -114,6 +121,26 @@
         name="senseMode"
         (selectedChange)="submitSweepData()"
       ></app-dropdown>
+    </div>
+    <div>
+      <app-input-plain
+        [(ngModel)]="sourceLimitI.value"
+        [label]="'Source Limit I'"
+        [unit]="sourceLimitI.unit"
+        *ngIf="sourceLimitI"
+        name="sourceLimitI"
+        (inputChange)="submitSweepData()"
+      ></app-input-plain>
+    </div>
+    <div>
+      <app-input-plain
+        [(ngModel)]="sourceLimitV.value"
+        [label]="'Source Limit V'"
+        [unit]="sourceLimitV.unit"
+        *ngIf="sourceLimitV"
+        name="sourceLimitV"
+        (inputChange)="submitSweepData()"
+      ></app-input-plain>
     </div>
   </div>
 </div>

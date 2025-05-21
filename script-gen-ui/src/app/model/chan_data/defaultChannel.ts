@@ -1,5 +1,8 @@
 import { ICommonChanAttributes } from '../interface';
-import { ParameterFloat, ParameterString } from '../sweep_data/SweepTimingConfig';
+import {
+  ParameterFloat,
+  ParameterString,
+} from '../sweep_data/SweepTimingConfig';
 import { ChannelRange } from './channelRange';
 
 export class CommonChanAttributes {
@@ -12,7 +15,7 @@ export class CommonChanAttributes {
   meas_range: ChannelRange;
 
   source_limiti: ParameterFloat;
-  source_limitv: ParameterFloat;
+  source_limitv?: ParameterFloat;
   sense_mode?: ParameterString;
 
   constructor(data: ICommonChanAttributes) {
@@ -24,7 +27,9 @@ export class CommonChanAttributes {
     this.source_range = new ChannelRange(data.source_range);
     this.meas_range = new ChannelRange(data.meas_range);
     this.source_limiti = new ParameterFloat(data.source_limiti);
-    this.source_limitv = new ParameterFloat(data.source_limitv);
+    this.source_limitv = data.source_limitv
+      ? new ParameterFloat(data.source_limitv)
+      : undefined;
     this.sense_mode = data.sense_mode
       ? new ParameterString(data.sense_mode)
       : undefined;
@@ -40,8 +45,11 @@ export class CommonChanAttributes {
       source_range: this.source_range.toJSON(),
       meas_range: this.meas_range.toJSON(),
       source_limiti: this.source_limiti.toJSON(),
-      source_limitv: this.source_limitv.toJSON(),
     };
+
+    if (this.source_limitv) {
+      json.source_limitv = this.source_limitv.toJSON();
+    }
 
     if (this.sense_mode) {
       json.sense_mode = this.sense_mode.toJSON();

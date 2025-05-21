@@ -3,7 +3,8 @@ import {
   Input,
   Output,
   EventEmitter,
-  SimpleChanges, OnChanges,
+  SimpleChanges,
+  OnChanges,
   ElementRef,
 } from '@angular/core';
 import {
@@ -30,7 +31,16 @@ import { InputToggleComponent } from '../../controls/input-toggle/input-toggle.c
   templateUrl: './step.component.html',
   styleUrls: ['./step.component.scss'],
   standalone: true,
-  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, DropdownComponent, InputNumericComponent, InputPlainComponent, InputToggleComponent],
+  imports: [
+    FormsModule,
+    BrowserModule,
+    CommonModule,
+    MatIconModule,
+    DropdownComponent,
+    InputNumericComponent,
+    InputPlainComponent,
+    InputToggleComponent,
+  ],
 })
 export class StepComponent implements OnChanges {
   commonChanAttributes: CommonChanAttributes | undefined;
@@ -141,7 +151,7 @@ export class StepComponent implements OnChanges {
           source_range: this.sourceRange!,
           meas_range: this.measRange!,
           source_limiti: this.sourceLimitI!,
-          source_limitv: this.sourceLimitV!,
+          source_limitv: this.sourceLimitV,
           sense_mode: this.senseMode,
         },
         start: this.start!,
@@ -163,19 +173,11 @@ export class StepComponent implements OnChanges {
     this.emitStepData.emit(this.getStepChanConfigFromComponent());
   }
 
-  onEnter() {
-    this.submitStepData();
-  }
-
-  onToggle(selectedOption: string) {
-    console.log('Selected option:', selectedOption);
-    this.submitStepData();
-  }
-
   onDeviceIDChange($event: string) {
     if (this.stepChannel) {
       this.emitStepChannelIdChange.emit({
-        oldChanId: this.stepChannel.start_stop_channel.common_chan_attributes.device_id,
+        oldChanId:
+          this.stepChannel.start_stop_channel.common_chan_attributes.device_id,
         newChanId: $event,
       });
     }
@@ -187,5 +189,4 @@ export class StepComponent implements OnChanges {
   }
 
   // TODO: Remove this function once plot is updated from main-sweep.component.ts
-
 }

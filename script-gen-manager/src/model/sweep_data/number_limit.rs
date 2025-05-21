@@ -124,6 +124,12 @@ impl NumberLimit {
     }
 }
 
+impl Default for NumberLimit {
+    fn default() -> Self {
+        NumberLimit::new(f64::NAN, f64::NAN, true, None)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct CommonTimingLimit {
     pub measure_count_limits: NumberLimit,

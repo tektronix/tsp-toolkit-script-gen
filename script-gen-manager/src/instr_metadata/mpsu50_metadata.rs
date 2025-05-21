@@ -1,3 +1,7 @@
+use crate::model::{
+    chan_data::region_map::RegionMapMetadata, sweep_data::number_limit::NumberLimit,
+};
+
 use super::base_metadata::{BaseMetadata, Metadata};
 
 #[derive(Debug, Clone)]
@@ -21,6 +25,16 @@ impl Mpsu50Metadata {
         base.add_range("source.levelv".to_string(), -50.0, 50.0);
         base.add_range("source.leveli".to_string(), -5.0, 5.0);
 
+        // Add region maps
+        // when pulse mode is off
+        let exclude_i = NumberLimit::new(-10.0e-9, 10.0e-9, false, None);
+        let mut region_map_metadata = RegionMapMetadata::new(None, exclude_i);
+        region_map_metadata.add_region(1, 0.0, 0.0, 50.0, 1.0);
+        region_map_metadata.add_region(1, 0.0, 0.0, 10.0, 5.0);
+        region_map_metadata.add_region(1, 0.0, 0.0, -10.0, -5.0);
+        region_map_metadata.add_region(1, 0.0, 0.0, -50.0, -1.0);
+        base.add_region_map("psu.region", region_map_metadata);
+
         Mpsu50Metadata {
             base,
             // Initialize additional properties
@@ -43,5 +57,9 @@ impl Metadata for Mpsu50Metadata {
 
     fn get_name(&self, key: &str) -> Option<&'static str> {
         self.base.get_name(key)
+    }
+
+    fn get_region_map(&self, key: &str) -> Option<RegionMapMetadata> {
+        self.base.get_region_map(key)
     }
 }

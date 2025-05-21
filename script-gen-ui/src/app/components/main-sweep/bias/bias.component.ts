@@ -3,7 +3,8 @@ import {
   Input,
   Output,
   EventEmitter,
-  SimpleChanges, OnChanges,
+  SimpleChanges,
+  OnChanges,
   ElementRef,
 } from '@angular/core';
 import { BiasChannel } from '../../../model/chan_data/biasChannel';
@@ -22,13 +23,20 @@ import { DropdownComponent } from '../../controls/dropdown/dropdown.component';
 import { InputPlainComponent } from '../../controls/input-plain/input-plain.component';
 import { InputToggleComponent } from '../../controls/input-toggle/input-toggle.component';
 
-
 @Component({
   selector: 'app-bias',
   templateUrl: './bias.component.html',
   styleUrls: ['./bias.component.scss'],
   standalone: true,
-  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, DropdownComponent, InputPlainComponent, InputToggleComponent],
+  imports: [
+    FormsModule,
+    BrowserModule,
+    CommonModule,
+    MatIconModule,
+    DropdownComponent,
+    InputPlainComponent,
+    InputToggleComponent,
+  ],
 })
 export class BiasComponent implements OnChanges {
   commonChanAttributes: CommonChanAttributes | undefined;
@@ -124,7 +132,6 @@ export class BiasComponent implements OnChanges {
 
   getBiasChanConfigFromComponent(): BiasChannel {
     //TODO: for all values that can be undefined throw an error as it's not a valid scenario
-    //TODO: for all values that can be undefined throw an error as it's not a valid scenario
     return new BiasChannel({
       common_chan_attributes: {
         uuid: this.uuid,
@@ -135,7 +142,7 @@ export class BiasComponent implements OnChanges {
         meas_function: this.measFunction!,
         meas_range: this.measRange!,
         source_limiti: this.sourceLimitI!,
-        source_limitv: this.sourceLimitV!,
+        source_limitv: this.sourceLimitV,
         sense_mode: this.senseMode,
       },
       bias: this.bias!,
@@ -145,24 +152,6 @@ export class BiasComponent implements OnChanges {
   submitBiasData() {
     const biasChannel = this.getBiasChanConfigFromComponent();
     this.emitBiasChannelData.emit(biasChannel);
-  }
-
-  onBiasValueChange() {
-    this.submitBiasData();
-  }
-
-  onRangeChange(event: Event): void {
-    const target = event.target as HTMLSelectElement;
-    const selectedRange = target.value;
-    console.log('Selected range:', selectedRange);
-    console.log('Selected range:', selectedRange);
-    this.submitBiasData();
-  }
-
-  onToggle(selectedOption: string) {
-    console.log('Selected option:', selectedOption);
-    console.log('Selected option:', selectedOption);
-    this.submitBiasData();
   }
 
   onDeviceIDChange($event: string) {
@@ -179,5 +168,4 @@ export class BiasComponent implements OnChanges {
       event.preventDefault(); // Prevent default scrolling for Space key
     }
   }
-
 }

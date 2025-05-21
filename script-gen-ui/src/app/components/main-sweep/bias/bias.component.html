@@ -2,16 +2,25 @@
   class="component-box"
   [ngClass]="{ active: isActive }"
   [style.border]="isActive ? '1px solid ' + color : null"
-  [style.background-color]="isActive ? 'var(--vscode-activityErrorBadge-foreground)' : null"
+  [style.background-color]="
+    isActive ? 'var(--vscode-activityErrorBadge-foreground)' : null
+  "
 >
-  <div class="expander"
-    [style.background-color]="isActive ? 'var(--vscode-activityBar-background)' : 'transparent'"
-    >
+  <div
+    class="expander"
+    [style.background-color]="
+      isActive ? 'var(--vscode-activityBar-background)' : 'transparent'
+    "
+  >
     <div style="display: flex">
       <mat-icon (click)="toggleBiasChannel()" class="h3">
         {{ isBiasChanExpanded ? "expand_more" : "chevron_right" }}
       </mat-icon>
-      <h3 tabindex="0" (click)="toggleBiasChannel()" (keydown)="handleKeydown($event)">
+      <h3
+        tabindex="0"
+        (click)="toggleBiasChannel()"
+        (keydown)="handleKeydown($event)"
+      >
         {{ chanName }}
       </h3>
     </div>
@@ -38,7 +47,7 @@
         [unit]="bias.unit"
         *ngIf="bias"
         name="bias"
-        (inputChange)="onBiasValueChange()"
+        (inputChange)="submitBiasData()"
       ></app-input-plain>
     </div>
     <div>
@@ -48,7 +57,7 @@
         [options]="sourceFunction.range"
         *ngIf="sourceFunction"
         name="sourceFunction"
-        (toggleOptionChange)="onToggle($event)"
+        (toggleOptionChange)="submitBiasData()"
       ></app-input-toggle>
     </div>
     <div>
@@ -59,7 +68,7 @@
         [options]="sourceRange.range"
         *ngIf="sourceRange"
         name="sourceRange"
-        (change)="onRangeChange($event)"
+        (change)="submitBiasData()"
       ></app-dropdown>
     </div>
     <div>
@@ -96,15 +105,24 @@
       ></app-dropdown>
     </div>
     <div>
-      <app-dropdown
-        [(ngModel)]="senseMode.value"
-        [label]="'Sense Mode'"
-        [selected]="senseMode.value"
-        [options]="senseMode.range"
-        *ngIf="senseMode"
-        name="senseMode"
-        (selectedChange)="submitBiasData()"
-      ></app-dropdown>
+      <app-input-plain
+        [(ngModel)]="sourceLimitI.value"
+        [label]="'Source Limit I'"
+        [unit]="sourceLimitI.unit"
+        *ngIf="sourceLimitI"
+        name="sourceLimitI"
+        (inputChange)="submitBiasData()"
+      ></app-input-plain>
+    </div>
+    <div>
+      <app-input-plain
+        [(ngModel)]="sourceLimitV.value"
+        [label]="'Source Limit V'"
+        [unit]="sourceLimitV.unit"
+        *ngIf="sourceLimitV"
+        name="sourceLimitV"
+        (inputChange)="submitBiasData()"
+      ></app-input-plain>
     </div>
   </div>
 </div>

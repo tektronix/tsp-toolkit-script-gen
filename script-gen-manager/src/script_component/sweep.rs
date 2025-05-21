@@ -142,6 +142,25 @@ impl SweepModel {
                 }
             }
 
+            //source_limitv exists only for SMU
+            if let Some(source_limitv) = &bias_channel.common_chan_attributes.source_limitv {
+                self.val_replacement_map.insert(
+                    instr_name.clone() + ":LIMITV",
+                    self.format(source_limitv.value.abs()),
+                );
+            }
+
+            self.val_replacement_map.insert(
+                instr_name.clone() + ":LIMITI",
+                self.format(
+                    bias_channel
+                        .common_chan_attributes
+                        .source_limiti
+                        .value
+                        .abs(),
+                ),
+            );
+
             self.val_replacement_map.insert(
                 instr_name.clone() + ":BIAS",
                 self.format(bias_channel.bias.value),
@@ -248,6 +267,30 @@ impl SweepModel {
                     //TODO: error handling for sense mode value not found
                 }
             }
+
+            //source_limitv exists only for SMU
+            if let Some(source_limitv) = &step_channel
+                .start_stop_channel
+                .common_chan_attributes
+                .source_limitv
+            {
+                self.val_replacement_map.insert(
+                    instr_name.clone() + ":LIMITV",
+                    self.format(source_limitv.value.abs()),
+                );
+            }
+
+            self.val_replacement_map.insert(
+                instr_name.clone() + ":LIMITI",
+                self.format(
+                    step_channel
+                        .start_stop_channel
+                        .common_chan_attributes
+                        .source_limiti
+                        .value
+                        .abs(),
+                ),
+            );
 
             self.val_replacement_map.insert(
                 instr_name.clone() + ":START",
@@ -389,6 +432,30 @@ impl SweepModel {
                     //TODO: error handling for sense mode value not found
                 }
             }
+
+            //source_limitv exists only for SMU
+            if let Some(source_limitv) = &sweep_channel
+                .start_stop_channel
+                .common_chan_attributes
+                .source_limitv
+            {
+                self.val_replacement_map.insert(
+                    instr_name.clone() + ":LIMITV",
+                    self.format(source_limitv.value.abs()),
+                );
+            }
+
+            self.val_replacement_map.insert(
+                instr_name.clone() + ":LIMITI",
+                self.format(
+                    sweep_channel
+                        .start_stop_channel
+                        .common_chan_attributes
+                        .source_limiti
+                        .value
+                        .abs(),
+                ),
+            );
 
             self.val_replacement_map.insert(
                 instr_name.clone() + ":START",
@@ -547,7 +614,7 @@ impl SweepModel {
                 result = self.format(value);
             }
         }
-        return result;
+        result
     }
 
     /// Extracts numeric indices from a formatted string containing bracketed numbers.

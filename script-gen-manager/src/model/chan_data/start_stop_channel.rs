@@ -38,12 +38,16 @@ impl StartStopChannel {
             BaseMetadata::STYLE_LOG.to_string(),
         ];
         self.style.value = BaseMetadata::STYLE_LIN.to_string();
+        self.common_chan_attributes
+            .update_region_constraints(self.start.value, self.stop.value);
     }
 
     pub fn evaluate(&mut self) {
         self.common_chan_attributes.evaluate();
         self.determine_start_value();
         self.determine_stop_value();
+        self.common_chan_attributes
+            .update_region_constraints(self.start.value, self.stop.value);
     }
 
     fn determine_start_value(&mut self) {

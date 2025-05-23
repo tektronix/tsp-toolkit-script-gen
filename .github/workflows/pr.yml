@@ -422,11 +422,11 @@ jobs:
         with:
           name: software-bom
           path: sbom
-      - name: Get Changelog for this Tag
-        id: changelog
-        uses: coditory/changelog-parser@v1
-        with:
-          version: ${{steps.lasttag.outputs.cl_version}}
+      # - name: Get Changelog for this Tag
+      #   id: changelog
+      #   uses: coditory/changelog-parser@v1
+      #   with:
+      #     version: ${{steps.lasttag.outputs.cl_version}}
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
@@ -443,7 +443,7 @@ jobs:
 
             ## Changelog
 
-            ${{steps.changelog.outputs.description}}
+            TODO <!--$\{{steps.changelog.outputs.description}}-->
 
           prerelease: ${{(! github.event.pull_request.merged) || (github.event.pull_request.merged && ! contains(github.head_ref, 'release/'))}}
           commit: ${{steps.lasttag.outputs.commit}}

@@ -2,6 +2,9 @@
   // display: flex;
   flex-direction: column;
   width: 100%;
+  overflow: hidden;
+  max-width: 300vh;
+  min-width: 100vh;
   // height: 400px;
   // background-color: var(--vscode-editor-background);
 }

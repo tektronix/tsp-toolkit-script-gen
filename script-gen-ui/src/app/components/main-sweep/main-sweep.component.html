@@ -32,11 +32,9 @@
           (focus)="setActiveComponent('bias', i)"
           (blur)="clearActiveComponent()"
           (emitBiasChannelData)="updateBiasChannelsConfig($event)"
-          (emitBiasExpanderState)="handleBiasChanExpanderStateChange($event)"
+          (emitBiasExpanderState)="handleChannelExpanderStateChange($event.uuid, $event.isExpanded)"
+          [isBiasChanExpanded]="isChannelExpanded(biasChannel.common_chan_attributes.uuid)"
           [biasChannel]="biasChannel"
-          [isBiasChanExpanded]="
-            isBiasChannelExpanded(biasChannel.common_chan_attributes.uuid)
-          "
           [deviceList]="deviceList"
           (emitBiasChannelDelete)="removeBiasChannel($event)"
           (emitBiasChannelIdChange)="updateBiasChannelId($event)"
@@ -50,10 +48,13 @@
     <div class="expander">
       <div style="display: flex">
         <button (click)="toggleStep()" class="h3-button">
-          <mat-icon>{{ isBiasExpanded ? "expand_more" : "chevron_right" }}</mat-icon>
+          <mat-icon>{{ isStepExpanded ? "expand_more" : "chevron_right" }}</mat-icon>
         </button>
         <h3>Step</h3>
       </div>
+      <button *ngIf="stepChannels.length === 0" class="button-icon" (click)="addStep()">
+        <mat-icon>add</mat-icon>
+      </button>
     </div>
     <div *ngIf="isStepExpanded">
       <div *ngFor="let stepChannel of stepChannels; let i = index">
@@ -61,6 +62,8 @@
           <app-step
             (emitStepData)="updateStepChannelsConfig($event)"
             (emitStepGlobalParameters)="updateStepGlobalParameters($event)"
+            (emitStepExpanderState)="handleChannelExpanderStateChange(stepChannel.start_stop_channel.common_chan_attributes.uuid, $event.isExpanded)"
+            [isStepExpanded]="isChannelExpanded(stepChannel.start_stop_channel.common_chan_attributes.uuid)"
             [stepChannel]="stepChannel"
             [stepGlobalParameters]="stepGlobalParameters"
             [deviceList]="deviceList"
@@ -77,7 +80,7 @@
     <div class="expander">
       <div style="display: flex">
         <button (click)="toggleSweep()" class="h3-button">
-          <mat-icon>{{ isBiasExpanded ? "expand_more" : "chevron_right" }}</mat-icon>
+          <mat-icon>{{ isSweepExpanded ? "expand_more" : "chevron_right" }}</mat-icon>
         </button>
         <h3>Sweep</h3>
       </div>
@@ -97,11 +100,21 @@
         </div>
         <!-- <div>
         </div> -->
-        <!-- <div class="checkbox">
-          <label for="list">List</label>
-          <input type="checkbox" id="list" [(ngModel)]="list" name="list" />
-          <button class="timing">Edit</button>
-        </div> -->
+        <div class="checkbox">
+          <div>
+            <label for="list">List</label>
+            <input type="checkbox" id="list" [(ngModel)]="list" name="list" />
+          </div>
+          <div>
+            <button class="timing" (click)="enableList()">Edit</button>
+            <app-list
+              *ngIf="showList"
+              [sweepPoints]="sweepPoints"
+              [sweepChannels]="sweepChannels"
+              (closeList)="closeList()"
+            ></app-list>
+          </div>
+        </div>
       </div>
       <div *ngFor="let sweepChannel of sweepChannels; let i = index">
         <div *ngIf="isSweepExpanded">
@@ -109,6 +122,8 @@
             (emitSweepData)="updateSweepChannelsConfig($event)"
             [sweepChannel]="sweepChannel"
             [deviceList]="deviceList"
+            (emitSweepExpanderState)="handleChannelExpanderStateChange(sweepChannel.start_stop_channel.common_chan_attributes.uuid, $event.isExpanded)"
+            [isSweepExpanded]="isChannelExpanded(sweepChannel.start_stop_channel.common_chan_attributes.uuid)"
             (emitSweepChannelDelete)="removeSweepChannel($event)"
             (emitSweepChannelIdChange)="updateSweepChannelId($event)"
             [color]="getSweepColor(sweepChannel)"

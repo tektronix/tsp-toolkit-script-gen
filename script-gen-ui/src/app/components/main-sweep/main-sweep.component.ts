@@ -34,11 +34,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { BrowserModule } from '@angular/platform-browser';
 import { PlotContainerComponent } from './plot-container/plot-container.component';
 import { InputNumericComponent } from '../controls/input-numeric/input-numeric.component';
+import { ListComponent } from './list/list.component';
 
 @Component({
   selector: 'app-main-sweep',
   standalone: true,
-  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, InputNumericComponent, BiasComponent, StepComponent, SweepComponent, TimingComponent, PlotContainerComponent],
+  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, InputNumericComponent, BiasComponent, StepComponent, SweepComponent, TimingComponent, PlotContainerComponent, ListComponent],
   templateUrl: './main-sweep.component.html',
   styleUrls: ['./main-sweep.component.scss'],
 })
@@ -58,7 +59,7 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
   activeIndex: number | null = null;
 
   colorIndex = 0;
-  colors: string[] = ['#F6F07D', '#7FBDC6', '#C95B66', '#91CE32', '#FF9832', '#2626BF', '#E254A6', '#00E09B']
+  colors: string[] = ['#F6F07D', '#7FBDC6', '#C95B66', '#91CE32', '#FF9832', '#E254A6', '#00E09B']
   colorMap = new Map<string, string>();
 
   setActiveComponent(
@@ -79,6 +80,7 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
   showPopupBox = false;
   showTiming = false;
   sweepTimingConfig: SweepTimingConfig | undefined;
+  showList = false; //Sweep list popup box
   deviceList: Device[] = [];
   stepGlobalParameters: StepGlobalParameters | undefined;
   sweepGlobalParameters: SweepGlobalParameters | undefined;
@@ -196,6 +198,14 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
     this.showTiming = false;
   }
 
+  enableList() {
+    this.showList = true;
+  }
+
+  closeList(){
+    this.showList = false;
+  }
+
   ngAfterViewInit(): void {
     this.biasComponents.changes.subscribe(() => {
       console.log('Updated biasComponents:', this.biasComponents.toArray());
@@ -226,14 +236,11 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
     this.isSweepExpanded = !this.isSweepExpanded;
   }
 
-  handleBiasChanExpanderStateChange(event: {
-    uuid: string;
-    isExpanded: boolean;
-  }) {
-    this.channelsExpanderState.set(event.uuid, event.isExpanded);
+  handleChannelExpanderStateChange(uuid: string, isExpanded: boolean): void {
+    this.channelsExpanderState.set(uuid, isExpanded);
   }
 
-  isBiasChannelExpanded(uuid: string): boolean {
+  isChannelExpanded(uuid: string): boolean {
     return this.channelsExpanderState.get(uuid) || false;
   }
 

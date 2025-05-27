@@ -12,15 +12,11 @@
       isActive ? 'var(--vscode-activityBar-background)' : 'transparent'
     "
   >
-    <div style="display: flex">
-      <mat-icon (click)="toggleSweepChannel(chanName)" class="h3">
-        {{ expandedSweepChannels[chanName] ? "expand_more" : "chevron_right" }}
+    <div style="display: flex;">
+      <mat-icon (click)="toggleSweepChannel()" class="h3">
+        {{ isSweepExpanded ? 'expand_more' : 'chevron_right' }}
       </mat-icon>
-      <h3
-        tabindex="0"
-        (click)="toggleSweepChannel(chanName)"
-        (keydown)="handleKeydown($event)"
-      >
+      <h3 tabindex="0" (click)="toggleSweepChannel()" (keydown)="handleKeydown($event)">
         {{ chanName }}
       </h3>
     </div>
@@ -28,7 +24,7 @@
       <mat-icon>delete</mat-icon>
     </button>
   </div>
-  <div *ngIf="expandedSweepChannels[chanName]" class="input-group">
+  <div *ngIf="isSweepExpanded" class="input-group">
     <div>
       <app-dropdown
         [(ngModel)]="deviceID"

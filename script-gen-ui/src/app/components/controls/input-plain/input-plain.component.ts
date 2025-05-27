@@ -42,13 +42,13 @@ export class InputPlainComponent implements ControlValueAccessor, OnInit {
 
   get displayValue(): string {
     const parsedValue = parseScientificInput(`${this._value} ${this.unit}`);
-    console.log('parsed value : ', parsedValue);
+    // console.log('parsed value : ', parsedValue);
 
     // If parseScientificInput returns a valid value, update _displayValue
     if (parsedValue && parsedValue !== 'Invalid input') {
       this._displayValue = parsedValue;
     }
-    console.log('displayvalue : ', this._displayValue);
+    // console.log('displayvalue : ', this._displayValue);
     // Return the cached _displayValue or fallback to default
     return this._displayValue || (this._value !== undefined ? `${this._value} ${this.unit}` : '');
   }
@@ -81,7 +81,7 @@ export class InputPlainComponent implements ControlValueAccessor, OnInit {
   }
 
   registerOnTouched(): void {
-    console.log('Input touched');
+    // console.log('Input touched');
   }
 
   // setDisabledState?(): void {

@@ -1,4 +1,4 @@
-import { Component, Input, AfterViewInit, OnInit, OnDestroy, ElementRef, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, AfterViewInit, OnInit, OnDestroy, ElementRef, OnChanges, SimpleChanges, HostListener } from '@angular/core';
 import { BiasChannel } from '../../../../model/chan_data/biasChannel';
 import { ParameterFloat, ParameterString } from '../../../../model/sweep_data/SweepTimingConfig';
 import { ChannelRange } from '../../../../model/chan_data/channelRange';
@@ -31,6 +31,7 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy, OnCh
   @Input() color = '';
   private mutationObserver: MutationObserver | undefined;
   private originalBackgroundColor = '';
+  activeBackgroundColor = '';
 
   plotLayout =  {
     xaxis: {
@@ -165,6 +166,7 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy, OnCh
 
       this.plotDivID = `plotDiv${this.biasChannel.common_chan_attributes.chan_name}`;
       console.log("plotDivID", this.plotDivID);
+      console.log("plotDivID", this.plotDivID);
       for(let i =0; i<11; i++){
         this.plotData1.y[i] = this.bias?.value ?? 0;
       }
@@ -186,6 +188,7 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy, OnCh
       console.log('isActive changed:', changes['isActive'].currentValue);
       this.renderPlot(); // Re-render the plot when isActive changes
     }
+    this.observeThemeChanges();
   }
 
   ngAfterViewInit(): void{
@@ -200,6 +203,21 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy, OnCh
     // Disconnect the MutationObserver when the component is destroyed
     if (this.mutationObserver) {
       this.mutationObserver.disconnect();
+    }
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    console.log('Window resized');
+    console.log('plotDivID:', this.plotDivID);
+
+    const container = document.getElementById(this.plotDivID);
+    if (container) {
+      console.log('Container dimensions:', container.offsetWidth, container.offsetHeight);
+    }
+
+    if (this.plotDivID) {
+      Plotly.Plots.resize(this.plotDivID);
     }
   }
 
@@ -248,21 +266,24 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy, OnCh
     this.plotLayout.paper_bgcolor = backgroundColorHex;
     this.plotLayout.plot_bgcolor = backgroundColorHex;
 
+    const activeBg = this.getCssVariableValue('--vscode-activityErrorBadge-foreground');
+    this.activeBackgroundColor = activeBg.startsWith('rgb')
+      ? this.rgbToHex(activeBg)
+      : activeBg;
+
     console.log('Initial background color:', backgroundColorHex);
+    console.log('Initial active background color:', this.activeBackgroundColor);
   }
 
   private renderPlot(): void {
     if (this.plotDataX && this.plotConfig) {
-      // Set both plot_bgcolor and paper_bgcolor based on isActive
       if (this.isActive) {
-        this.plotLayout.plot_bgcolor = 'black';
-        this.plotLayout.paper_bgcolor = 'black';
+        this.plotLayout.plot_bgcolor = this.activeBackgroundColor;
+        this.plotLayout.paper_bgcolor = this.activeBackgroundColor;
       } else {
         this.plotLayout.plot_bgcolor = this.originalBackgroundColor;
         this.plotLayout.paper_bgcolor = this.originalBackgroundColor;
       }
-
-      // Render the plot with the updated layout
       Plotly.newPlot(this.plotDivID, this.plotData, this.plotLayout, this.plotConfig);
     }
   }
@@ -279,9 +300,15 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy, OnCh
       this.plotLayout.paper_bgcolor = backgroundColorHex;
       this.plotLayout.plot_bgcolor = backgroundColorHex;
 
-      console.log('Theme changed, new background color:', backgroundColorHex);
+      // Update active background color on theme change
+      const activeBg = this.getCssVariableValue('--vscode-activityErrorBadge-foreground');
+      this.activeBackgroundColor = activeBg.startsWith('rgb')
+        ? this.rgbToHex(activeBg)
+        : activeBg;
 
-      // Re-render the plot with the updated background color
+      console.log('Theme changed, new background color:', backgroundColorHex);
+      console.log('Theme changed, new active background color:', this.activeBackgroundColor);
+
       this.renderPlot();
     });
 

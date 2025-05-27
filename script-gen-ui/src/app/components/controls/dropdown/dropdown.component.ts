@@ -53,7 +53,7 @@ export class DropdownComponent implements ControlValueAccessor, OnInit {
   }
 
   registerOnTouched(): void {
-    console.log('Dropdown touched');
+    // console.log('Dropdown touched');
   }
 
   setDisabledState?(): void {

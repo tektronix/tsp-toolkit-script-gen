@@ -69,7 +69,7 @@ export class InputNumericComponent implements ControlValueAccessor, OnInit {
   }
 
   registerOnTouched(): void {
-    console.log('InputNumericComponent touched');
+    // console.log('InputNumericComponent touched');
   }
 
   setDisabledState?(): void {

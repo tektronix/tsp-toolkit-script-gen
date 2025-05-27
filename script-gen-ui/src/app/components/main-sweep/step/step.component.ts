@@ -25,6 +25,7 @@ import { DropdownComponent } from '../../controls/dropdown/dropdown.component';
 import { InputNumericComponent } from '../../controls/input-numeric/input-numeric.component';
 import { InputPlainComponent } from '../../controls/input-plain/input-plain.component';
 import { InputToggleComponent } from '../../controls/input-toggle/input-toggle.component';
+import { ListComponent } from '../list/list.component';
 
 @Component({
   selector: 'app-step',
@@ -40,6 +41,7 @@ import { InputToggleComponent } from '../../controls/input-toggle/input-toggle.c
     InputNumericComponent,
     InputPlainComponent,
     InputToggleComponent,
+    ListComponent
   ],
 })
 export class StepComponent implements OnChanges {
@@ -63,6 +65,7 @@ export class StepComponent implements OnChanges {
   stop: ParameterFloat | undefined;
   style: ParameterString | undefined;
   list = false;
+  showStepList = false;
 
   @Input() stepChannel: StepChannel | undefined;
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
@@ -70,6 +73,10 @@ export class StepComponent implements OnChanges {
   @Input() deviceList: Device[] = [];
   @Output() emitStepData = new EventEmitter<StepChannel>();
   @Output() emitStepGlobalParameters = new EventEmitter<StepGlobalParameters>();
+  @Output() emitStepExpanderState = new EventEmitter<{
+    uuid: string;
+    isExpanded: boolean;
+  }>();
   @Output() emitStepChannelDelete = new EventEmitter<string>();
   @Output() emitStepChannelIdChange = new EventEmitter<{
     oldChanId: string;
@@ -131,8 +138,13 @@ export class StepComponent implements OnChanges {
     }
   }
 
-  toggleStepChannel(stepName: string): void {
-    this.expandedStepChannels[stepName] = !this.expandedStepChannels[stepName];
+  toggleStepChannel(): void {
+    this.isStepExpanded = !this.isStepExpanded;
+    // this.expandedStepChannels[stepName] = !this.expandedStepChannels[stepName];
+    this.emitStepExpanderState.emit({
+      uuid: this.uuid,
+      isExpanded: this.isStepExpanded
+    });
   }
 
   removeStep() {

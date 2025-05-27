@@ -1,0 +1,47 @@
+.sweep-list-popup {
+  position: fixed;
+  top: 10vh;
+  left: 40vw;
+  background-color: var(--vscode-editor-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.sweep-list-popup-content {
+  // background: white;
+  padding: 18px;
+  border-radius: 8px;
+  // min-width: 300px;
+  // min-height: 100px;
+  position: relative;
+}
+
+.sweep-list-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px;
+}
+
+.sweep-list-popup-close {
+  font-size: 18px;
+  border: none;
+  // background: none;
+  cursor: pointer;
+}
+
+.sweep-list-popup-inputs {
+  overflow-x: auto;
+  max-width: 30vw;
+  overflow-y: auto;
+  max-height: 39vh;
+  margin-top: 3vh;
+  border-top: 1px solid var(--vscode-activityBar-inactiveForeground);
+}
+
+.outer-container{
+  border: 1px solid var(--vscode-badge-background);
+  padding: 15px;
+}

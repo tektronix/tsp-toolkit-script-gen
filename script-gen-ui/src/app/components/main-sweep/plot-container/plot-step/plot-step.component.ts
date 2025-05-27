@@ -44,6 +44,7 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
   @Input() color = '';
   private mutationObserver: MutationObserver | undefined;
   private originalBackgroundColor = '';
+  activeBackgroundColor = '';
 
   commonChanAttributes: CommonChanAttributes | undefined;
   chanName = 'step1';
@@ -162,7 +163,7 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
     line: {
       width: 2,
       color: this.color,
-      shape: 'hv'
+      shape: 'vh'
     },
   };
   plotData2 = {  x: [],
@@ -195,7 +196,7 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
       this.stepToSweepDelay = this.stepGlobalParameters.step_to_sweep_delay;
 
     }
-    this.stepValues();
+    // this.stepValues();
     this.plotData1.line.color = this.color;
     this.updatePlotLayout();
     this.initializePlot();
@@ -205,25 +206,21 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
   }
 
   ngAfterViewInit(): void{
-    // setTimeout(() => {
-    //   if (this.plotDataX && this.plotConfig) {
-    //     this.stepValues();
-    //     this.renderPlot();
-    //     Plotly.newPlot('divStep', this.plotData, this.plotLayout, this.plotConfig);
-    //   }
-    //   this.renderPlot();
-    // }, 0);
-    if (this.plotDataX && this.plotConfig) {
+    if (this.plotDataX && this.plotConfig && this.style?.value == 'LIN') {
       this.stepValues();
 
       Plotly.newPlot('divStep', this.plotData, this.plotLayout, this.plotConfig);
       console.log('step data', this.plotData, this.plotLayout, this.plotConfig);
+    }
+    else {
+      this.updatePlotStyle();
     }
     this.renderPlot();
   }
 
   stepValues(){
     if (this.start && this.stop && this.stepPoints) {
+      this.plotData1.line.shape = 'hv';
       const stepSize = (this.stop.value - this.start.value) / (this.stepPoints.value - 1);
       this.plotData1.x = Array.from({ length: this.stepPoints.value }, (_, i) => i).concat(this.stepPoints.value).flat();
       this.plotData1.y = Array.from({ length: this.stepPoints?.value ?? 0 }, (_, i) => (this.start?.value ?? 0) + i * stepSize).concat(this.stop?.value ?? 0).flat();
@@ -235,33 +232,39 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
     if (this.sourceFunction) {
       this.plotLayout.yaxis2.ticksuffix = this.sourceFunction.value === 'Voltage' ? ' V' : ' A';
     }
+    if (this.start && this.stop) {
+      // Use the greater of start or stop for maxRange
+      const maxRange = Math.ceil(Math.max(this.start.value, this.stop.value));
+      this.plotLayout.yaxis.range = [0, maxRange];
+      this.plotLayout.yaxis2.range = [0, maxRange];
+      this.plotLayout.yaxis2.dtick = maxRange;
+
+      const dtick = maxRange / 4; // Divide maxRange into 4 intervals
+      this.plotLayout.yaxis.dtick = dtick;
+    }
   }
 
   private updatePlotStyle(): void {
-    if (this.style?.value === 'log') {
-      // Update the xaxis to logarithmic scale
-      this.plotLayout.xaxis.type = 'log';
-      console.log('Logarithmic scale applied to x-axis');
+    if (this.style?.value === 'LOG') {
+      // this.plotLayout.xaxis.type = 'log';
+      // this.plotData1.line.shape = 'vh';
 
-      // Recalculate the x values for logarithmic scale
       if (this.start && this.stop && this.stepPoints) {
-        const startValue = this.start.value > 0 ? this.start.value : 1; // Ensure start > 0 for log scale
-        const stopValue = this.stop.value > 0 ? this.stop.value : 1;   // Ensure stop > 0 for log scale
+        console.log('start:', this.start.value, 'stop:', this.stop.value, 'stepPoints:', this.stepPoints.value);
+        const startValue = this.start.value > 0 ? this.start.value : 1e-12;
+        const stopValue = this.stop.value > 0 ? this.stop.value : 1e-12;
         const stepFactor = Math.pow(stopValue / startValue, 1 / (this.stepPoints.value - 1));
+        console.log('startValue:', startValue, 'stopValue:', stopValue, 'stepFactor:', stepFactor);
 
-        this.plotData1.x = Array.from({ length: this.stepPoints.value }, (_, i) =>
+        this.plotData1.x = Array.from({ length: this.stepPoints.value }, (_, i) => i).concat(this.stepPoints.value).flat();
+        this.plotData1.y = Array.from({ length: this.stepPoints.value }, (_, i) =>
           startValue * Math.pow(stepFactor, i)
         );
+        console.log("plotData1", this.plotData1);
       }
     } else {
-      // Revert to linear scale
-      this.plotLayout.xaxis.type = 'linear';
-
-      // Recalculate the x values for linear scale
       this.stepValues();
     }
-
-    // Re-render the plot
     this.renderPlot();
   }
 
@@ -271,11 +274,18 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
       ? this.rgbToHex(backgroundColor)
       : backgroundColor;
 
-    this.originalBackgroundColor = backgroundColorHex; // Store the original background color
+    this.originalBackgroundColor = backgroundColorHex;
     this.plotLayout.paper_bgcolor = backgroundColorHex;
     this.plotLayout.plot_bgcolor = backgroundColorHex;
 
+    // Fetch and store active background color
+    const activeBg = this.getCssVariableValue('--vscode-activityErrorBadge-foreground');
+    this.activeBackgroundColor = activeBg.startsWith('rgb')
+      ? this.rgbToHex(activeBg)
+      : activeBg;
+
     console.log('Initial background color:', backgroundColorHex);
+    console.log('Initial active background color:', this.activeBackgroundColor);
   }
 
   getCssVariableValue(variableName: string): string {
@@ -295,16 +305,13 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
 
   private renderPlot(): void {
     if (this.plotDataX && this.plotConfig) {
-      // Set both plot_bgcolor and paper_bgcolor to black when active
       if (this.isActive) {
-        this.plotLayout.plot_bgcolor = 'black';
-        this.plotLayout.paper_bgcolor = 'black';
+        this.plotLayout.plot_bgcolor = this.activeBackgroundColor;
+        this.plotLayout.paper_bgcolor = this.activeBackgroundColor;
       } else {
-        this.plotLayout.paper_bgcolor = this.originalBackgroundColor;
         this.plotLayout.plot_bgcolor = this.originalBackgroundColor;
+        this.plotLayout.paper_bgcolor = this.originalBackgroundColor;
       }
-
-      // Render the plot with the updated layout
       Plotly.newPlot('divStep', this.plotData, this.plotLayout, this.plotConfig);
     }
   }
@@ -321,15 +328,21 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
       this.plotLayout.paper_bgcolor = backgroundColorHex;
       this.plotLayout.plot_bgcolor = backgroundColorHex;
 
-      console.log('Theme changed, new background color:', backgroundColorHex);
+      // Update active background color on theme change
+      const activeBg = this.getCssVariableValue('--vscode-activityErrorBadge-foreground');
+      this.activeBackgroundColor = activeBg.startsWith('rgb')
+        ? this.rgbToHex(activeBg)
+        : activeBg;
 
-      // Re-render the plot with the updated background color
+      console.log('Theme changed, new background color:', backgroundColorHex);
+      console.log('Theme changed, new active background color:', this.activeBackgroundColor);
+
       this.renderPlot();
     });
 
     this.mutationObserver.observe(root, {
       attributes: true,
-      attributeFilter: ['style'], // Listen for changes to the "style" attribute
+      attributeFilter: ['style'],
     });
   }
 

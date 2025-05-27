@@ -33,6 +33,7 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
   @Input() color = '';
   private mutationObserver: MutationObserver | undefined;
   private originalBackgroundColor = '';
+  activeBackgroundColor = '';
 
   sweepDivID = '';
 
@@ -184,7 +185,7 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
       this.numPoints = this.sweepGlobalParameters?.sweep_points;
       this.numSteps = this.stepGlobalParameters?.step_points.value;
 
-      this.sweepDivID = this.sweepChannel.start_stop_channel.common_chan_attributes.uuid;
+      this.sweepDivID = `plotDiv${this.sweepChannel.start_stop_channel.common_chan_attributes.uuid}`;
       console.log('sweepDivID', this.sweepDivID);
     }
     console.log(this.plotDataX, this.plotData);
@@ -193,7 +194,8 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
     this.updatePlotLayout();
     this.initializePlot();
     this.observeThemeChanges();
-    this.sweepValues();
+    // this.sweepValues();
+    this.updatePlotStyle();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -205,6 +207,7 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
 
   sweepValues(){
     if (this.start && this.stop && this.numSteps && this.numPoints) {
+      this.plotData1.line.shape = 'hv';
       const numberOfPoints = this.numPoints.value;
       const startValue = this.start.value;
       const stopValue = this.stop.value;
@@ -240,7 +243,7 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
     //   }
     //   this.renderPlot();
     // }, 0);
-    if (this.plotDataX && this.plotConfig) {
+    if (this.plotDataX && this.plotConfig && this.style?.value == 'LIN') {
       this.sweepValues();
       Plotly.newPlot(this.sweepDivID, this.plotData, this.plotLayout, this.plotConfig);
       console.log('sweep data', this.plotData, this.plotLayout, this.plotConfig);
@@ -249,29 +252,59 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
   }
 
   private updatePlotLayout(): void {
-    if (this.sourceFunction) {
+     if (this.sourceFunction) {
       this.plotLayout.yaxis2.ticksuffix = this.sourceFunction.value === 'Voltage' ? ' V' : ' A';
     }
+    if (this.start && this.stop) {
+      // Use the greater of start or stop for maxRange
+      const maxRange = Math.ceil(Math.max(this.start.value, this.stop.value));
+      this.plotLayout.yaxis.range = [0, maxRange];
+      this.plotLayout.yaxis2.range = [0, maxRange];
+      this.plotLayout.yaxis2.dtick = maxRange;
 
-    // if (this.sourceRange) {
-    //   const maxRange = parseFloat(this.sourceRange.value);
-    //   this.plotLayout.yaxis.range = [0, maxRange];
-    //   this.plotLayout.yaxis2.range = [0, maxRange];
-    //   this.plotLayout.yaxis2.dtick = maxRange;
+      const dtick = maxRange / 4; // Divide maxRange into 4 intervals
+      this.plotLayout.yaxis.dtick = dtick;
+    }
+  }
 
-    //   const dtick = maxRange / 4;
-    //   this.plotLayout.yaxis.dtick = dtick;
-    // }
+  private updatePlotStyle(): void {
+    if (this.style?.value === 'LOG') {
+      // this.plotLayout.xaxis.type = 'log';
+      // this.plotData1.line.shape = 'vh';
+
+      if (this.start && this.stop && this.numSteps && this.numPoints) {
+        const numberOfPoints = this.numPoints.value;
+        const numSteps = this.numSteps;
+        const startValue = this.start.value > 0 ? this.start.value : 1e-12;
+        const stopValue = this.stop.value > 0 ? this.stop.value : 1e-12;
+        const stepFactor = Math.pow(stopValue / startValue, 1 / (numberOfPoints - 1));
+
+        const sweepValues = Array.from(
+          { length: numberOfPoints },
+          (_, i) => startValue * Math.pow(stepFactor, i)
+        );
+
+        this.plotData1.y = Array.from(
+          { length: numSteps },
+          () => sweepValues
+        ).flat();
+
+        this.plotData1.x = Array.from(
+          { length: numSteps },
+          (_, i) => sweepValues.map((_, j) => i + j / numberOfPoints)
+        ).flat();
+
+        console.log('LOG sweep plotData1.x:', this.plotData1.x);
+        console.log('LOG sweep plotData1.y:', this.plotData1.y);
+      }
+    } else {
+      this.plotLayout.xaxis.type = 'linear';
+      this.sweepValues();
+    }
+    this.renderPlot();
   }
 
   private initializePlot(): void {
-    if (this.sweepChannel && this.sweepChannel.start_stop_channel.common_chan_attributes.uuid) {
-      this.sweepDivID = `plotDiv${this.sweepChannel.start_stop_channel.common_chan_attributes.uuid}`;
-    } else {
-      console.error('SweepChannel or UUID is undefined. Cannot set sweepDivID.');
-      this.sweepDivID = ''; // Set to an empty string to avoid undefined errors
-    }
-
     const backgroundColor = this.getCssVariableValue('--vscode-editor-background');
     const backgroundColorHex = backgroundColor.startsWith('rgb')
       ? this.rgbToHex(backgroundColor)
@@ -281,7 +314,13 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
     this.plotLayout.paper_bgcolor = backgroundColorHex;
     this.plotLayout.plot_bgcolor = backgroundColorHex;
 
+    const activeBg = this.getCssVariableValue('--vscode-activityErrorBadge-foreground');
+    this.activeBackgroundColor = activeBg.startsWith('rgb')
+      ? this.rgbToHex(activeBg)
+      : activeBg;
+
     console.log('Initial background color:', backgroundColorHex);
+    console.log('Initial active background color:', this.activeBackgroundColor);
   }
 
   getCssVariableValue(variableName: string): string {
@@ -300,16 +339,19 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
   }
 
   private renderPlot(): void {
-    if (this.plotDataX && this.plotConfig) {
-      // Set both plot_bgcolor and paper_bgcolor to black when active
+     if (this.plotDataX && this.plotConfig) {
+      const plotDiv = document.getElementById(this.sweepDivID);
+      if (!plotDiv) {
+      // Optionally, log or skip rendering if div is not present
+      return;
+     }
       if (this.isActive) {
-        this.plotLayout.plot_bgcolor = 'black';
-        this.plotLayout.paper_bgcolor = 'black';
+        this.plotLayout.plot_bgcolor = this.activeBackgroundColor;
+        this.plotLayout.paper_bgcolor = this.activeBackgroundColor;
       } else {
         this.plotLayout.paper_bgcolor = this.originalBackgroundColor;
         this.plotLayout.plot_bgcolor = this.originalBackgroundColor;
       }
-      // Render the plot with the updated layout
       Plotly.newPlot(this.sweepDivID, this.plotData, this.plotLayout, this.plotConfig);
     }
   }
@@ -326,22 +368,28 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
       this.plotLayout.paper_bgcolor = backgroundColorHex;
       this.plotLayout.plot_bgcolor = backgroundColorHex;
 
-      console.log('Theme changed, new background color:', backgroundColorHex);
+      // Update active background color on theme change
+      const activeBg = this.getCssVariableValue('--vscode-activityErrorBadge-foreground');
+      this.activeBackgroundColor = activeBg.startsWith('rgb')
+        ? this.rgbToHex(activeBg)
+        : activeBg;
 
-      // Re-render the plot with the updated background color
+      console.log('Theme changed, new background color:', backgroundColorHex);
+      console.log('Theme changed, new active background color:', this.activeBackgroundColor);
+
       this.renderPlot();
     });
 
     this.mutationObserver.observe(root, {
       attributes: true,
-      attributeFilter: ['style'], // Listen for changes to the "style" attribute
+      attributeFilter: ['style'],
     });
   }
 
   ngOnDestroy(): void {
-    // Disconnect the MutationObserver when the component is destroyed
     if (this.mutationObserver) {
       this.mutationObserver.disconnect();
     }
   }
+
 }

@@ -69,6 +69,7 @@ export class SweepComponent implements OnChanges {
   @Input() sweepChannel: SweepChannel | undefined;
   @Input() isSweepExpanded = false;
   @Input() deviceList: Device[] = [];
+  @Output() emitSweepExpanderState = new EventEmitter<{ uuid: string; isExpanded: boolean }>();
   @Output() emitSweepData = new EventEmitter<SweepChannel>();
   @Output() emitSweepChannelDelete = new EventEmitter<string>();
   @Output() emitSweepChannelIdChange = new EventEmitter<{
@@ -128,9 +129,12 @@ export class SweepComponent implements OnChanges {
     }
   }
 
-  toggleSweepChannel(deviceId: string) {
-    this.expandedSweepChannels[deviceId] =
-      !this.expandedSweepChannels[deviceId];
+  toggleSweepChannel(): void {
+    this.isSweepExpanded = !this.isSweepExpanded;
+    this.emitSweepExpanderState.emit({
+      uuid: this.uuid,
+      isExpanded: this.isSweepExpanded,
+    });
   }
 
   removeSweep() {

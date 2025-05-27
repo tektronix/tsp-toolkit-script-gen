@@ -13,8 +13,8 @@
     "
   >
     <div style="display: flex">
-      <mat-icon (click)="toggleStepChannel(chanName)" class="h3">
-        {{ expandedStepChannels[chanName] ? "expand_more" : "chevron_right" }}
+      <mat-icon (click)="toggleStepChannel()" class="h3">
+        {{ isStepExpanded ? "expand_more" : "chevron_right" }}
       </mat-icon>
       <h3>
         {{ chanName }}
@@ -24,7 +24,7 @@
       <mat-icon>delete</mat-icon>
     </button>
   </div>
-  <div *ngIf="expandedStepChannels[chanName]" class="input-group">
+  <div *ngIf="isStepExpanded" class="input-group">
     <div>
       <app-dropdown
         [(ngModel)]="deviceID"
@@ -135,8 +135,14 @@
         name="list"
         (selectionchange)="submitStepGlobalParamsData()"
       />
-      <button class="timing">Edit</button>
+      <button class="timing" (click)="showStepList = true">Edit</button>
     </div>
+    <app-list
+      *ngIf="showStepList"
+      [sweepPoints]="stepPoints"
+      [stepChannels]="stepChannel ? [stepChannel] : []"
+      (closeList)="showStepList = false"
+    ></app-list>
     <div>
       <app-dropdown
         [(ngModel)]="senseMode.value"

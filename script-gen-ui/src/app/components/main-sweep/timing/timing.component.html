@@ -1,19 +1,25 @@
 <div class="popup">
-  <div class="popup-content">
+  <div class="popup-content" cdkDrag>
     <!-- <span class="close" (click)="close_Timing()">&times;</span> -->
     <div>
-      <app-input-numeric
-        [(ngModel)]="measureCount.value"
-        [label]="'Measure Count (per step)'"
-        *ngIf="measureCount"
-        (inputChange)="submitTimingData()"
-      ></app-input-numeric>
+      <div class="popup-header">
+        <h3 id="timingLabel">Timing</h3>
+        <mat-icon (click)="okTiming()" class="button">close</mat-icon>
+      </div>
+      <div class="measure-count">
+        <div>
+          <app-input-numeric
+          [(ngModel)]="measureCount.value"
+          [label]="'Measure Count (per step)'"
+          *ngIf="measureCount"
+          (inputChange)="submitTimingData()"
+          ></app-input-numeric>
+        </div>
+
+      </div>
     </div>
-    <div class="window-switching-buttons">
-      <button (click)="selectWindow('window1')">SMU Timing</button>
-      <button (click)="selectWindow('window2')">PSU Timing</button>
-    </div>
-    <div *ngIf="selectedWindow === 'window1'" class="popup-container">
+    <h3 id="SMUTimingLabel">SMU Timing</h3>
+    <div id="SMUTiming" class="popup-container">
       <div>
         <app-input-toggle
           [(ngModel)]="nplcType.value"
@@ -35,7 +41,7 @@
       <div *ngIf="nplcType?.value === 'Aperture'">
         <app-input-plain
           [(ngModel)]="aperture.value"
-          [label]="'Aperture'"
+          [label]="'Aperature'"
           [unit]="aperture.unit"
           *ngIf="aperture"
           (inputChange)="submitTimingData()"
@@ -80,7 +86,8 @@
         ></app-input-plain>
       </div>
     </div>
-    <div *ngIf="selectedWindow === 'window2'" class="popup-container">
+    <h3 id="PSUTimingLabel">PSU Timing</h3>
+    <div id="PSUTiming" class="popup-container">
       <div>
         <app-dropdown
           [(ngModel)]="rate.value"
@@ -92,6 +99,5 @@
         ></app-dropdown>
       </div>
     </div>
-    <button (click)="okTiming()" class="button">OK</button>
   </div>
 </div>

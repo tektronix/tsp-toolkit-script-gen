@@ -5,21 +5,38 @@
   top: 50%;
   transform: translate(-50%, -50%);
   z-index: 1000;
-  border: 1px solid #545454;
 }
 
 .popup.active {
   display: block;
 }
 
+h3 {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.popup-header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.measure-count {
+  padding: 5px 17px;
+  font-weight: bold;
+  width: 50%
+}
+
 .popup-content {
   background-color: var(--vscode-editor-background);
-  padding: 20px;
-  border-radius: 5px;
+  padding: 5px 10px;
+  border: 1px solid #545454;
+  border-radius: 8px;
   // text-align: center;
   color: var(--vscode-editor-foreground);
   position: relative;
-  width: 350px;
+  width: 300px;
 }
 
 .spacer {
@@ -32,15 +49,14 @@
   // flex-direction: column;
   // align-items: center;
   // border: 1px solid #545454;
-  // padding: 5px;
-  // margin-top: 22px;
+  // padding: 5px 10px;
+  margin-top: 5px;
+  margin-bottom: 5px;
   // background-color: black;
-  border-radius: 8px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 15px 20px;
-  padding: 17px;
-  border: 1px solid var(--vscode-badge-background);
+  gap: 20px 20px;
+  padding: 2px 17px;
 }
 .popup-container-sweep {
   border-radius: 8px;
@@ -94,21 +110,14 @@
 }
 
 .button {
-  border-radius: 13px;
   background-color: transparent;
   color: var(--vscode-activityBarBadge-foreground);
-  border-color: var(--vscode-activityBar-activeBorder);
-  border-style: solid;
-  border-width: thin;
-  padding-top: 5px;
-  padding-bottom: 5px;
-  padding-left: 15px;
-  padding-right: 15px;
   margin-top: 10px;
 }
 
-.window-switching-buttons{
-  margin-bottom: 10px;
+.button:hover {
+  cursor: pointer;
+  color: var(--vscode-errorForeground)
 }
 
 .disabled {

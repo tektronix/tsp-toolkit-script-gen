@@ -5,7 +5,7 @@ import {
   OnDestroy,
   Output,
   SimpleChanges,
-  OnChanges,
+  OnChanges
 } from '@angular/core';
 import {
   ParameterFloat,
@@ -23,6 +23,7 @@ import { DropdownComponent } from '../../controls/dropdown/dropdown.component';
 import { InputNumericComponent } from '../../controls/input-numeric/input-numeric.component';
 import { InputPlainComponent } from '../../controls/input-plain/input-plain.component';
 import { InputToggleComponent } from '../../controls/input-toggle/input-toggle.component';
+import {CdkDrag} from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-timing',
@@ -36,12 +37,12 @@ import { InputToggleComponent } from '../../controls/input-toggle/input-toggle.c
     InputNumericComponent,
     InputPlainComponent,
     InputToggleComponent,
+    CdkDrag
   ],
   templateUrl: './timing.component.html',
   styleUrl: './timing.component.scss',
 })
 export class TimingComponent implements OnDestroy, OnChanges {
-  selectedWindow: 'window1' | 'window2' = 'window1';
 
   nplc: ParameterFloat | undefined;
   aperture: ParameterFloat | undefined;
@@ -97,10 +98,6 @@ export class TimingComponent implements OnDestroy, OnChanges {
   okTiming() {
     //close the timing dialog
     this.ok.emit();
-  }
-
-  selectWindow(window: 'window1' | 'window2') {
-    this.selectedWindow = window;
   }
 
   submitTimingData() {

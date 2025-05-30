@@ -10,12 +10,10 @@ export class WebSocketService {
   private messageSubject: Subject<string> = new Subject<string>();
 
   constructor() {
-    this.socket = new WebSocket('ws://localhost:8080/ws');
+    this.socket = new WebSocket('ws://localhost:27950/ws');
   }
 
   connect(): void {
-    // this.socket = new WebSocket('ws://localhost:8080/ws');
-
     this.socket.onopen = () => {
       console.log('WebSocket connection established');
       this.sendInitialDataRequest();

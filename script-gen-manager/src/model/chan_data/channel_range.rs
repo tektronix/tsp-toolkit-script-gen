@@ -79,15 +79,15 @@ impl ChannelRange {
 
         // Determine the scaling factor based on the prefix
         let scaling_factor = match prefix.as_str() {
-            "f" => 1e-15,     // femto
-            "p" => 1e-12,     // pico
-            "n" => 1e-9,      // nano
-            "u" => 1e-6,      // micro
-            "m" => 1e-3,      // milli
-            "" => 1.0,        // no prefix
-            "k" => 1e3,       // kilo
-            "M" => 1e6,       // mega
-            _ => return None, // Unknown prefix
+            "f" => 1e-15,       // femto
+            "p" => 1e-12,       // pico
+            "n" => 1e-9,        // nano
+            "\u{00B5}" => 1e-6, // micro
+            "m" => 1e-3,        // milli
+            "" => 1.0,          // no prefix
+            "k" => 1e3,         // kilo
+            "M" => 1e6,         // mega
+            _ => return None,   // Unknown prefix
         };
 
         // Calculate the scaled value

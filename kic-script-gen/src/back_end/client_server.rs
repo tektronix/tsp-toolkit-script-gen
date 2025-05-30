@@ -107,24 +107,16 @@ async fn serve_index_html() -> Result<HttpResponse, Error> {
     let exe_path =
         std::env::current_exe().expect("should be able to get path of server executable");
 
-    // Get the directory of the executable (this will be `target/debug`)
+    // Get the directory of the executable (this will be `script-gen-win32-x64/bin`)
     let exe_dir = exe_path
         .parent()
         .expect("should be able to get directory of server executable");
 
-    // Navigate to the `target` level
-    let target_dir = exe_dir
-        .parent()
-        .expect("Failed to get parent directory of target/debug");
-
-    // Navigate to the `bin` folder at the same level as `target`
-    let bin_dir = target_dir
-        .parent()
-        .expect("Failed to get project root directory")
-        .join("bin");
+    //browser directory and kic-script-gen.exe are on the same level in npm package
+    let browser_dir = exe_dir.join("browser");
 
     // Path to the HTML file
-    let html_path = format!("{}/browser/index.html", bin_dir.display());
+    let html_path = browser_dir.join("index.html");
 
     // Read the HTML file
     let html_content = other_fs::read_to_string(&html_path).map_err(|e| {
@@ -133,7 +125,7 @@ async fn serve_index_html() -> Result<HttpResponse, Error> {
     })?;
 
     // Rewrite resource URLs
-    let base_url = "http://127.0.0.1:8080";
+    let base_url = "http://127.0.0.1:27950";
     let modified_html = html_content
         .replace("src=\"", &format!("src=\"{}/", base_url))
         .replace("href=\"", &format!("href=\"{}/", base_url));
@@ -154,22 +146,12 @@ pub async fn start_web_server(
         let exe_dir = exe_path
             .parent()
             .expect("should be able to get directory of server executable");
-        let target_dir = exe_dir
-            .parent()
-            .expect("Failed to get parent directory of target/debug");
-        let bin_dir = target_dir
-            .parent()
-            .expect("Failed to get project root directory")
-            .join("bin");
-        //println!("Path to bin folder: {}", bin_dir.display());
+        let browser_dir = exe_dir.join("browser");
         App::new()
             .app_data(web::Data::new(app_state.clone()))
             .route("/", web::get().to(serve_index_html))
             .route("/ws", web::get().to(ws_index))
-            .service(
-                fs::Files::new("/", format!("{}/browser", bin_dir.display()))
-                    .index_file("index.html"),
-            )
+            .service(fs::Files::new("/", browser_dir).index_file("index.html"))
             .wrap(
                 actix_cors::Cors::default()
                     .allow_any_origin()
@@ -177,7 +159,7 @@ pub async fn start_web_server(
                     .allowed_headers(vec!["Content-Type"]),
             )
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("127.0.0.1", 27950))?
     .run();
 
     tokio::select! {
@@ -235,46 +217,28 @@ pub async fn start(mut script_model: ScriptModel) -> anyhow::Result<()> {
 
         while let Some(line) = reader.next_line().await.unwrap() {
             println!("Received from stdin: {line}");
-            if line.trim() == "shutdown" {
+            let trimmed_line = line.trim();
+            if trimmed_line == "shutdown" {
                 println!("Received shutdown command from stdin, shutting down...");
                 let _ = shutdown_tx.send(());
                 break;
-            } else if line.trim() == "reload" {
-                println!("Received reload command from stdin, reloading...");
-                let json_str = r#"
-                    [
-                        {
-                            "name": "localnode",
-                            "model": "MP5103",
-                            "slot":
-                            [
-                                {
-                                    "name": "slot[1]",
-                                    "model": "MPSU50-2ST"
-                                },
-                                {
-                                    "name": "slot[2]",
-                                    "model": "MSMU60-2"
-                                },
-                                {
-                                    "name": "slot[3]",
-                                    "model": "MSMU60-2"
-                                }
-                            ]
-                        }
-                    ]
-                "#;
-
+            } else if trimmed_line.contains("systems") {
                 let mut data_model = app_state.data_model.lock().await;
-                let response = data_model.process_instr_info(json_str.to_string());
-                println!("{}", response);
-                // Send generate script signal
-                if let Err(e) = app_state.gen_script_tx.send(()) {
-                    eprintln!("Failed to send signal: {}", e);
-                }
-                let mut session = app_state.session.lock().await;
-                if let Some(session) = session.as_mut() {
-                    session.text(response).await.unwrap();
+                if data_model.device_manager.device_list.is_empty() {
+                    let response = data_model.process_system_info(trimmed_line);
+                    println!("{}", response);
+                    // Send generate script signal
+                    if !response.contains("error") {
+                        if let Err(e) = app_state.gen_script_tx.send(()) {
+                            eprintln!("Failed to send signal: {}", e);
+                        }
+                    }
+                    let mut session = app_state.session.lock().await;
+                    if let Some(session) = session.as_mut() {
+                        session.text(response).await.unwrap();
+                    }
+                } else {
+                    //system config has changed after the script gen UI is initialized for the first time
                 }
             }
         }

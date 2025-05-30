@@ -7,7 +7,7 @@ use crate::{
         mpsu50_metadata::Mpsu50Metadata,
         msmu60_metadata::Msmu60Metadata,
     },
-    model::mainframe::Slot,
+    model::system_info::Slot,
 };
 use serde::{Deserialize, Deserializer, Serialize};
 // use tsp_toolkit_kic_lib::instrument::info::InstrumentInfo;
@@ -114,7 +114,7 @@ impl Device {
         slot: &Slot,
         channel_id: i32,
     ) -> Self {
-        let device_type = match MODEL_MAP.get(&slot.model) {
+        let device_type = match MODEL_MAP.get(&slot.module) {
             Some(&"Smu") => DeviceType::Smu,
             Some(&"Psu") => DeviceType::Psu,
             _ => DeviceType::Unknown, // Handle unknown device types
@@ -130,7 +130,7 @@ impl Device {
             _id,
             device_type,
 
-            model: slot.model.clone(),
+            model: slot.module.clone(),
             fw_version: String::new(),
             in_use: false,
             metadata,
@@ -148,7 +148,7 @@ impl Device {
     /// # Returns
     ///
     /// A tuple containing the node ID and ID.
-    /// e.g., if mainframe_name = "node[37]", slot.name = slot[1], id = 1 and device_type = Smu
+    /// e.g., if mainframe_name = "node[37]", slot.slot_id = slot[1], id = 1 and device_type = Smu
     /// the function returns ("node[37]", "node[37].slot[1].smu[1]").
     fn parse_id(
         mainframe_name: String,
@@ -158,7 +158,7 @@ impl Device {
     ) -> (String, String) {
         let node_id = format!("{}", mainframe_name);
         let chan_id = format!("{}[{}]", device_type, id);
-        let _id = format!("{}.{}.{}", mainframe_name, slot.name, chan_id);
+        let _id = format!("{}.{}.{}", mainframe_name, slot.slot_id, chan_id);
 
         (node_id, _id)
     }

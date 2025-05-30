@@ -300,10 +300,6 @@ impl SweepModel {
                 instr_name.clone() + ":STOP",
                 self.format(step_channel.start_stop_channel.stop.value),
             );
-            self.val_replacement_map.insert(
-                instr_name.clone() + ":ASYMPTOTE",
-                self.format(step_channel.start_stop_channel.asymptote),
-            );
 
             index += 1;
         }
@@ -464,10 +460,6 @@ impl SweepModel {
             self.val_replacement_map.insert(
                 instr_name.clone() + ":STOP",
                 self.format(sweep_channel.start_stop_channel.stop.value),
-            );
-            self.val_replacement_map.insert(
-                instr_name.clone() + ":ASYMPTOTE",
-                self.format(sweep_channel.start_stop_channel.asymptote),
             );
 
             index += 1;

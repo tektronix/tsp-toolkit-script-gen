@@ -18,10 +18,19 @@ impl Msmu60Metadata {
             "source_meas.rangev",
             vec!["AUTO", "200 mV", "2 V", "6 V", "20 V", "60 V"],
         );
+        // "\u{00B5}"" - Unicode character for micro (µ)
         base.add_option(
             "source_meas.rangei",
             vec![
-                "AUTO", "100 nA", "1 uA", "10 uA", "100 uA", "1 mA", "10 mA", "100 mA", "1 A",
+                "AUTO",
+                "100 nA",
+                "1 \u{00B5}A",
+                "10 \u{00B5}A",
+                "100 \u{00B5}A",
+                "1 mA",
+                "10 mA",
+                "100 mA",
+                "1 A",
                 "1.5 A",
             ],
         );

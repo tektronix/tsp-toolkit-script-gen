@@ -21,15 +21,17 @@ impl DataModel {
         }
     }
 
-    pub fn process_instr_info(&mut self, instr_info: String) -> String {
-        self.device_manager.create_device_list(instr_info);
+    pub fn process_system_info(&mut self, system_info: &str) -> String {
+        if self.device_manager.create_device_list(system_info) {
+            let mut sweep_model = SweepModel::new();
+            sweep_model.sweep_config.device_list = self.device_manager.device_list.clone();
+            sweep_model.sweep_config.auto_configure();
 
-        let mut sweep_model = SweepModel::new();
-        sweep_model.sweep_config.device_list = self.device_manager.device_list.clone();
-        sweep_model.sweep_config.auto_configure();
-
-        self.sweep = Some(sweep_model.clone());
-        self.serialize_sweep_model(&sweep_model, "initial_response", "Initialized sweep model")
+            self.sweep = Some(sweep_model.clone());
+            self.serialize_sweep_model(&sweep_model, "initial_response", "Initialized sweep model")
+        } else {
+            self.serialize_empty_response("empty_system_config_error", "No devices found")
+        }
     }
 
     /// Processes data received from the client by deserializing it into a `SweepModel`,

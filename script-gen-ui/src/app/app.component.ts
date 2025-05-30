@@ -15,7 +15,14 @@ import { BrowserModule } from '@angular/platform-browser';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, MainSweepComponent, EmptyConfigComponent],
+  imports: [
+    FormsModule,
+    BrowserModule,
+    CommonModule,
+    MatIconModule,
+    MainSweepComponent,
+    EmptyConfigComponent,
+  ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
@@ -70,6 +77,9 @@ export class AppComponent implements OnInit, OnDestroy {
         } else {
           console.error('sweep_model property is missing in the data');
         }
+      } else if (ipcData.request_type === 'empty_system_config_error') {
+        // handle empty system config error
+        console.log('Empty system config error received');
       } else {
         console.warn('Unhandled request_type:', ipcData.request_type);
       }

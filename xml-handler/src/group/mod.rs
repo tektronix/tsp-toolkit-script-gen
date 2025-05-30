@@ -223,7 +223,7 @@ mod tests {
         Ok(groups)
     }
 
-    //#[test]
+    #[test]
     fn test_parse_group_with_valid_attributes() {
         let xml = r#"<group id="test_group" type="example_type"></group>"#;
 

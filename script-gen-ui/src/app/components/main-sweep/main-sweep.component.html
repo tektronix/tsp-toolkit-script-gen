@@ -1,5 +1,5 @@
 <div class="parent-container">
-  <div class="input-container" style="overflow: auto; max-height: 100vh;">
+  <div class="input-container" style="overflow: auto; max-height: 100vh">
     <div class="timing-autorangebox">
       <div>
         <button class="timing" (click)="enableTiming()">Timing</button>
@@ -11,14 +11,18 @@
         ></app-timing>
       </div>
       <div>
-        <button class="fetch-script" (click)="fetchScript()" >Fetch Script</button>
+        <button class="fetch-script" (click)="fetchScript()">
+          Fetch Script
+        </button>
       </div>
     </div>
 
     <div class="expander">
       <div style="display: flex">
         <button (click)="toggleBias()" class="h3-button">
-          <mat-icon>{{ isBiasExpanded ? "expand_more" : "chevron_right" }}</mat-icon>
+          <mat-icon>{{
+            isBiasExpanded ? "expand_more" : "chevron_right"
+          }}</mat-icon>
         </button>
         <h3>Bias</h3>
       </div>
@@ -32,15 +36,23 @@
           (focus)="setActiveComponent('bias', i)"
           (blur)="clearActiveComponent()"
           (emitBiasChannelData)="updateBiasChannelsConfig($event)"
-          (emitBiasExpanderState)="handleChannelExpanderStateChange($event.uuid, $event.isExpanded)"
-          [isBiasChanExpanded]="isChannelExpanded(biasChannel.common_chan_attributes.uuid)"
+          (emitBiasExpanderState)="
+            handleChannelExpanderStateChange($event.uuid, $event.isExpanded)
+          "
+          [isBiasChanExpanded]="
+            isChannelExpanded(biasChannel.common_chan_attributes.uuid)
+          "
           [biasChannel]="biasChannel"
           [deviceList]="deviceList"
           (emitBiasChannelDelete)="removeBiasChannel($event)"
           (emitBiasChannelIdChange)="updateBiasChannelId($event)"
           [color]="getBiasColor(biasChannel)"
           [isActive]="activeComponent === 'bias' && activeIndex === i"
-          (click)="setActiveComponent('bias', i); scrollToInstance('bias', i); scrollToPlotInPlotContainer('bias', i)"
+          (click)="
+            setActiveComponent('bias', i);
+            scrollToInstance('bias', i);
+            scrollToPlotInPlotContainer('bias', i)
+          "
         ></app-bias>
       </div>
     </div>
@@ -48,11 +60,17 @@
     <div class="expander">
       <div style="display: flex">
         <button (click)="toggleStep()" class="h3-button">
-          <mat-icon>{{ isStepExpanded ? "expand_more" : "chevron_right" }}</mat-icon>
+          <mat-icon>{{
+            isStepExpanded ? "expand_more" : "chevron_right"
+          }}</mat-icon>
         </button>
         <h3>Step</h3>
       </div>
-      <button *ngIf="stepChannels.length === 0" class="button-icon" (click)="addStep()">
+      <button
+        *ngIf="stepChannels.length === 0"
+        class="button-icon"
+        (click)="addStep()"
+      >
         <mat-icon>add</mat-icon>
       </button>
     </div>
@@ -62,8 +80,17 @@
           <app-step
             (emitStepData)="updateStepChannelsConfig($event)"
             (emitStepGlobalParameters)="updateStepGlobalParameters($event)"
-            (emitStepExpanderState)="handleChannelExpanderStateChange(stepChannel.start_stop_channel.common_chan_attributes.uuid, $event.isExpanded)"
-            [isStepExpanded]="isChannelExpanded(stepChannel.start_stop_channel.common_chan_attributes.uuid)"
+            (emitStepExpanderState)="
+              handleChannelExpanderStateChange(
+                stepChannel.start_stop_channel.common_chan_attributes.uuid,
+                $event.isExpanded
+              )
+            "
+            [isStepExpanded]="
+              isChannelExpanded(
+                stepChannel.start_stop_channel.common_chan_attributes.uuid
+              )
+            "
             [stepChannel]="stepChannel"
             [stepGlobalParameters]="stepGlobalParameters"
             [deviceList]="deviceList"
@@ -71,7 +98,11 @@
             (emitStepChannelIdChange)="updateStepChannelId($event)"
             [color]="getStepColor(stepChannel)"
             [isActive]="activeComponent === 'step' && activeIndex === i"
-            (click)="setActiveComponent('step', i); scrollToInstance('step', i); scrollToPlotInPlotContainer('step', i)"
+            (click)="
+              setActiveComponent('step', i);
+              scrollToInstance('step', i);
+              scrollToPlotInPlotContainer('step', i)
+            "
           ></app-step>
         </div>
       </div>
@@ -80,7 +111,9 @@
     <div class="expander">
       <div style="display: flex">
         <button (click)="toggleSweep()" class="h3-button">
-          <mat-icon>{{ isSweepExpanded ? "expand_more" : "chevron_right" }}</mat-icon>
+          <mat-icon>{{
+            isSweepExpanded ? "expand_more" : "chevron_right"
+          }}</mat-icon>
         </button>
         <h3>Sweep</h3>
       </div>
@@ -96,6 +129,7 @@
             [label]="'Number of Points'"
             *ngIf="sweepPoints"
             name="sweepPoints"
+            (inputChange)="updateSweepGlobalParameters()"
           ></app-input-numeric>
         </div>
         <!-- <div>
@@ -122,20 +156,33 @@
             (emitSweepData)="updateSweepChannelsConfig($event)"
             [sweepChannel]="sweepChannel"
             [deviceList]="deviceList"
-            (emitSweepExpanderState)="handleChannelExpanderStateChange(sweepChannel.start_stop_channel.common_chan_attributes.uuid, $event.isExpanded)"
-            [isSweepExpanded]="isChannelExpanded(sweepChannel.start_stop_channel.common_chan_attributes.uuid)"
+            (emitSweepExpanderState)="
+              handleChannelExpanderStateChange(
+                sweepChannel.start_stop_channel.common_chan_attributes.uuid,
+                $event.isExpanded
+              )
+            "
+            [isSweepExpanded]="
+              isChannelExpanded(
+                sweepChannel.start_stop_channel.common_chan_attributes.uuid
+              )
+            "
             (emitSweepChannelDelete)="removeSweepChannel($event)"
             (emitSweepChannelIdChange)="updateSweepChannelId($event)"
             [color]="getSweepColor(sweepChannel)"
             [isActive]="activeComponent === 'sweep' && activeIndex === i"
-            (click)="setActiveComponent('sweep', i); scrollToInstance('sweep', i); scrollToPlotInPlotContainer('sweep', i)"
+            (click)="
+              setActiveComponent('sweep', i);
+              scrollToInstance('sweep', i);
+              scrollToPlotInPlotContainer('sweep', i)
+            "
           ></app-sweep>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="plot-container" style="overflow: auto; max-height: 100vh;">
+  <div class="plot-container" style="overflow: auto; max-height: 100vh">
     <app-plot-container
       [biasChannels]="biasChannels"
       [stepChannels]="stepChannels"

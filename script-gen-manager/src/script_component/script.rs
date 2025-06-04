@@ -1,4 +1,4 @@
-use std::{fs::File, io::Write};
+use std::{fs::File, io::Write, path::Path};
 
 use super::{
     data_report::DataReportModel, finalize::FinalizeModel, function::FunctionModel,
@@ -43,14 +43,29 @@ impl ScriptModel {
         for chunk in self.chunks.iter_mut() {
             chunk.to_script(sweep_config, &mut script_buffer);
         }
-        // println!("{}", script_buffer.to_string());
-        let file = File::create("C:\\Trebuchet\\Snippet.txt");
-        match file {
+        let file_path = "C:\\ScriptGen\\Snippet.txt";
+        let path = Path::new(file_path);
+
+        // Check if file exists, if not, create the file and its parent directory if needed
+        if !path.exists() {
+            if let Some(parent) = path.parent() {
+                if !parent.exists() {
+                    if let Err(e) = std::fs::create_dir_all(parent) {
+                        println!("Failed to create directory: {}", e);
+                        return;
+                    }
+                }
+            }
+        }
+
+        match File::create(file_path) {
             Ok(mut file_res) => {
-                file_res.write_all(script_buffer.to_string().as_bytes());
+                if let Err(e) = file_res.write_all(script_buffer.to_string().as_bytes()) {
+                    println!("Error writing to file: {}", e);
+                }
             }
             Err(e) => {
-                println!("Error: {}", e);
+                println!("Error creating file: {}", e);
             }
         }
     }

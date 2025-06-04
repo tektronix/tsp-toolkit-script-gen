@@ -144,7 +144,7 @@
         ---@field trigger_model_initiate fun(self: Device) The function used to initiate the trigger model
 
         UTILITY                     = {
-            ---@type table<any, {event_id: number, used: boolean}>
+            ---@type table&lt;any, {event_id: number, used: boolean}&gt;
             event_ids = {},
             init_slot_event_ids = function(slot, event_numbers)
                 -- make sure we only add these once.
@@ -211,14 +211,14 @@
                     if table.getn(events) == 1 then
                         tm.addblock.wait(model, block_name, events[1])
                         return nil
-                    elseif table.getn(events) > 1 then
+                    elseif table.getn(events) &gt; 1 then
                         local first = events[1]
                         local next = {}
                         local remainder = {}
                         for i, v in ipairs(events) do
-                            if i > 1 then
+                            if i &gt; 1 then
                                 next[table.getn(next)] = v
-                            elseif i > 4 then
+                            elseif i &gt; 4 then
                                 remainder[table.getn(remainder)] = v
                             end
                         end
@@ -869,7 +869,7 @@
                 if details.node_idx == 0 then
                     device.node_name = "localnode"
                     device.node = localnode
-                elseif details.node_idx > 0 and details.node_idx <= 63 then
+                elseif details.node_idx &gt; 0 and details.node_idx &lt;= 63 then
                     device.node_name = "node[" .. device.node_idx .. "]"
                     device.node = node[device.node_idx]
                 else

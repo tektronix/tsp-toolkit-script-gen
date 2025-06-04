@@ -87,6 +87,9 @@ export class StepComponent implements OnChanges {
   @Input() color = '';
   isFocused = false;
 
+  @Output() listOfStepPoints = new EventEmitter<ParameterFloat[][]>();
+  stepPointsList: ParameterFloat[][] = [];
+
   toggleFocus(state: boolean): void {
     this.isFocused = state;
   }
@@ -177,7 +180,7 @@ export class StepComponent implements OnChanges {
     return new StepGlobalParameters({
       step_points: this.stepPoints!,
       step_to_sweep_delay: this.stepToSweepDelay!,
-      list_step: this.list,
+      list_step: this.list!,
     });
   }
 
@@ -200,5 +203,13 @@ export class StepComponent implements OnChanges {
     this.emitStepGlobalParameters.emit(this.getStepGlobalParamsFromComponent());
   }
 
+  listOfStepPointsUpdate(points: ParameterFloat[][]){
+    this.stepPointsList = points;
+    this.listOfStepPoints.emit(points);
+  }
+
+  listOfPoints(points: ParameterFloat[][]){
+    console.log(points);
+  }
   // TODO: Remove this function once plot is updated from main-sweep.component.ts
 }

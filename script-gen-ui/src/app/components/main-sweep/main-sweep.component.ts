@@ -14,6 +14,7 @@ import {
   SweepConfig,
 } from '../../model/sweep_data/sweepConfig';
 import {
+  ParameterFloat,
   ParameterInt,
   SweepTimingConfig,
 } from '../../model/sweep_data/SweepTimingConfig';
@@ -87,6 +88,8 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
 
   sweepPoints: ParameterInt | undefined;
   list = false;
+  listOfSweepPoints: ParameterFloat[][] = [];
+  listOfStepPoints: ParameterFloat[][] = [];
 
   @Input() sweepConfig: SweepConfig | undefined;
 
@@ -204,6 +207,14 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
 
   closeList(){
     this.showList = false;
+  }
+
+  listOfSweepPointsUpdate(points: ParameterFloat[][]){
+    this.listOfSweepPoints = points;
+  }
+
+  listOfStepPointsUpdate(points: ParameterFloat[][]){
+    this.listOfStepPoints = points;
   }
 
   ngAfterViewInit(): void {

@@ -21,10 +21,9 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
   @Input() stepChannel: StepChannel | undefined;
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
 
-  // @Input() plotData: any;
-  // @Input() plotLayout: any;
   @Input() plotDataX: number[] = [];
   @Input() plotConfig: { staticPlot: boolean; } | undefined;
+  @Input() stepPointsList: ParameterFloat[][] = [];
 
   private _isActive = false;
 
@@ -197,6 +196,7 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
 
     }
     // this.stepValues();
+    console.log(" step points list", this.stepPointsList);
     this.plotData1.line.color = this.color;
     this.updatePlotLayout();
     this.initializePlot();
@@ -233,8 +233,7 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
       this.plotLayout.yaxis2.ticksuffix = this.sourceFunction.value === 'Voltage' ? ' V' : ' A';
     }
     if (this.start && this.stop) {
-      // Use the greater of start or stop for maxRange
-      const maxRange = Math.ceil(Math.max(this.start.value, this.stop.value));
+      const maxRange = Math.max(this.start.value, this.stop.value);
       this.plotLayout.yaxis.range = [0, maxRange];
       this.plotLayout.yaxis2.range = [0, maxRange];
       this.plotLayout.yaxis2.dtick = maxRange;

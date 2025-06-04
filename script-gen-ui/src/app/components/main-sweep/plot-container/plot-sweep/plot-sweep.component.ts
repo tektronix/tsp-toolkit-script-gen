@@ -23,6 +23,7 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
   @Input() plotDataX: number[] = [];
   @Input() plotConfig: { staticPlot: boolean; } | undefined;
+  @Input() sweepPointsList: ParameterFloat[][] = [];
 
   @Input() isActive = false;
 
@@ -50,6 +51,7 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
   style: ParameterString | undefined;
 
   numPoints: ParameterInt | undefined;
+  list = true;
   numSteps: number | undefined;
 
   plotLayout = {
@@ -183,11 +185,16 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
       this.style = this.sweepChannel.start_stop_channel.style;
 
       this.numPoints = this.sweepGlobalParameters?.sweep_points;
+      this.list = this.sweepGlobalParameters?.list_sweep;
       this.numSteps = this.stepGlobalParameters?.step_points.value;
 
       this.sweepDivID = `plotDiv${this.sweepChannel.start_stop_channel.common_chan_attributes.uuid}`;
-      console.log('sweepDivID', this.sweepDivID);
     }
+    console.log("sweep points list", this.sweepPointsList);
+
+    // if(this.list != false){
+    //   this.sweepListPlot();
+    // }
     console.log(this.plotDataX, this.plotData);
     this.plotData1.x = this.plotDataX;
     this.plotData1.line.color = this.color;
@@ -196,12 +203,21 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
     this.observeThemeChanges();
     // this.sweepValues();
     this.updatePlotStyle();
+    this.sweepListPlot();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['isActive'] && !changes['isActive'].isFirstChange()) {
       console.log('isActive changed:', changes['isActive'].currentValue);
       this.renderPlot(); // Re-render the plot when isActive changes
+    }
+     if (
+      changes['sweepPointsList'] ||
+      changes['numPoints'] ||
+      changes['numSteps'] ||
+      changes['list']
+    ) {
+      this.sweepListPlot();
     }
   }
 
@@ -256,8 +272,7 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
       this.plotLayout.yaxis2.ticksuffix = this.sourceFunction.value === 'Voltage' ? ' V' : ' A';
     }
     if (this.start && this.stop) {
-      // Use the greater of start or stop for maxRange
-      const maxRange = Math.ceil(Math.max(this.start.value, this.stop.value));
+      const maxRange = Math.max(this.start.value, this.stop.value);
       this.plotLayout.yaxis.range = [0, maxRange];
       this.plotLayout.yaxis2.range = [0, maxRange];
       this.plotLayout.yaxis2.dtick = maxRange;
@@ -304,6 +319,33 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
     this.renderPlot();
   }
 
+  private sweepListPlot(): void {
+    console.log('sweepPointsList: step and sweep', this.sweepPointsList, this.numPoints, this.numSteps);
+    if (this.list && this.numPoints && this.numSteps) {
+      const numberOfPoints = this.numPoints.value;
+      const numSteps = this.numSteps;
+
+      const sweepValues = this.sweepPointsList.map(pfArr => pfArr[0]?.value ?? 0);
+      this.plotData1.y = Array.from({ length: numSteps }, () => sweepValues).flat();
+
+      this.plotData1.x = Array.from(
+        { length: numSteps },
+        (_, i) => Array.from(
+          { length: numberOfPoints },
+          (_, j) => i + j / numberOfPoints
+        )
+      ).flat();
+
+      this.plotData1.line.shape = 'hv';
+      console.log('List sweep plotData1.x:', this.plotData1.x);
+      console.log('List sweep plotData1.y:', this.plotData1.y);
+    } else {
+      console.warn('No sweep points available for list sweep.');
+    }
+    this.plotData = [this.plotData1, this.plotData2];
+    this.renderPlot();
+  }
+
   private initializePlot(): void {
     const backgroundColor = this.getCssVariableValue('--vscode-editor-background');
     const backgroundColorHex = backgroundColor.startsWith('rgb')
@@ -344,7 +386,7 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
       if (!plotDiv) {
       // Optionally, log or skip rendering if div is not present
       return;
-     }
+      }
       if (this.isActive) {
         this.plotLayout.plot_bgcolor = this.activeBackgroundColor;
         this.plotLayout.paper_bgcolor = this.activeBackgroundColor;

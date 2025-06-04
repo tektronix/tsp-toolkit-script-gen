@@ -1,8 +1,8 @@
-<div class="sweep-list-popup">
+<div class="sweep-list-popup" cdkDrag>
   <div class="sweep-list-popup-content">
-    <div class="sweep-list-popup-header">
+    <div class="sweep-list-popup-header" cdkDragHandle>
       <h3 style="margin: 0;">List</h3>
-      <button class="sweep-list-popup-close" (click)="onClose()">&times;</button>
+      <mat-icon class="button" (click)="onClose()" >close</mat-icon>
     </div>
     <div class="outer-container">
     <div style="width: 14vw;">
@@ -27,15 +27,15 @@
       <table>
         <thead>
           <tr>
-            <th></th>
+            <th class="sticky-col sticky-header point-col">Point #</th>
             <!-- Show sweep channel headers if present, else step channel headers -->
             <ng-container *ngIf="sweepChannels?.length; else stepHeaders">
-              <th *ngFor="let channel of sweepChannels">
+              <th *ngFor="let channel of sweepChannels" class="sticky-header">
                 {{ channel.start_stop_channel.common_chan_attributes.chan_name }}
               </th>
             </ng-container>
             <ng-template #stepHeaders>
-              <th *ngFor="let channel of stepChannels">
+              <th *ngFor="let channel of stepChannels" class="sticky-header">
                 {{ channel.start_stop_channel.common_chan_attributes.chan_name }}
               </th>
             </ng-template>
@@ -43,16 +43,24 @@
         </thead>
         <tbody>
           <tr *ngFor="let n of pointsArray; let i = index">
-            <td>{{ i + 1 }}</td>
+            <td class="sticky-col point-col">{{ i + 1 }}</td>
             <!-- Show sweep channel inputs if present, else step channel inputs -->
             <ng-container *ngIf="sweepChannels?.length; else stepInputs">
-              <td *ngFor="let channel of sweepChannels">
-                <app-input-plain [unit]="'V'"></app-input-plain>
+              <td *ngFor="let channel of sweepChannels; let j = index">
+                <app-input-plain
+                  [unit]="'V'"
+                  [(ngModel)]="values[i][j].value"
+                  (keydown.enter)="onEnter()"
+                ></app-input-plain>
               </td>
             </ng-container>
             <ng-template #stepInputs>
-              <td *ngFor="let channel of stepChannels">
-                <app-input-plain [unit]="'V'"></app-input-plain>
+              <td *ngFor="let channel of stepChannels; let j = index">
+                <app-input-plain
+                  [unit]="'V'"
+                  [(ngModel)]="values[i][j].value"
+                  (keydown.enter)="onEnter()"
+                ></app-input-plain>
               </td>
             </ng-template>
           </tr>

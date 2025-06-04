@@ -127,22 +127,27 @@
       ></app-input-toggle>
     </div>
     <div class="checkbox">
-      <label for="list">List</label>
-      <input
-        type="checkbox"
-        id="list"
-        [(ngModel)]="list"
-        name="list"
-        (selectionchange)="submitStepGlobalParamsData()"
-      />
-      <button class="timing" (click)="showStepList = true">Edit</button>
+      <div style="display: inline-flex">
+        <input
+          type="checkbox"
+          id="list"
+          [(ngModel)]="list"
+          name="list"
+          style="margin-top: 4.2vh;"
+        />
+        <label for="list" style="margin-top: 4.0vh; margin-left: 5px;" >List</label>
+      </div>
+      <div style="margin-top: 2.7vh;">
+        <button class="timing" (click)="showStepList = true">Edit</button>
+        <app-list
+          *ngIf="showStepList"
+          [sweepPoints]="stepPoints"
+          [stepChannels]="stepChannel ? [stepChannel] : []"
+          (closeList)="showStepList = false"
+          (listOfPoints)="listOfStepPointsUpdate($event)"
+        ></app-list>
+      </div>
     </div>
-    <app-list
-      *ngIf="showStepList"
-      [sweepPoints]="stepPoints"
-      [stepChannels]="stepChannel ? [stepChannel] : []"
-      (closeList)="showStepList = false"
-    ></app-list>
     <div>
       <app-dropdown
         [(ngModel)]="senseMode.value"

@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { BrowserModule } from '@angular/platform-browser';
+import { parseToDecimal } from '../../../controls/input-parser.util';
 
 @Component({
   selector: 'app-plot-bias',
@@ -227,13 +228,15 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy, OnCh
     }
 
     if (this.sourceRange) {
-      const maxRange = parseFloat(this.sourceRange.value);
+      const maxRange = parseToDecimal(this.sourceRange.value);
+      if(typeof maxRange === 'number' && !isNaN(maxRange)) {
       this.plotLayout.yaxis.range = [0, maxRange];
       this.plotLayout.yaxis2.range = [0, maxRange];
       this.plotLayout.yaxis2.dtick = maxRange;
 
       const dtick = maxRange / 4;
       this.plotLayout.yaxis.dtick = dtick;
+      }
     }
   }
 

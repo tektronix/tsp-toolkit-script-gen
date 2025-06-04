@@ -10,12 +10,11 @@
 }
 
 .sweep-list-popup-content {
-  // background: white;
-  padding: 18px;
+  padding: 5px 18px 18px 18px;
+  // padding: 18px;
   border-radius: 8px;
-  // min-width: 300px;
-  // min-height: 100px;
   position: relative;
+  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25), 0 1.5px 4px 0 rgba(0,0,0,0.18);;
 }
 
 .sweep-list-popup-header {
@@ -23,6 +22,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 4px;
+  cursor: move;
+  z-index: 10;
 }
 
 .sweep-list-popup-close {
@@ -39,9 +40,60 @@
   max-height: 39vh;
   margin-top: 3vh;
   border-top: 1px solid var(--vscode-activityBar-inactiveForeground);
+
+  table {
+    table-layout: fixed;
+    width: 1vw;
+    min-width: 17vw;
+    border-spacing: 10px 2px;
+    margin-top: 1vh;
+  }
+
+  th,
+  td {
+    width: 8vw;
+    min-width: 4vw;
+    // text-overflow: ellipsis;
+    // white-space: nowrap;
+    // background: var(--vscode-editor-background);
+    z-index: 1;
+    text-align: left;
+  }
+
+  th.point-col,
+  td.point-col {
+    width: 4vw !important;
+    z-index: 5 !important;
+    position: sticky !important
+  }
+
+  th.sticky-col, td.sticky-col {
+    position: sticky;
+    left: 0;
+    background: var(--vscode-editor-background);
+    z-index: 4;
+  }
+
+  th.sticky-header {
+    position: sticky;
+    top: 0;
+    background: var(--vscode-editor-background);
+    z-index: 3;
+  }
 }
 
-.outer-container{
+.outer-container {
   border: 1px solid var(--vscode-badge-background);
   padding: 15px;
+  border-radius: 8px;
+}
+
+.button{
+  background-color: transparent;
+  color: var(--vscode-activityBarBadge-foreground);
+}
+
+.button:hover {
+  cursor: pointer;
+  color: var(--vscode-errorForeground)
 }

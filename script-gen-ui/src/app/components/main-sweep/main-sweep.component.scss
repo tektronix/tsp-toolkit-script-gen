@@ -264,6 +264,15 @@
 
 .checkbox{
   display: flex;
+  justify-content: space-around;
+}
+
+.checkbox input{
+  margin-top: 4.2vh;
+  box-sizing: border-box;
+  // appearance: none;
+  padding: 1.3vh;
+  border-radius: 3px;
 }
 
 .h3{

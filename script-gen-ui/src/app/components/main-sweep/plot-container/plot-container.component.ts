@@ -6,7 +6,7 @@ import { StepGlobalParameters, SweepGlobalParameters } from '../../../model/swee
 import { PlotBiasComponent } from './plot-bias/plot-bias.component';
 import { PlotStepComponent } from './plot-step/plot-step.component';
 import { PlotSweepComponent } from './plot-sweep/plot-sweep.component';
-import { ParameterInt } from '../../../model/sweep_data/SweepTimingConfig';
+import { ParameterFloat, ParameterInt } from '../../../model/sweep_data/SweepTimingConfig';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -26,6 +26,8 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
   @Input() sweepChannels: SweepChannel[] = [];
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
   @Input() sweepGlobalParameters: SweepGlobalParameters | undefined;
+  @Input() listofSweepPoints: ParameterFloat[][] = [];
+  @Input() listofStepPoints: ParameterFloat[][] = [];
 
   @Input() colorMap = new Map<string, string>(); // Accept colorMap from MainSweepComponent
   @Input() activeComponent: 'bias' | 'step' | 'sweep' | null = null; // Accept active component
@@ -179,6 +181,11 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
       backgroundColor: isActive ? backgroundColor : 'var(--vscode-activityBar-border)',
       color: isActive ? 'black' : 'white',
     };
+  }
+
+  listOfSweepPointsUpdate(newPoints: ParameterFloat[][]) {
+    // This creates a new reference, triggering ngOnChanges in the child
+    this.listofSweepPoints = [...newPoints];
   }
 
   scrollToPlot(componentType: 'bias' | 'step' | 'sweep', index: number): void {

@@ -103,7 +103,8 @@
               scrollToInstance('step', i);
               scrollToPlotInPlotContainer('step', i)
             "
-            (listOfStepPoints)="listOfStepPointsUpdate($event)"
+            [showStepList]="showStepListStates[stepChannel.start_stop_channel.common_chan_attributes.uuid] || false"
+            (showStepListChange)="onShowStepListChange($event.stepId, $event.value)"
           ></app-step>
         </div>
       </div>
@@ -139,9 +140,9 @@
           <div style="display: inline-flex" >
             <input
               type="checkbox"
-              id="list"
-              [(ngModel)]="list"
-              name="list"
+              id="isListSweep"
+              [(ngModel)]="isListSweep"
+              name="isListSweep"
               (change)="updateSweepGlobalParameters()"
             />
             <label for="list" style="margin-top: 4.5vh; margin-left: 5px;" >List</label>
@@ -150,10 +151,11 @@
             <button class="timing" (click)="enableList()">Edit</button>
             <app-list
               *ngIf="showList"
-              [sweepPoints]="sweepPoints"
-              [sweepChannels]="sweepChannels"
+              [listsWithNames]="sweepListsWithNames"
+              [noOfPointsOrSteps]="sweepPoints?.value"
               (closeList)="closeList()"
               (listOfPoints)="listOfSweepPointsUpdate($event)"
+              (updatedStepsOrPoints)="sweepPointsUpdatefromList($event)"
             ></app-list>
           </div>
         </div>
@@ -200,8 +202,6 @@
       [colorMap]="colorMap"
       [activeComponent]="activeComponent"
       [activeIndex]="activeIndex"
-      [listofSweepPoints]="listOfSweepPoints"
-      [listofStepPoints]="listOfStepPoints"
     ></app-plot-container>
   </div>
 </div>

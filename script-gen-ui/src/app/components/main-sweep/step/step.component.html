@@ -130,21 +130,23 @@
       <div style="display: inline-flex">
         <input
           type="checkbox"
-          id="list"
-          [(ngModel)]="list"
-          name="list"
+          id="listStep"
+          [(ngModel)]="listStep"
+          name="listStep"
+          (change)="submitStepGlobalParamsData()"
           style="margin-top: 4.2vh;"
         />
         <label for="list" style="margin-top: 4.0vh; margin-left: 5px;" >List</label>
       </div>
-      <div style="margin-top: 2.7vh;">
-        <button class="timing" (click)="showStepList = true">Edit</button>
+      <div style="margin-top: 2.7vh; margin-left: 3vw;">
+        <button class="timing" (click)="showStepListPopup()">Edit</button>
         <app-list
           *ngIf="showStepList"
-          [sweepPoints]="stepPoints"
-          [stepChannels]="stepChannel ? [stepChannel] : []"
-          (closeList)="showStepList = false"
+          [listsWithNames]="stepListsWithNames"
+          [noOfPointsOrSteps]="stepPoints?.value"
+          (closeList)="closeStepListPopup()"
           (listOfPoints)="listOfStepPointsUpdate($event)"
+          (updatedStepsOrPoints)="stepPointsUpdatefromList($event)"
         ></app-list>
       </div>
     </div>

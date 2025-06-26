@@ -2,7 +2,7 @@ import { ISweepChannel } from "../interface";
 import { StartStopChannel } from "./startStopChannel";
 
 export class SweepChannel {
-    start_stop_channel: StartStopChannel
+    start_stop_channel: StartStopChannel;
 
     constructor(data: ISweepChannel) {
         this.start_stop_channel = new StartStopChannel(data.start_stop_channel);

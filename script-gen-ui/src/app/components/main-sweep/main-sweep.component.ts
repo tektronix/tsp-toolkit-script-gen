@@ -4,15 +4,14 @@ import {
   QueryList,
   Input,
   ViewChild,
-  SimpleChanges, OnChanges, AfterViewInit,
+  SimpleChanges,
+  OnChanges,
 } from '@angular/core';
 import { BiasComponent } from './bias/bias.component';
 import { StepComponent } from './step/step.component';
 import { SweepComponent } from './sweep/sweep.component';
 import { WebSocketService } from '../../websocket.service';
-import {
-  SweepConfig,
-} from '../../model/sweep_data/sweepConfig';
+import { SweepConfig } from '../../model/sweep_data/sweepConfig';
 import {
   ParameterFloat,
   ParameterInt,
@@ -40,18 +39,29 @@ import { ListComponent } from './list/list.component';
 @Component({
   selector: 'app-main-sweep',
   standalone: true,
-  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, InputNumericComponent, BiasComponent, StepComponent, SweepComponent, TimingComponent, PlotContainerComponent, ListComponent],
+  imports: [
+    FormsModule,
+    BrowserModule,
+    CommonModule,
+    MatIconModule,
+    InputNumericComponent,
+    BiasComponent,
+    StepComponent,
+    SweepComponent,
+    TimingComponent,
+    PlotContainerComponent,
+    ListComponent,
+  ],
   templateUrl: './main-sweep.component.html',
   styleUrls: ['./main-sweep.component.scss'],
 })
-export class MainSweepComponent implements OnChanges, AfterViewInit {
+export class MainSweepComponent implements OnChanges {
   @ViewChildren(BiasComponent) biasComponents!: QueryList<BiasComponent>;
   @ViewChildren(StepComponent) stepComponents!: QueryList<StepComponent>;
   @ViewChildren(SweepComponent) sweepComponents!: QueryList<SweepComponent>;
   @ViewChild(TimingComponent) timingComponent!: TimingComponent;
   @ViewChild(PlotContainerComponent) plotContainer!: PlotContainerComponent;
 
-  // console.log('biasComponents:', this.biasComponents);
   biasChannels: BiasChannel[] = [];
   stepChannels: StepChannel[] = [];
   sweepChannels: SweepChannel[] = [];
@@ -60,7 +70,15 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
   activeIndex: number | null = null;
 
   colorIndex = 0;
-  colors: string[] = ['#F6F07D', '#7FBDC6', '#C95B66', '#91CE32', '#FF9832', '#E254A6', '#00E09B']
+  colors: string[] = [
+    '#F6F07D',
+    '#7FBDC6',
+    '#C95B66',
+    '#91CE32',
+    '#FF9832',
+    '#E254A6',
+    '#00E09B',
+  ];
   colorMap = new Map<string, string>();
 
   setActiveComponent(
@@ -87,9 +105,10 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
   sweepGlobalParameters: SweepGlobalParameters | undefined;
 
   sweepPoints: ParameterInt | undefined;
-  list = false;
-  listOfSweepPoints: ParameterFloat[][] = [];
-  listOfStepPoints: ParameterFloat[][] = [];
+  isListSweep = false; // list sweep checkbox
+  sweepListsWithNames: { chanName: string; list: ParameterFloat[] }[] = [];
+
+  showStepListStates: Record<string, boolean> = {}; // step list pop up box boolean tracking
 
   @Input() sweepConfig: SweepConfig | undefined;
 
@@ -101,7 +120,7 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
   constructor(private webSocketService: WebSocketService) {}
 
   // ngOnInit() {
-  //   // this.updateAll();
+  //   this.updateSweepListsWithNames();
   // }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -117,14 +136,25 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
   }
 
   getStepColor(stepChannel: StepChannel): string {
-    return this.colorMap.get(stepChannel.start_stop_channel.common_chan_attributes.uuid) || 'gray';
+    return (
+      this.colorMap.get(
+        stepChannel.start_stop_channel.common_chan_attributes.uuid
+      ) || 'gray'
+    );
   }
 
   getSweepColor(sweepChannel: SweepChannel): string {
-    return this.colorMap.get(sweepChannel.start_stop_channel.common_chan_attributes.uuid) || 'gray';
+    return (
+      this.colorMap.get(
+        sweepChannel.start_stop_channel.common_chan_attributes.uuid
+      ) || 'gray'
+    );
   }
 
-  scrollToInstance(componentType: 'bias' | 'step' | 'sweep', index: number): void {
+  scrollToInstance(
+    componentType: 'bias' | 'step' | 'sweep',
+    index: number
+  ): void {
     let component: BiasComponent | StepComponent | SweepComponent | undefined;
 
     if (componentType === 'bias') {
@@ -136,19 +166,18 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
     }
 
     if (component) {
-      const element = (component).elementRef.nativeElement; // Access the DOM element
+      const element = component.elementRef.nativeElement; // Access the DOM element
       element.scrollIntoView({
         behavior: 'smooth', // Smooth scrolling
-        block: 'center',    // Align to the center of the viewport
+        block: 'center', // Align to the center of the viewport
       });
     }
-
-    // if (this.plotContainer) {
-    //   this.plotContainer.scrollToPlot(componentType, index);
-    // }
   }
 
-  scrollToPlotInPlotContainer(componentType: 'bias' | 'step' | 'sweep', index: number): void {
+  scrollToPlotInPlotContainer(
+    componentType: 'bias' | 'step' | 'sweep',
+    index: number
+  ): void {
     if (this.plotContainer) {
       this.plotContainer.scrollToPlot(componentType, index);
     }
@@ -156,7 +185,8 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
 
   updateAll() {
     if (this.sweepConfig) {
-      this.sweepTimingConfig = this.sweepConfig.global_parameters.sweep_timing_config;
+      this.sweepTimingConfig =
+        this.sweepConfig.global_parameters.sweep_timing_config;
       this.deviceList = this.sweepConfig.device_list;
       this.biasChannels = this.sweepConfig.bias_channels;
       this.stepChannels = this.sweepConfig.step_channels;
@@ -165,6 +195,9 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
       this.sweepGlobalParameters = this.sweepConfig.sweep_global_parameters;
 
       this.sweepPoints = this.sweepGlobalParameters.sweep_points;
+      this.isListSweep = this.sweepGlobalParameters.list_sweep;
+      // this.list = this.sweepChannels[0].list;
+      this.updateSweepListsWithNames();
 
       this.biasChannels.forEach((biasChannel) => {
         const uuid = biasChannel.common_chan_attributes.uuid;
@@ -183,7 +216,8 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
         }
       });
       this.sweepChannels.forEach((sweepChannel) => {
-        const uuid = sweepChannel.start_stop_channel.common_chan_attributes.uuid;
+        const uuid =
+          sweepChannel.start_stop_channel.common_chan_attributes.uuid;
         if (!this.colorMap.has(uuid)) {
           const color = this.colors[this.colorIndex % this.colors.length];
           this.colorMap.set(uuid, color);
@@ -205,22 +239,45 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
     this.showList = true;
   }
 
-  closeList(){
+  closeList() {
     this.showList = false;
   }
 
-  listOfSweepPointsUpdate(points: ParameterFloat[][]){
-    this.listOfSweepPoints = points;
+  onShowStepListChange(stepId: string, value: boolean) {
+    this.showStepListStates[stepId] = value;
   }
 
-  listOfStepPointsUpdate(points: ParameterFloat[][]){
-    this.listOfStepPoints = points;
+  listOfSweepPointsUpdate(
+    points: { chanName: string; list: ParameterFloat[] }[]
+  ) {
+    for (const incoming of points) {
+      const sweep = this.sweepChannels.find(
+        (s) =>
+          s.start_stop_channel.common_chan_attributes.chan_name ===
+          incoming.chanName
+      );
+      if (sweep) {
+        sweep.start_stop_channel.list = incoming.list;
+      }
+    }
+    this.sweepChannels.forEach((sweepChannel) =>
+      this.updateSweepChannelsConfig(sweepChannel)
+    );
+    console.log('listOfSweepPointsUpdate', this.sweepListsWithNames);
   }
 
-  ngAfterViewInit(): void {
-    this.biasComponents.changes.subscribe(() => {
-      console.log('Updated biasComponents:', this.biasComponents.toArray());
-    });
+  updateSweepListsWithNames() {
+    this.sweepListsWithNames = this.sweepChannels.map((sweep) => ({
+      chanName: sweep.start_stop_channel.common_chan_attributes.chan_name, // or the correct property for channel name
+      list: sweep.start_stop_channel.list, // ParameterFloat[]
+    }));
+  }
+
+  sweepPointsUpdatefromList(points: number) {
+    if (this.sweepPoints) {
+      this.sweepPoints.value = points;
+      this.updateSweepGlobalParameters();
+    }
   }
 
   addBias() {
@@ -233,6 +290,7 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
 
   addSweep() {
     this.submitSweepConfigAsJson('reallocation', 'add,sweep');
+    // this.buildListSweep();  //the sweepchannels is not updated yet, so the list will not be updated
   }
 
   toggleBias() {
@@ -256,14 +314,16 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
   }
 
   updateTimingConfig() {
-    const sweepTimingConfig = this.timingComponent.getSweepTimingConfigFromComponent();
+    const sweepTimingConfig =
+      this.timingComponent.getSweepTimingConfigFromComponent();
     if (this.sweepConfig && this.sweepConfig.global_parameters) {
-      this.sweepConfig.global_parameters.sweep_timing_config = sweepTimingConfig;
+      this.sweepConfig.global_parameters.sweep_timing_config =
+        sweepTimingConfig;
       this.submitSweepConfigAsJson('evaluate_data', '');
     }
   }
 
-  fetchScript(){
+  fetchScript() {
     // TODO: fetching script
   }
 
@@ -294,8 +354,11 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
   updateStepGlobalParameters(
     updatedStepGlobalParameters: StepGlobalParameters
   ) {
-    this.stepGlobalParameters = updatedStepGlobalParameters;
-    this.submitSweepConfigAsJson('evaluate_data', '');
+    // this.stepGlobalParameters = updatedStepGlobalParameters;  // this updates other globals but not the boolean list_step
+    if (this.sweepConfig) {
+      this.sweepConfig.step_global_parameters = updatedStepGlobalParameters;
+      this.submitSweepConfigAsJson('evaluate_data', '');
+    }
   }
 
   updateSweepChannelsConfig(updatedSweepChannel: SweepChannel) {
@@ -313,7 +376,7 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
   updateSweepGlobalParameters() {
     const sweepGlobalParams = new SweepGlobalParameters({
       sweep_points: this.sweepPoints!,
-      list_sweep: this.list,
+      list_sweep: this.isListSweep,
     });
     if (this.sweepConfig) {
       this.sweepConfig.sweep_global_parameters = sweepGlobalParams;
@@ -334,8 +397,7 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
   removeStepChannel(deviceID: string) {
     const index = this.stepChannels.findIndex(
       (channel) =>
-        channel.start_stop_channel.common_chan_attributes.device_id ===
-        deviceID
+        channel.start_stop_channel.common_chan_attributes.device_id === deviceID
     );
     if (index !== -1) {
       this.stepChannels.splice(index, 1);
@@ -346,13 +408,13 @@ export class MainSweepComponent implements OnChanges, AfterViewInit {
   removeSweepChannel(deviceID: string) {
     const index = this.sweepChannels.findIndex(
       (channel) =>
-        channel.start_stop_channel.common_chan_attributes.device_id ===
-        deviceID
+        channel.start_stop_channel.common_chan_attributes.device_id === deviceID
     );
     if (index !== -1) {
       this.sweepChannels.splice(index, 1);
       this.submitSweepConfigAsJson('reallocation', 'remove,sweep,' + deviceID);
     }
+    this.updateSweepListsWithNames();
   }
 
   updateBiasChannelId($event: { oldChanId: string; newChanId: string }) {

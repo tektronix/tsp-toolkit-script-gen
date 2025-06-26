@@ -6,6 +6,7 @@ import {
   SimpleChanges,
   OnChanges,
   ElementRef,
+  OnInit,
 } from '@angular/core';
 import {
   ParameterInt,
@@ -41,10 +42,10 @@ import { ListComponent } from '../list/list.component';
     InputNumericComponent,
     InputPlainComponent,
     InputToggleComponent,
-    ListComponent
+    ListComponent,
   ],
 })
-export class StepComponent implements OnChanges {
+export class StepComponent implements OnChanges, OnInit {
   commonChanAttributes: CommonChanAttributes | undefined;
   chanName = '';
   deviceID = '';
@@ -64,8 +65,14 @@ export class StepComponent implements OnChanges {
   start: ParameterFloat | undefined;
   stop: ParameterFloat | undefined;
   style: ParameterString | undefined;
-  list = false;
-  showStepList = false;
+
+  @Input() listStep = false; // list checkbox
+  @Input() showStepList = false; //edit list popup
+  @Output() showStepListChange = new EventEmitter<{
+    stepId: string;
+    value: boolean;
+  }>(); //storing the value main-sweep since this will be reloaded after changes
+  list: ParameterFloat[] = []; // list of points
 
   @Input() stepChannel: StepChannel | undefined;
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
@@ -87,7 +94,7 @@ export class StepComponent implements OnChanges {
   @Input() color = '';
   isFocused = false;
 
-  @Output() listOfStepPoints = new EventEmitter<ParameterFloat[][]>();
+  @Output() listOfStepPoints = new EventEmitter<ParameterFloat[]>();
   stepPointsList: ParameterFloat[][] = [];
 
   toggleFocus(state: boolean): void {
@@ -98,14 +105,49 @@ export class StepComponent implements OnChanges {
     this.isActive = !this.isActive;
   }
 
+  showStepListPopup() {
+    this.showStepList = true;
+    this.showStepListChange.emit({
+      stepId: this.uuid,
+      value: this.showStepList,
+    });
+  }
+
+  closeStepListPopup() {
+    this.showStepList = false;
+    this.showStepListChange.emit({
+      stepId: this.uuid,
+      value: this.showStepList,
+    });
+  }
+
   expandedStepChannels: Record<string, boolean> = {};
 
   constructor(public elementRef: ElementRef) {}
+
+  ngOnInit() {
+    this.updateStepListsWithNames();
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['stepChannel']) {
       // Handle the change in biasChannel here if needed
       this.updateAll();
+    }
+  }
+
+  stepListsWithNames: { chanName: string; list: ParameterFloat[] }[] = [];
+
+  updateStepListsWithNames() {
+    if (this.stepChannel) {
+      this.stepListsWithNames = [
+        {
+          chanName:
+            this.stepChannel.start_stop_channel.common_chan_attributes
+              .chan_name,
+          list: this.stepChannel.start_stop_channel.list,
+        },
+      ];
     }
   }
 
@@ -131,6 +173,9 @@ export class StepComponent implements OnChanges {
 
       this.stepPoints = this.stepGlobalParameters.step_points;
       this.stepToSweepDelay = this.stepGlobalParameters.step_to_sweep_delay;
+      this.listStep = this.stepGlobalParameters.list_step;
+      // this.listStep = true;
+      this.list = this.stepChannel.start_stop_channel.list;
 
       if (this.deviceList) {
         this.dropdownDeviceList = this.deviceList
@@ -146,7 +191,7 @@ export class StepComponent implements OnChanges {
     // this.expandedStepChannels[stepName] = !this.expandedStepChannels[stepName];
     this.emitStepExpanderState.emit({
       uuid: this.uuid,
-      isExpanded: this.isStepExpanded
+      isExpanded: this.isStepExpanded,
     });
   }
 
@@ -172,6 +217,7 @@ export class StepComponent implements OnChanges {
         start: this.start!,
         stop: this.stop!,
         style: this.style!,
+        list: this.list
       },
     });
   }
@@ -180,7 +226,7 @@ export class StepComponent implements OnChanges {
     return new StepGlobalParameters({
       step_points: this.stepPoints!,
       step_to_sweep_delay: this.stepToSweepDelay!,
-      list_step: this.list!,
+      list_step: this.listStep,
     });
   }
 
@@ -201,15 +247,25 @@ export class StepComponent implements OnChanges {
   submitStepGlobalParamsData() {
     // this.updatePlot();
     this.emitStepGlobalParameters.emit(this.getStepGlobalParamsFromComponent());
+    console.log(
+      'submitStepGlobalParamsData',
+      this.getStepGlobalParamsFromComponent()
+    );
   }
 
-  listOfStepPointsUpdate(points: ParameterFloat[][]){
-    this.stepPointsList = points;
-    this.listOfStepPoints.emit(points);
+  listOfStepPointsUpdate(
+    points: { chanName: string; list: ParameterFloat[] }[]
+  ) {
+    this.stepListsWithNames = points;
+    this.list = points[0].list;
+    // this.submitStepData();
+    this.submitStepGlobalParamsData();
   }
 
-  listOfPoints(points: ParameterFloat[][]){
-    console.log(points);
+  stepPointsUpdatefromList(steps: number) {
+    if (this.stepPoints) {
+      this.stepPoints.value = steps;
+      this.submitStepGlobalParamsData();
+    }
   }
-  // TODO: Remove this function once plot is updated from main-sweep.component.ts
 }

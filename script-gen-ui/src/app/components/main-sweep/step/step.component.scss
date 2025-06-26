@@ -138,6 +138,8 @@
   .checkbox{
     display: flex;
     align-items: anchor-center;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .checkbox input{
@@ -150,7 +152,7 @@
 
   .timing{
     border-radius: 10px;
-    background-color: var(--vscode-activityWarningBadge-foreground);
+    background-color: var(--vscode-editor-background);
     color: var(--vscode-activityBarBadge-foreground);
     padding: 5px;
     border-color: var(--vscode-activityBar-activeBorder);
@@ -158,7 +160,7 @@
     border-width: thin;
     padding-left: 10px;
     padding-right: 10px;
-    margin-left: 8vh;
+    // margin-left: 8vh;
   }
 
   .h3{

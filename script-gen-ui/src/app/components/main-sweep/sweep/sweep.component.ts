@@ -10,7 +10,6 @@ import {
 import { ChannelRange } from '../../../model/chan_data/channelRange';
 import {
   ParameterFloat,
-  ParameterInt,
   ParameterString,
 } from '../../../model/sweep_data/SweepTimingConfig';
 import { SweepChannel } from '../../../model/chan_data/sweepChannel';
@@ -58,13 +57,8 @@ export class SweepComponent implements OnChanges {
   stop: ParameterFloat | undefined;
   style: ParameterString | undefined;
 
-  //TODO: use this value directly from main-sweep.component.ts for plot computation
-  sweepPoints = new ParameterInt({
-    id: 'sweep_points',
-    value: 10,
-  });
-
-  list = false;
+  listSweep = false;
+  list: ParameterFloat[] = [];
 
   @Input() sweepChannel: SweepChannel | undefined;
   @Input() isSweepExpanded = false;
@@ -159,6 +153,7 @@ export class SweepComponent implements OnChanges {
         start: this.start!,
         stop: this.stop!,
         style: this.style!,
+        list: this.list,
       },
     });
   }

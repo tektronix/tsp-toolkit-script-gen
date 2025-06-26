@@ -50,18 +50,22 @@ impl SweepConfig {
         //add default step
         if self.can_add_channel() {
             self.device_list[self.total_chan_count].in_use = true;
+            let step_points = self.step_global_parameters.step_points.value;
             self.add_step(StepChannel::new(
                 String::from("step1"),
                 self.device_list[self.total_chan_count].clone(),
+                step_points,
             ));
         }
 
         //add default sweep
         if self.can_add_channel() {
             self.device_list[self.total_chan_count].in_use = true;
+            let sweep_points = self.sweep_global_parameters.sweep_points.value;
             self.add_sweep(SweepChannel::new(
                 String::from("sweep1"),
                 self.device_list[self.total_chan_count].clone(),
+                sweep_points,
             ));
         }
 
@@ -180,13 +184,15 @@ impl SweepConfig {
                     ));
                 } else if chan_type == "step" {
                     self.add_step(StepChannel::new(
-                        format!("step{}", self.step_channels.len() + 1),
+                        format!("step{}", self.step_channels.len() + 1,),
                         device.clone(),
+                        self.step_global_parameters.step_points.value,
                     ));
                 } else if chan_type == "sweep" {
                     self.add_sweep(SweepChannel::new(
                         format!("sweep{}", self.sweep_channels.len() + 1),
                         device.clone(),
+                        self.sweep_global_parameters.sweep_points.value,
                     ));
                 }
             } else {
@@ -247,6 +253,7 @@ impl SweepConfig {
                             .chan_name
                             .clone(),
                         device.clone(),
+                        self.step_global_parameters.step_points.value,
                     );
                     new_step_channel
                         .start_stop_channel
@@ -272,6 +279,7 @@ impl SweepConfig {
                             .chan_name
                             .clone(),
                         device.clone(),
+                        self.sweep_global_parameters.sweep_points.value,
                     );
                     new_sweep_channel
                         .start_stop_channel

@@ -1,73 +1,49 @@
 <div class="sweep-list-popup" cdkDrag>
   <div class="sweep-list-popup-content">
     <div class="sweep-list-popup-header" cdkDragHandle>
-      <h3 style="margin: 0;">List</h3>
-      <mat-icon class="button" (click)="onClose()" >close</mat-icon>
+      <h3 style="margin: 0">List</h3>
+      <mat-icon class="button" (click)="onClose()">close</mat-icon>
     </div>
     <div class="outer-container">
-    <div style="width: 14vw;">
-      <ng-container *ngIf="sweepChannels?.length; else stepPointsInput">
+      <div style="width: 14vw">
         <app-input-numeric
-          [label]="'Points'"
-          [(ngModel)]="sweepPoints.value"
-          *ngIf="sweepPoints"
-          name="sweepPoints"
+          [label]="'Points/Steps'"
+          [(ngModel)]="noOfPointsOrSteps"
+          name="noOfPointsOrSteps"
+          *ngIf="noOfPointsOrSteps"
+          (keydown.enter)="emitStepsOrPoints()"
         ></app-input-numeric>
-      </ng-container>
-      <ng-template #stepPointsInput>
-        <app-input-numeric
-          [label]="'Steps'"
-          [(ngModel)]="sweepPoints.value"
-          *ngIf="sweepPoints"
-          name="stepPoints"
-        ></app-input-numeric>
-      </ng-template>
-    </div>
-    <div class="sweep-list-popup-inputs">
-      <table>
-        <thead>
-          <tr>
-            <th class="sticky-col sticky-header point-col">Point #</th>
-            <!-- Show sweep channel headers if present, else step channel headers -->
-            <ng-container *ngIf="sweepChannels?.length; else stepHeaders">
-              <th *ngFor="let channel of sweepChannels" class="sticky-header">
-                {{ channel.start_stop_channel.common_chan_attributes.chan_name }}
+      </div>
+      <div class="sweep-list-popup-inputs">
+        <table>
+          <thead>
+            <tr>
+              <th
+                class="sticky-col sticky-header point-col"
+                style="position: sticky !important; z-index: 6"
+              >
+                Point #
               </th>
-            </ng-container>
-            <ng-template #stepHeaders>
-              <th *ngFor="let channel of stepChannels" class="sticky-header">
-                {{ channel.start_stop_channel.common_chan_attributes.chan_name }}
+              <th *ngFor="let sweep of listsWithNames" class="sticky-header">
+                {{ sweep.chanName }}
               </th>
-            </ng-template>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let n of pointsArray; let i = index">
-            <td class="sticky-col point-col">{{ i + 1 }}</td>
-            <!-- Show sweep channel inputs if present, else step channel inputs -->
-            <ng-container *ngIf="sweepChannels?.length; else stepInputs">
-              <td *ngFor="let channel of sweepChannels; let j = index">
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let i of rowIndices">
+              <td class="sticky-col point-col">{{ i + 1 }}</td>
+              <td *ngFor="let sweep of listsWithNames">
                 <app-input-plain
-                  [unit]="'V'"
-                  [(ngModel)]="values[i][j].value"
+                  [unit]="sweep.list[i].unit"
+                  [(ngModel)]="sweep.list[i].value"
                   (keydown.enter)="onEnter()"
+                  style="width: 95%"
                 ></app-input-plain>
               </td>
-            </ng-container>
-            <ng-template #stepInputs>
-              <td *ngFor="let channel of stepChannels; let j = index">
-                <app-input-plain
-                  [unit]="'V'"
-                  [(ngModel)]="values[i][j].value"
-                  (keydown.enter)="onEnter()"
-                ></app-input-plain>
-              </td>
-            </ng-template>
-          </tr>
-        </tbody>
-      </table>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-    </div>
-
   </div>
 </div>

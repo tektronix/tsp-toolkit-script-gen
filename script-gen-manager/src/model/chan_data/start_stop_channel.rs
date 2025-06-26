@@ -1,3 +1,5 @@
+use core::num;
+
 use serde::{Deserialize, Serialize};
 
 use super::default_channel::CommonChanAttributes;
@@ -13,6 +15,7 @@ pub struct StartStopChannel {
     pub start: ParameterFloat,
     pub stop: ParameterFloat,
     pub style: ParameterString,
+    pub list: Vec<ParameterFloat>,
     #[serde(default)]
     pub asymptote: f64,
 }
@@ -24,11 +27,12 @@ impl StartStopChannel {
             start: ParameterFloat::new("start", 0.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
             stop: ParameterFloat::new("stop", 1.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
             style: ParameterString::new("style"),
+            list: Vec::new(),
             asymptote: 0.0,
         }
     }
 
-    pub fn set_defaults(&mut self) {
+    pub fn set_defaults(&mut self, steps_or_points: i32) {
         self.common_chan_attributes.set_defaults();
         self.start.value = 0.0;
         self.stop.value = 1.0;
@@ -40,6 +44,21 @@ impl StartStopChannel {
         self.style.value = BaseMetadata::STYLE_LIN.to_string();
         self.common_chan_attributes
             .update_region_constraints(self.start.value, self.stop.value);
+        self.set_list(steps_or_points);
+    }
+
+    pub fn set_list(&mut self, steps_or_points: i32) {
+        let num_points = steps_or_points;
+        self.list = Vec::with_capacity(num_points.try_into().unwrap());
+
+        for i in 0..num_points {
+            let pf = ParameterFloat::new(
+                &format!("list_{}", i),
+                0.0,
+                Some(BaseMetadata::UNIT_VOLTS.to_string()),
+            );
+            self.list.push(pf);
+        }
     }
 
     pub fn evaluate(&mut self) {

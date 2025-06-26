@@ -26,7 +26,6 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
   @Input() sweepPointsList: ParameterFloat[][] = [];
 
   @Input() isActive = false;
-
   @Input() activeStyle: {backgroundColor:string, color:string} = {
     backgroundColor: '',
     color: ''
@@ -52,6 +51,7 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
 
   numPoints: ParameterInt | undefined;
   list = true;
+  listSweep: ParameterFloat[] = [];
   numSteps: number | undefined;
 
   plotLayout = {
@@ -174,7 +174,6 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
 
       this.chanName = this.commonChanAttributes.chan_name;
       this.deviceID = this.commonChanAttributes.device_id;
-      console.log("device_id, channame", this.deviceID, this.chanName);
       this.sourceFunction = this.commonChanAttributes.source_function;
       this.sourceRange = this.commonChanAttributes.source_range;
       this.measFunction = this.commonChanAttributes.meas_function;
@@ -187,37 +186,39 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
       this.numPoints = this.sweepGlobalParameters?.sweep_points;
       this.list = this.sweepGlobalParameters?.list_sweep;
       this.numSteps = this.stepGlobalParameters?.step_points.value;
+      this.list = this.sweepGlobalParameters?.list_sweep;
+      this.listSweep = this.sweepChannel.start_stop_channel.list;
 
       this.sweepDivID = `plotDiv${this.sweepChannel.start_stop_channel.common_chan_attributes.uuid}`;
+      console.log('sweepDivID', this.sweepDivID);
     }
-    console.log("sweep points list", this.sweepPointsList);
-
-    // if(this.list != false){
-    //   this.sweepListPlot();
-    // }
-    console.log(this.plotDataX, this.plotData);
     this.plotData1.x = this.plotDataX;
     this.plotData1.line.color = this.color;
     this.updatePlotLayout();
     this.initializePlot();
     this.observeThemeChanges();
-    // this.sweepValues();
-    this.updatePlotStyle();
-    this.sweepListPlot();
+
+    if(this.list == false){
+      this.updatePlotStyle();
+      this.sweepValues();
+    }
+    else {
+      this.sweepListPlot();
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['isActive'] && !changes['isActive'].isFirstChange()) {
-      console.log('isActive changed:', changes['isActive'].currentValue);
+      // console.log('isActive changed:', changes['isActive'].currentValue);
       this.renderPlot(); // Re-render the plot when isActive changes
     }
      if (
-      changes['sweepPointsList'] ||
+      changes['listSweep'] ||
       changes['numPoints'] ||
       changes['numSteps'] ||
       changes['list']
     ) {
-      this.sweepListPlot();
+      this.sweepListPlot(); //doesnt render the plot when listSweep changes, works only for input properties
     }
   }
 
@@ -250,19 +251,11 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
     }
   }
 
+  // the plots are rendered only after the DOM is created, so we need to render them after all the DOM is loaded
   ngAfterViewInit(): void{
-    // setTimeout(() => {
-    //   if (this.plotDataX && this.plotConfig) {
-    //     this.sweepValues();
-    //     this.renderPlot();
-    //     Plotly.newPlot('divStep', this.plotData, this.plotLayout, this.plotConfig);
-    //   }
-    //   this.renderPlot();
-    // }, 0);
-    if (this.plotDataX && this.plotConfig && this.style?.value == 'LIN') {
+    if (this.plotDataX && this.plotConfig && this.style?.value == 'LIN' && this.list == false) {
       this.sweepValues();
       Plotly.newPlot(this.sweepDivID, this.plotData, this.plotLayout, this.plotConfig);
-      console.log('sweep data', this.plotData, this.plotLayout, this.plotConfig);
     }
     this.renderPlot();
   }
@@ -280,12 +273,21 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
       const dtick = maxRange / 4; // Divide maxRange into 4 intervals
       this.plotLayout.yaxis.dtick = dtick;
     }
+
+    if (this.listSweep && this.list == true) {
+      const allValues = this.listSweep.flat().map(pf => pf.value);
+      const maxRange = Math.max(...allValues);
+      this.plotLayout.yaxis.range = [0, maxRange];
+      this.plotLayout.yaxis2.range = [0, maxRange];
+      this.plotLayout.yaxis2.dtick = maxRange;
+
+      const dtick = maxRange / 4; // Divide maxRange into 4 intervals
+      this.plotLayout.yaxis.dtick = dtick;
+    }
   }
 
   private updatePlotStyle(): void {
     if (this.style?.value === 'LOG') {
-      // this.plotLayout.xaxis.type = 'log';
-      // this.plotData1.line.shape = 'vh';
 
       if (this.start && this.stop && this.numSteps && this.numPoints) {
         const numberOfPoints = this.numPoints.value;
@@ -320,12 +322,12 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
   }
 
   private sweepListPlot(): void {
-    console.log('sweepPointsList: step and sweep', this.sweepPointsList, this.numPoints, this.numSteps);
-    if (this.list && this.numPoints && this.numSteps) {
+    // console.log('listSweep: step and sweep', this.listSweep, this.numPoints, this.numSteps);
+    if (this.listSweep && this.numPoints && this.numSteps) {
       const numberOfPoints = this.numPoints.value;
       const numSteps = this.numSteps;
 
-      const sweepValues = this.sweepPointsList.map(pfArr => pfArr[0]?.value ?? 0);
+      const sweepValues = this.listSweep.map(pf => pf?.value ?? 0);
       this.plotData1.y = Array.from({ length: numSteps }, () => sweepValues).flat();
 
       this.plotData1.x = Array.from(
@@ -337,12 +339,9 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
       ).flat();
 
       this.plotData1.line.shape = 'hv';
-      console.log('List sweep plotData1.x:', this.plotData1.x);
-      console.log('List sweep plotData1.y:', this.plotData1.y);
-    } else {
-      console.warn('No sweep points available for list sweep.');
+      // console.log('List sweep plotData1.x:', this.plotData1.x);
+      // console.log('List sweep plotData1.y:', this.plotData1.y);
     }
-    this.plotData = [this.plotData1, this.plotData2];
     this.renderPlot();
   }
 
@@ -361,14 +360,14 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
       ? this.rgbToHex(activeBg)
       : activeBg;
 
-    console.log('Initial background color:', backgroundColorHex);
-    console.log('Initial active background color:', this.activeBackgroundColor);
+    // console.log('Initial background color:', backgroundColorHex);
+    // console.log('Initial active background color:', this.activeBackgroundColor);
   }
 
   getCssVariableValue(variableName: string): string {
     const root = document.documentElement;
     const value = getComputedStyle(root).getPropertyValue(variableName).trim();
-    console.log(`CSS variable ${variableName}:`, value);
+    // console.log(`CSS variable ${variableName}:`, value);
     return value;
   }
 
@@ -416,8 +415,8 @@ export class PlotSweepComponent implements AfterViewInit, OnInit, OnDestroy, OnC
         ? this.rgbToHex(activeBg)
         : activeBg;
 
-      console.log('Theme changed, new background color:', backgroundColorHex);
-      console.log('Theme changed, new active background color:', this.activeBackgroundColor);
+      // console.log('Theme changed, new background color:', backgroundColorHex);
+      // console.log('Theme changed, new active background color:', this.activeBackgroundColor);
 
       this.renderPlot();
     });

@@ -75,6 +75,7 @@ export interface IStartStopChannel {
   start: IParameterFloat;
   stop: IParameterFloat;
   style: IParameterString;
+  list: IParameterFloat[];
 }
 
 export interface IStepChannel {

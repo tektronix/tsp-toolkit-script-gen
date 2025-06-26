@@ -59,7 +59,8 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
   start: ParameterFloat | undefined;
   stop: ParameterFloat | undefined;
   style: ParameterString | undefined;
-  list = false;
+  list = true;
+  listStep: ParameterFloat[] = [];
 
   plotLayout =  {
     xaxis: {
@@ -191,29 +192,45 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
       this.stop = this.stepChannel.start_stop_channel.stop;
       this.style = this.stepChannel.start_stop_channel.style;
 
+      this.list = this.stepGlobalParameters?.list_step;
+      this.listStep = this.stepChannel.start_stop_channel.list;
+
       this.stepPoints = this.stepGlobalParameters.step_points;
       this.stepToSweepDelay = this.stepGlobalParameters.step_to_sweep_delay;
 
     }
-    // this.stepValues();
-    console.log(" step points list", this.stepPointsList);
+    this.plotData1.x = this.plotDataX;
     this.plotData1.line.color = this.color;
     this.updatePlotLayout();
     this.initializePlot();
     this.observeThemeChanges();
-    this.updatePlotStyle();
-    console.log('after loop', this.plotDataX, this.plotData, this.stepPoints);
-  }
 
-  ngAfterViewInit(): void{
-    if (this.plotDataX && this.plotConfig && this.style?.value == 'LIN') {
+    if(this.list == false){
+      this.updatePlotStyle();
       this.stepValues();
-
-      Plotly.newPlot('divStep', this.plotData, this.plotLayout, this.plotConfig);
-      console.log('step data', this.plotData, this.plotLayout, this.plotConfig);
     }
     else {
-      this.updatePlotStyle();
+      this.stepListPlot();
+    }
+  }
+
+  stepListPlot() {
+    if (this.listStep && this.stepPoints) {
+      const stepValues = this.listStep.map(pf => pf?.value ?? 0);
+      this.plotData1.x = Array.from({ length: this.stepPoints.value }, (_, i) => i);
+      this.plotData1.y = stepValues.slice(0, this.stepPoints.value);
+      this.plotData1.line.shape = 'hv';
+      console.log('generated step list data:', this.plotData1);
+    }
+    this.renderPlot();
+  }
+
+  // the plots are rendered only after the DOM is created, so we need to render them after all the DOM is loaded
+  ngAfterViewInit(): void{
+    if (this.plotDataX && this.plotConfig && this.style?.value == 'LIN' && this.list == false) {
+      this.stepValues();
+      // this.stepListPlot();
+      Plotly.newPlot('divStep', this.plotData, this.plotLayout, this.plotConfig);
     }
     this.renderPlot();
   }
@@ -232,8 +249,19 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
     if (this.sourceFunction) {
       this.plotLayout.yaxis2.ticksuffix = this.sourceFunction.value === 'Voltage' ? ' V' : ' A';
     }
-    if (this.start && this.stop) {
+    if (this.start && this.stop && this.list == false) {
       const maxRange = Math.max(this.start.value, this.stop.value);
+      this.plotLayout.yaxis.range = [0, maxRange];
+      this.plotLayout.yaxis2.range = [0, maxRange];
+      this.plotLayout.yaxis2.dtick = maxRange;
+
+      const dtick = maxRange / 4; // Divide maxRange into 4 intervals
+      this.plotLayout.yaxis.dtick = dtick;
+    }
+
+    if (this.listStep && this.list == true) {
+      const allValues = this.listStep.flat().map(pf => pf.value);
+      const maxRange = Math.max(...allValues);
       this.plotLayout.yaxis.range = [0, maxRange];
       this.plotLayout.yaxis2.range = [0, maxRange];
       this.plotLayout.yaxis2.dtick = maxRange;

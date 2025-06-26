@@ -192,6 +192,7 @@ export class PlotBiasComponent implements AfterViewInit, OnInit, OnDestroy, OnCh
     this.observeThemeChanges();
   }
 
+  // the plots are rendered only after the DOM is created, so we need to render them after all the DOM is loaded
   ngAfterViewInit(): void{
     if (this.plotDataX && this.plotConfig) {
       Plotly.newPlot(this.plotDivID, this.plotData, this.plotLayout, this.plotConfig);

@@ -12,9 +12,12 @@
 .sweep-list-popup-content {
   padding: 5px 18px 18px 18px;
   // padding: 18px;
+  padding: 5px 18px 18px 18px;
+  // padding: 18px;
   border-radius: 8px;
   position: relative;
-  box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25), 0 1.5px 4px 0 rgba(0,0,0,0.18);;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25),
+    0 1.5px 4px 0 rgba(0, 0, 0, 0.18);
 }
 
 .sweep-list-popup-header {
@@ -39,7 +42,7 @@
   overflow-y: auto;
   max-height: 39vh;
   margin-top: 3vh;
-  border-top: 1px solid var(--vscode-activityBar-inactiveForeground);
+  border-top: 1.4px solid var(--vscode-activityBar-inactiveForeground);
 
   table {
     table-layout: fixed;
@@ -63,11 +66,12 @@
   th.point-col,
   td.point-col {
     width: 4vw !important;
-    z-index: 5 !important;
-    position: sticky !important
+    z-index: 5;
+    position: sticky !important;
   }
 
-  th.sticky-col, td.sticky-col {
+  th.sticky-col,
+  td.sticky-col {
     position: sticky;
     left: 0;
     background: var(--vscode-editor-background);
@@ -88,12 +92,12 @@
   border-radius: 8px;
 }
 
-.button{
+.button {
   background-color: transparent;
   color: var(--vscode-activityBarBadge-foreground);
 }
 
 .button:hover {
   cursor: pointer;
-  color: var(--vscode-errorForeground)
+  color: var(--vscode-errorForeground);
 }

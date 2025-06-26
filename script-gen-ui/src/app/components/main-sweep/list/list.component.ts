@@ -1,14 +1,12 @@
 import { Component, EventEmitter, Input, Output, OnChanges } from '@angular/core';
 import { DragDropModule } from '@angular/cdk/drag-drop';
-import { ParameterFloat, ParameterInt } from '../../../model/sweep_data/SweepTimingConfig';
+import { ParameterFloat } from '../../../model/sweep_data/SweepTimingConfig';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { BrowserModule } from '@angular/platform-browser';
 import { MatIconModule } from '@angular/material/icon';
 import { InputPlainComponent } from '../../controls/input-plain/input-plain.component';
-import { SweepChannel } from '../../../model/chan_data/sweepChannel';
 import { InputNumericComponent } from '../../controls/input-numeric/input-numeric.component';
-import { StepChannel } from '../../../model/chan_data/stepChannel';
 
 @Component({
   selector: 'app-list',
@@ -17,31 +15,25 @@ import { StepChannel } from '../../../model/chan_data/stepChannel';
   styleUrl: './list.component.scss'
 })
 export class ListComponent implements OnChanges {
-  @Input() sweepPoints: ParameterInt | undefined;
-  @Input() sweepChannels: SweepChannel[] | undefined;
-  @Input() stepChannels: StepChannel[] | undefined;
+  @Input() noOfPointsOrSteps: number | undefined;
+  @Input() listsWithNames: { chanName: string, list: ParameterFloat[] }[] = [];
   @Output() closeList = new EventEmitter<void>();
-  @Output() listOfPoints = new EventEmitter<ParameterFloat[][]>();
+  @Output() listOfPoints = new EventEmitter<{ chanName: string, list: ParameterFloat[] }[]>();
+  @Output() updatedStepsOrPoints = new EventEmitter<number>();
 
-  values: ParameterFloat[][] = [];
+  rowIndices: number[] = [];
 
-  get pointsArray(): number[] {
-    return Array(this.sweepPoints?.value || 0);
-  }
-
-  get channelCount(): number {
-    return (this.sweepChannels?.length || this.stepChannels?.length || 0);
+  getRowIndices(): number[] {
+    return this.listsWithNames.length > 0 ? Array.from({length: this.listsWithNames[0].list.length}, (_, i) => i) : [];
   }
 
   ngOnChanges() {
-    const rows = this.sweepPoints?.value || 0;
-    const cols = this.sweepChannels?.length ?? this.stepChannels?.length ?? 0;
-    if (rows !== this.values.length || (this.values[0]?.length || 0) !== cols) {
-      this.values = Array.from({ length: rows }, () =>
-        Array.from({ length: cols }, () => ({ value: 0 } as ParameterFloat))
-      );
+    console.log('listsWithNames:', this.listsWithNames);
+    if (this.listsWithNames.length > 0) {
+      this.rowIndices = Array.from({length: this.listsWithNames[0].list.length}, (_, i) => i);
+    } else {
+      this.rowIndices = [];
     }
-    console.log("values list", this.values)
   }
 
   onClose() {
@@ -49,6 +41,11 @@ export class ListComponent implements OnChanges {
   }
 
   onEnter(){
-    this.listOfPoints.emit(this.values);
+    this.listOfPoints.emit(this.listsWithNames);
+  }
+
+  emitStepsOrPoints() {
+    // emitting points or steps
+    this.updatedStepsOrPoints.emit(this.noOfPointsOrSteps);
   }
 }

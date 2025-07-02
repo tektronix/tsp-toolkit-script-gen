@@ -322,6 +322,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       packages: write
+      contents: read
     container:
       image: ghcr.io/tektronix/tsp-toolkit-build:latest
       credentials:

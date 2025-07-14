@@ -9,6 +9,7 @@
       <div class="measure-count">
         <div>
           <app-input-numeric
+          automationID="measureCount"
           [(ngModel)]="measureCount.value"
           [label]="'Measure Count (per step)'"
           *ngIf="measureCount"
@@ -32,6 +33,7 @@
       </div>
       <div *ngIf="nplcType?.value === 'NPLC'">
         <app-input-numeric
+          automationID="nplc"
           [(ngModel)]="nplc.value"
           [label]="'NPLC'"
           *ngIf="nplc"
@@ -40,8 +42,9 @@
       </div>
       <div *ngIf="nplcType?.value === 'Aperture'">
         <app-input-plain
+          automationID="aperture"
           [(ngModel)]="aperture.value"
-          [label]="'Aperature'"
+          [label]="'Aperture'"
           [unit]="aperture.unit"
           *ngIf="aperture"
           (inputChange)="submitTimingData()"
@@ -49,6 +52,7 @@
       </div>
       <div>
         <app-dropdown
+          automationID="sourceAutoDelay"
           [(ngModel)]="sourceAutoDelay.value"
           [label]="'Source Auto Delay'"
           [selected]="sourceAutoDelay.value"
@@ -59,6 +63,7 @@
       </div>
       <div [ngClass]="{ disabled: sourceAutoDelay?.value !== 'OFF' }">
         <app-input-plain
+          automationID="sourceDelay"
           [(ngModel)]="sourceDelay.value"
           [label]="'Source Delay'"
           [unit]="sourceDelay.unit"
@@ -68,6 +73,7 @@
       </div>
       <div>
         <app-dropdown
+          automationID="measureAutoDelay"
           [(ngModel)]="measureAutoDelay.value"
           [label]="'Measure Auto Delay'"
           [selected]="measureAutoDelay.value"

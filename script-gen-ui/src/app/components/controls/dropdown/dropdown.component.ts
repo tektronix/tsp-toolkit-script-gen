@@ -30,6 +30,9 @@ import { BrowserModule } from '@angular/platform-browser';
 })
 export class DropdownComponent implements ControlValueAccessor, OnInit {
   @Input() label: string | undefined;
+
+  @Input() automationID: string | undefined;
+
   @Input() selected: string | undefined;
   @Input() options: string[] = [];
   // @Input() unit: string | undefined;

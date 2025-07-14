@@ -27,6 +27,9 @@ import { BrowserModule } from '@angular/platform-browser';
 })
 export class InputPlainComponent implements ControlValueAccessor, OnInit {
   @Input() label: string | undefined;
+
+  @Input() automationID: string | undefined;
+
   @Input() unit: string | undefined;
   @Output() inputChange = new EventEmitter<number>();
 

@@ -1,7 +1,7 @@
 <div class="dropdown">
-  <label for="dropdown">{{ label }}</label>
+  <label [attr.for]="automationID">{{ label }}</label>
   <select
-    id="dropdown"
+    [id]="automationID"
     [value]="selected"
     (change)="onSelectionChanged($event)"
   >

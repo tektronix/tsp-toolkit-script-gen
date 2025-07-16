@@ -1,12 +1,13 @@
 <div class="toggle-container">
   <span *ngIf="label" class="toggle-label">{{ label }}</span>
-    <div class="toggle-options-box">
+  <div class="toggle-options-box">
     <table>
       <tr>
         <td
           *ngFor="let option of options"
           class="toggle-option"
           [class.selected]="option === selectedOption"
+          [class.disabled]="disabled"
           (click)="toggleOption(option)"
         >
           {{ option }}

@@ -41,3 +41,17 @@
   border-radius: 5px;
   padding: 4px;
 }
+
+:host input:disabled,
+:host select:disabled,
+.input-numeric input:disabled,
+.input-numeric select:disabled {
+  background-color: var(
+    --vscode-editorWidget-background,
+    var(--vscode-input-background)
+  );
+  color: var(--vscode-disabledForeground, var(--vscode-input-foreground));
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-color: var(--vscode-editorWidget-border);
+}

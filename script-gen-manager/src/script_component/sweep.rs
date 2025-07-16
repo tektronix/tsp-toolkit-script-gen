@@ -146,19 +146,16 @@ impl SweepModel {
             if let Some(source_limitv) = &bias_channel.common_chan_attributes.source_limitv {
                 self.val_replacement_map.insert(
                     instr_name.clone() + ":LIMITV",
-                    self.format(source_limitv.value.abs()),
+                    self.format(source_limitv.value),
                 );
+            } else {
+                self.val_replacement_map
+                    .insert(instr_name.clone() + ":LIMITV", String::from("nil"));
             }
 
             self.val_replacement_map.insert(
                 instr_name.clone() + ":LIMITI",
-                self.format(
-                    bias_channel
-                        .common_chan_attributes
-                        .source_limiti
-                        .value
-                        .abs(),
-                ),
+                self.format(bias_channel.common_chan_attributes.source_limiti.value),
             );
 
             self.val_replacement_map.insert(
@@ -276,8 +273,11 @@ impl SweepModel {
             {
                 self.val_replacement_map.insert(
                     instr_name.clone() + ":LIMITV",
-                    self.format(source_limitv.value.abs()),
+                    self.format(source_limitv.value),
                 );
+            } else {
+                self.val_replacement_map
+                    .insert(instr_name.clone() + ":LIMITV", String::from("nil"));
             }
 
             self.val_replacement_map.insert(
@@ -287,8 +287,7 @@ impl SweepModel {
                         .start_stop_channel
                         .common_chan_attributes
                         .source_limiti
-                        .value
-                        .abs(),
+                        .value,
                 ),
             );
 
@@ -437,8 +436,11 @@ impl SweepModel {
             {
                 self.val_replacement_map.insert(
                     instr_name.clone() + ":LIMITV",
-                    self.format(source_limitv.value.abs()),
+                    self.format(source_limitv.value),
                 );
+            } else {
+                self.val_replacement_map
+                    .insert(instr_name.clone() + ":LIMITV", String::from("nil"));
             }
 
             self.val_replacement_map.insert(
@@ -448,8 +450,7 @@ impl SweepModel {
                         .start_stop_channel
                         .common_chan_attributes
                         .source_limiti
-                        .value
-                        .abs(),
+                        .value,
                 ),
             );
 
@@ -545,6 +546,9 @@ impl SweepModel {
                         .value,
                 ),
             );
+        } else {
+            self.val_replacement_map
+                .insert(String::from("MEASURE-DELAY"), String::from("nil"));
         }
 
         if sweep_config
@@ -566,6 +570,9 @@ impl SweepModel {
                         .value,
                 ),
             );
+        } else {
+            self.val_replacement_map
+                .insert(String::from("SOURCE-DELAY"), String::from("nil"));
         }
     }
 

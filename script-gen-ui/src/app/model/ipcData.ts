@@ -1,4 +1,4 @@
-import { IIpcDataInterface } from "./interface";
+import { IIpcDataInterface } from './interface';
 
 export class IpcData {
   request_type: string;

@@ -6,7 +6,11 @@ import {
   EventEmitter,
   forwardRef,
 } from '@angular/core';
-import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+import {
+  ControlValueAccessor,
+  FormsModule,
+  NG_VALUE_ACCESSOR,
+} from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { BrowserModule } from '@angular/platform-browser';
 
@@ -28,12 +32,15 @@ export class InputToggleComponent implements ControlValueAccessor {
   @Input() label: string | undefined;
   @Input() options: string[] = [];
   @Input() selectedOption: string | undefined;
+  @Input() disabled = false;
   @Output() toggleOptionChange = new EventEmitter<string>();
 
   private onChange: (value: string) => void = (value: string) => {
     console.log('Value changed:', value);
-    };
-  private onTouched: () => void = () => {console.log('Input touched'); };
+  };
+  private onTouched: () => void = () => {
+    console.log('Input touched');
+  };
 
   writeValue(value: string): void {
     this.selectedOption = value;
@@ -47,11 +54,14 @@ export class InputToggleComponent implements ControlValueAccessor {
     this.onTouched = fn;
   }
 
-  setDisabledState?(): void {
-    // Implement if needed
+  setDisabledState(isDisabled: boolean): void {
+    this.disabled = isDisabled;
   }
 
   toggleOption(option: string): void {
+    if (this.disabled) {
+      return;
+    }
     if (this.selectedOption !== option) {
       this.selectedOption = option;
       this.onChange(this.selectedOption);

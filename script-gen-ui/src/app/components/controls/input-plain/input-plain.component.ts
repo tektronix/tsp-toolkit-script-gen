@@ -3,9 +3,14 @@ import {
   Input,
   Output,
   EventEmitter,
-  forwardRef, OnInit,
+  forwardRef,
+  OnInit,
 } from '@angular/core';
-import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+import {
+  ControlValueAccessor,
+  FormsModule,
+  NG_VALUE_ACCESSOR,
+} from '@angular/forms';
 import { parseScientificInput, parseToDecimal } from '../input-parser.util'; // Import the parser
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
@@ -31,6 +36,7 @@ export class InputPlainComponent implements ControlValueAccessor, OnInit {
   @Input() automationID: string | undefined;
 
   @Input() unit: string | undefined;
+  @Input() disabled = false;
   @Output() inputChange = new EventEmitter<number>();
 
   private _value: number | undefined;
@@ -53,7 +59,10 @@ export class InputPlainComponent implements ControlValueAccessor, OnInit {
     }
     // console.log('displayvalue : ', this._displayValue);
     // Return the cached _displayValue or fallback to default
-    return this._displayValue || (this._value !== undefined ? `${this._value} ${this.unit}` : '');
+    return (
+      this._displayValue ||
+      (this._value !== undefined ? `${this._value} ${this.unit}` : '')
+    );
   }
 
   set displayValue(val: string) {
@@ -66,7 +75,7 @@ export class InputPlainComponent implements ControlValueAccessor, OnInit {
       if (this.onChange) {
         this.onChange(this._value);
       }
-      this.inputChange.emit(this._value);         // emitting the parsed value to rust
+      this.inputChange.emit(this._value); // emitting the parsed value to rust
     } else {
       // this._value = this._value;
       // console.log("value: ", this._value);

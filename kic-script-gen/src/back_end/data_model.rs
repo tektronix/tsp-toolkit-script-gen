@@ -1,36 +1,51 @@
-use script_gen_manager::{
-    device_manager::DeviceManager, model::sweep_data::sweep_model::SweepModel,
-};
+use script_gen_manager::model::sweep_data::sweep_model::SweepModel;
 use serde_json::json;
 
 use crate::back_end::ipc_data::IpcData;
 
 #[derive(Clone)]
 pub struct DataModel {
-    pub data: String,
-    pub sweep: Option<SweepModel>,
-    pub device_manager: DeviceManager,
+    pub sweep_model: SweepModel,
+}
+
+impl Default for DataModel {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl DataModel {
     pub fn new() -> Self {
         DataModel {
-            data: String::new(),
-            sweep: None,
-            device_manager: DeviceManager::new(),
+            sweep_model: SweepModel::new(),
         }
     }
 
-    pub fn process_system_info(&mut self, system_info: &str) -> String {
-        if self.device_manager.create_device_list(system_info) {
-            let mut sweep_model = SweepModel::new();
-            sweep_model.sweep_config.device_list = self.device_manager.device_list.clone();
-            sweep_model.sweep_config.auto_configure();
-
-            self.sweep = Some(sweep_model.clone());
-            self.serialize_sweep_model(&sweep_model, "initial_response", "Initialized sweep model")
+    pub fn process_system_config(&mut self, system_info: &str) -> String {
+        if self.sweep_model.sweep_config.device_list.is_empty() {
+            if self
+                .sweep_model
+                .sweep_config
+                .create_device_list(system_info)
+            {
+                self.sweep_model.sweep_config.auto_configure();
+                self.serialize_sweep_model(
+                    &self.sweep_model,
+                    "initial_response",
+                    "Initialized sweep model",
+                )
+            } else {
+                self.serialize_empty_response("empty_system_config_error", "No devices found")
+            }
         } else {
-            self.serialize_empty_response("empty_system_config_error", "No devices found")
+            self.sweep_model
+                .sweep_config
+                .update_devices_for_changed_slots(system_info);
+            self.serialize_sweep_model(
+                &self.sweep_model,
+                "evaluated_response",
+                "Updated sweep model with new system configuration",
+            )
         }
     }
 
@@ -57,14 +72,11 @@ impl DataModel {
         // Deserialize the JSON string into a serde_json::Value
         match serde_json::from_str::<SweepModel>(&data) {
             Ok(mut sweep_model) => {
-                println!(
-                    "Successfully deserialized JSON in server: {:?}",
-                    sweep_model
-                );
+                println!("Successfully deserialized JSON in server: {sweep_model:?}");
                 sweep_model.sweep_config.evaluate();
 
                 //update sweep variable - required for actual script generation
-                self.sweep = Some(sweep_model.clone());
+                self.sweep_model = sweep_model.clone();
                 self.serialize_sweep_model(
                     &sweep_model,
                     "evaluated_response",
@@ -72,8 +84,31 @@ impl DataModel {
                 )
             }
             Err(e) => {
-                println!("Failed to deserialize JSON: {}", e);
+                println!("Failed to deserialize JSON: {e}");
                 self.serialize_empty_response("error", "Failed to process sweep model")
+            }
+        }
+    }
+
+    pub fn process_data_from_saved_config(&mut self, data: String) -> String {
+        match serde_json::from_str::<SweepModel>(&data) {
+            Ok(mut sweep_model) => {
+                println!(
+                    "Successfully deserialized saved JSON in server: {:?}",
+                    sweep_model
+                );
+                sweep_model.sweep_config.evaluate();
+
+                self.sweep_model = sweep_model.clone();
+                self.serialize_sweep_model(
+                    &sweep_model,
+                    "evaluated_response",
+                    "Processed saved sweep model",
+                )
+            }
+            Err(e) => {
+                println!("Failed to deserialize saved JSON: {}", e);
+                self.serialize_empty_response("error", "Failed to process saved sweep model")
             }
         }
     }
@@ -103,10 +138,7 @@ impl DataModel {
     pub fn add_remove_channel(&mut self, ipc_data: IpcData) -> String {
         match serde_json::from_str::<SweepModel>(ipc_data.json_value.as_str()) {
             Ok(mut sweep_model) => {
-                println!(
-                    "Successfully deserialized JSON in server: {:?}",
-                    sweep_model
-                );
+                println!("Successfully deserialized JSON in server: {sweep_model:?}");
 
                 sweep_model.sweep_config.update_channel_devices();
                 let res: Vec<&str> = ipc_data.additional_info.split(',').collect();
@@ -122,7 +154,10 @@ impl DataModel {
                     );
                 }
 
-                self.sweep = Some(sweep_model.clone());
+                // remove unused and invalid channels
+                sweep_model.sweep_config.remove_unused_invalid_channels();
+
+                self.sweep_model = sweep_model.clone();
                 self.serialize_sweep_model(
                     &sweep_model,
                     "evaluated_response",
@@ -130,7 +165,7 @@ impl DataModel {
                 )
             }
             Err(e) => {
-                println!("Failed to deserialize JSON: {}", e);
+                println!("Failed to deserialize JSON: {e}");
                 self.serialize_empty_response("error", "Failed to process sweep model")
             }
         }
@@ -150,12 +185,12 @@ impl DataModel {
                     json_value: json_str,
                 };
                 serde_json::to_string(&ipc_data).unwrap_or_else(|e| {
-                    println!("Failed to serialize IpcData: {}", e);
+                    println!("Failed to serialize IpcData: {e}");
                     self.serialize_empty_response("error", "Serialization error")
                 })
             }
             Err(e) => {
-                println!("Failed to serialize sweep model: {}", e);
+                println!("Failed to serialize sweep model: {e}");
                 self.serialize_empty_response("error", "Serialization error")
             }
         }
@@ -168,8 +203,14 @@ impl DataModel {
             json_value: "{}".to_string(),
         };
         serde_json::to_string(&ipc_data).unwrap_or_else(|e| {
-            println!("Failed to serialize empty IpcData: {}", e);
+            println!("Failed to serialize empty IpcData: {e}");
             "{}".to_string()
         })
+    }
+
+    pub fn reset_sweep_config(&mut self) -> String {
+        self.sweep_model.sweep_config.reset();
+        let sweep_model_clone = self.sweep_model.clone();
+        self.serialize_sweep_model(&sweep_model_clone, "reset_response", "Sweep config reset")
     }
 }

@@ -1,3 +1,9 @@
+<div *ngIf="statusMsg">
+  <app-banner-display
+    [statusMsg]="statusMsg"
+    class="banner-display"
+  ></app-banner-display>
+</div>
 <div class="parent-container">
   <div class="input-container" style="overflow: auto; max-height: 100vh">
     <div class="timing-autorangebox">
@@ -103,8 +109,14 @@
               scrollToInstance('step', i);
               scrollToPlotInPlotContainer('step', i)
             "
-            [showStepList]="showStepListStates[stepChannel.start_stop_channel.common_chan_attributes.uuid] || false"
-            (showStepListChange)="onShowStepListChange($event.stepId, $event.value)"
+            [showStepList]="
+              showStepListStates[
+                stepChannel.start_stop_channel.common_chan_attributes.uuid
+              ] || false
+            "
+            (showStepListChange)="
+              onShowStepListChange($event.stepId, $event.value)
+            "
           ></app-step>
         </div>
       </div>
@@ -137,7 +149,7 @@
         <!-- <div>
         </div> -->
         <div class="checkbox">
-          <div style="display: inline-flex" >
+          <div style="display: inline-flex">
             <input
               type="checkbox"
               id="isListSweep"
@@ -145,9 +157,11 @@
               name="isListSweep"
               (change)="updateSweepGlobalParameters()"
             />
-            <label for="list" style="margin-top: 4.5vh; margin-left: 5px;" >List</label>
+            <label for="list" style="margin-top: 4.5vh; margin-left: 5px"
+              >List</label
+            >
           </div>
-          <div style="margin-top: 2.9vh;">
+          <div style="margin-top: 2.9vh">
             <button class="timing" (click)="enableList()">Edit</button>
             <app-list
               *ngIf="showList"

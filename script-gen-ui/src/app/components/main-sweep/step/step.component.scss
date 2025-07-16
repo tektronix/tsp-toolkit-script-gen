@@ -1,85 +1,85 @@
 :host {
-    display: block;
-    // width: 40%;
-    // background-color: var(--vscode-activityErrorBadge-foreground);
-    padding-left: 10px;
-    box-sizing: border-box;
-  }
+  display: block;
+  // width: 40%;
+  // background-color: var(--vscode-activityErrorBadge-foreground);
+  padding-left: 10px;
+  box-sizing: border-box;
+}
 
-  .component-box {
-    // background-color: var(--vscode-activityErrorBadge-foreground);
-    color: var(--vscode-editor-foreground);
-    border: 1px solid var(--vscode-editorWidget-border);
-    border-radius: 8px;
-    // padding: 12px;
-    margin: 10px 0;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden; /* Prevent elements from overflowing */
-    box-sizing: border-box; /* Include padding and borders in width */
-    width: 100%;
-  }
+.component-box {
+  // background-color: var(--vscode-activityErrorBadge-foreground);
+  color: var(--vscode-editor-foreground);
+  border: 1px solid var(--vscode-editorWidget-border);
+  border-radius: 8px;
+  // padding: 12px;
+  margin: 10px 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Prevent elements from overflowing */
+  box-sizing: border-box; /* Include padding and borders in width */
+  width: 100%;
+}
 
+.input-group {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  box-sizing: border-box; /* Include padding and borders in width */
+  max-width: 100%;
+  gap: 15px 20px;
+  padding: 12px;
+}
+
+@media (max-width: 130vh) {
   .input-group {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    box-sizing: border-box; /* Include padding and borders in width */
-    max-width: 100%;
+    grid-template-columns: 1fr;
     gap: 15px 20px;
     padding: 12px;
   }
+}
 
-  @media (max-width: 130vh) {
-    .input-group {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 15px 20px;
-      padding: 12px;
-    }
-  }
+.input-group label {
+  display: block;
+  // margin-bottom: 5px;
+}
 
-  .input-group label {
-    display: block;
-    // margin-bottom: 5px;
-  }
+.input-group input {
+  width: 96%;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 3px;
+  padding: 5px;
+}
 
-  .input-group input {
-    width: 96%;
-    background-color: var(--vscode-input-background);
-    color: var(--vscode-input-foreground);
-    border: 1px solid var(--vscode-input-border);
-    border-radius: 3px;
-    padding: 5px;
-  }
+h4 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: var(--vscode-editor-foreground);
+}
 
-  h4 {
-    margin-top: 0;
-    margin-bottom: 20px;
-    color: var(--vscode-editor-foreground);
-  }
+.remove-button {
+  align-self: flex-end;
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  border-radius: 3px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
 
-  .remove-button {
-    align-self: flex-end;
-    background-color: var(--vscode-button-background);
-    color: var(--vscode-button-foreground);
-    border: none;
-    border-radius: 3px;
-    padding: 5px 10px;
-    cursor: pointer;
-  }
+.remove-button:hover {
+  background-color: var(--vscode-button-hoverBackground);
+}
 
-  .remove-button:hover {
-    background-color: var(--vscode-button-hoverBackground);
-  }
-
-  .input-group-dropdown select {
-    width: 100%;
-    background-color: var(--vscode-input-background);
-    color: var(--vscode-input-foreground);
-    border: 1px solid var(--vscode-input-border);
-    border-radius: 3px;
-    padding: 5px;
-  }
+.input-group-dropdown select {
+  width: 100%;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 3px;
+  padding: 5px;
+}
 
   .step-start-stop-container {
     display: flex;
@@ -111,92 +111,113 @@
     border-radius: none;
   }
 
-  // .stop{
-  //   width: 94%;
-  //   background-color: var(--vscode-input-background);
-  //   color: var(--vscode-input-foreground);
-  //   border: 1px solid var(--vscode-editorWidget-border);
-  //   border-radius: 5px;
-  //   padding: 4px;
-  // }
+// .stop{
+//   width: 94%;
+//   background-color: var(--vscode-input-background);
+//   color: var(--vscode-input-foreground);
+//   border: 1px solid var(--vscode-editorWidget-border);
+//   border-radius: 5px;
+//   padding: 4px;
+// }
 
-  .expander {
-    display: flex;
-    border-radius: 7px;
-    justify-content: space-between;
-    color: var(--vscode-editor-foreground);
-    border-bottom: 1px solid var(--vscode-editorWidget-border);
-    padding-left: 10px;
-    padding-right: 10px;
-    font-size: smaller;
-    // background-color: var(--vscode-activityErrorBadge-foreground);
-    // border-top-left-radius: 12px;
-    // border-top-right-radius: 12px;
-  }
+.expander {
+  display: flex;
+  border-radius: 7px;
+  justify-content: space-between;
+  color: var(--vscode-editor-foreground);
+  border-bottom: 1px solid var(--vscode-editorWidget-border);
+  padding-left: 10px;
+  padding-right: 10px;
+  font-size: smaller;
+  // background-color: var(--vscode-activityErrorBadge-foreground);
+  // border-top-left-radius: 12px;
+  // border-top-right-radius: 12px;
+}
 
-  .button-icon {
-    background-color: transparent;
-    color: currentColor;
-    padding: 0;
-    border: none;
-  }
+.button-icon {
+  background-color: transparent;
+  color: currentColor;
+  padding: 0;
+  border: none;
+}
 
-  .numeric-control label{
-    // display: flex;
-    margin-top: 0;
-    width: 96%;
-  }
+.numeric-control label {
+  // display: flex;
+  margin-top: 0;
+  width: 96%;
+}
 
-  .checkbox{
-    display: flex;
-    align-items: anchor-center;
-    margin-left: auto;
-    margin-right: auto;
-  }
+.checkbox {
+  display: flex;
+  align-items: anchor-center;
+  margin-left: auto;
+  margin-right: auto;
+}
 
-  .checkbox input{
-    margin-top: 3.5vh;
-    box-sizing: border-box;
-    // appearance: none;
-    padding: 1.3vh;
-    border-radius: 3px;
-  }
+.checkbox input {
+  margin-top: 3.5vh;
+  box-sizing: border-box;
+  // appearance: none;
+  padding: 1.3vh;
+  border-radius: 3px;
+}
 
-  .timing{
-    border-radius: 10px;
-    background-color: var(--vscode-editor-background);
-    color: var(--vscode-activityBarBadge-foreground);
-    padding: 5px;
-    border-color: var(--vscode-activityBar-activeBorder);
-    border-style: solid;
-    border-width: thin;
-    padding-left: 10px;
-    padding-right: 10px;
-    // margin-left: 8vh;
-  }
+.input-group input[type="checkbox"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(
+    --vscode-editorWidget-background,
+    var(--vscode-input-background)
+  );
+  border-color: var(--vscode-editorWidget-border, var(--vscode-input-border));
+}
 
-  .h3{
-    padding: 0;
-    display: flex;
-    margin-top: 8px;
-    margin-bottom: 5px;
-    padding-right: 5px;
-  }
+.timing {
+  border-radius: 10px;
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-activityBarBadge-foreground);
+  padding: 5px;
+  border-color: var(--vscode-activityBar-activeBorder);
+  border-style: solid;
+  border-width: thin;
+  padding-left: 10px;
+  padding-right: 10px;
+  // margin-left: 8vh;
+}
 
-  .delete-button-icon {
-    background-color: transparent;
-    color: currentColor;
-    padding: 0;
-    border: none;
-    padding-top: 5px;
-  }
+button.timing:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(
+    --vscode-editorWidget-background,
+    var(--vscode-input-background)
+  );
+  color: var(--vscode-disabledForeground, var(--vscode-input-foreground));
+  border-color: var(--vscode-editorWidget-border, var(--vscode-input-border));
+}
 
-  .delete-button-icon mat-icon {
-    -webkit-user-select: none;
-    user-select: none;
-    background-repeat: no-repeat;
-    display: inline-block;
-    fill: currentColor;
-    font-size: 20px;
-    overflow: hidden;
-  }
+.h3 {
+  padding: 0;
+  display: flex;
+  margin-top: 8px;
+  margin-bottom: 5px;
+  padding-right: 5px;
+}
+
+.delete-button-icon {
+  background-color: transparent;
+  color: currentColor;
+  padding: 0;
+  border: none;
+  padding-top: 5px;
+}
+
+.delete-button-icon mat-icon {
+  -webkit-user-select: none;
+  user-select: none;
+  background-repeat: no-repeat;
+  display: inline-block;
+  fill: currentColor;
+  font-size: 20px;
+  overflow: hidden;
+}

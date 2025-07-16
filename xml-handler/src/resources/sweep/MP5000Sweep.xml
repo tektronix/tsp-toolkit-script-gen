@@ -31,7 +31,6 @@
 	<substitute name="NPLC">%NPLC%</substitute>
 	<substitute name="SOURCE-DELAY">%SOURCE-DELAY%</substitute>
 	<substitute name="MEASURE-DELAY">%MEASURE-DELAY%</substitute>
-	<substitute name="MEASURE-POINT-TIME">%MEASURE-POINT-TIME%</substitute>
 	<substitute name="EFFECTIVE-FILTER-COUNT">%EFFECTIVE-FILTER-COUNT%</substitute>
 	<snippet>
         --------------------------------------------------------------------------------
@@ -1107,15 +1106,12 @@
 
         local errorTag              = &quot;[{error}]&quot;
 
-        local measurePointTime      = %MEASURE-POINT-TIME%
-
         local numberOfSteps         = %STEP-COUNT%
         local numberOfSweeps        = %SWEEP-POINTS%
 
         local stepToSweepDelay      = %STEP-TO-SWEEP-DELAY%
 
         local nplc                  = %NPLC%
-        local lineFrequency         = %LINE-FREQUENCY%
 
         local source_delay          = %SOURCE-DELAY%
         local measure_delay         = %MEASURE-DELAY%
@@ -1238,10 +1234,10 @@
                 source = {
 
                     -- IF linear sweep --
-                    values = { start = %START%, stop = %STOP%, count = %%STEP-COUNT%% },
+                    values = { start = %START%, stop = %STOP%, count = %STEP-COUNT% },
 
                     --IF log sweep --
-                    values = { start = %START%, stop = %STOP%, count = %%STEP-COUNT%%},
+                    values = { start = %START%, stop = %STOP%, count = %STEP-COUNT%},
 
                     --IF LIST --
                     values = { list = {%LIST%}},
@@ -1308,7 +1304,6 @@
         <substitute name="SWEEP-DEVICE:SRANGE">%SRANGE%</substitute>
         <substitute name="SWEEP-DEVICE:START">%START%</substitute>
         <substitute name="SWEEP-DEVICE:STOP">%STOP%</substitute>
-        <substitute name="SWEEP-DEVICE:SWEEP-POINTS">%SWEEP-POINTS%</substitute>
         <substitute name="SWEEP-DEVICE:LIST">%LIST%</substitute>
         <substitute name="SWEEP-DEVICE:MFUNCTION">%MFUNCTION%</substitute>
         <substitute name="SWEEP-DEVICE:SENSE">%SENSE%</substitute>

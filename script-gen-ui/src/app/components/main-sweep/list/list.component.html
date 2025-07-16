@@ -12,6 +12,7 @@
           name="noOfPointsOrSteps"
           *ngIf="noOfPointsOrSteps"
           (keydown.enter)="emitStepsOrPoints()"
+          [disabled]="!isNoOfPointsOrSteps"
         ></app-input-numeric>
       </div>
       <div class="sweep-list-popup-inputs">
@@ -38,6 +39,7 @@
                   [(ngModel)]="sweep.list[i].value"
                   (keydown.enter)="onEnter()"
                   style="width: 95%"
+                  [disabled]="!sweep.isDeviceValid"
                 ></app-input-plain>
               </td>
             </tr>

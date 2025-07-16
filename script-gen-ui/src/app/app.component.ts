@@ -60,10 +60,9 @@ export class AppComponent implements OnInit, OnDestroy {
       // Handle based on the request_type
       if (
         ipcData.request_type === 'initial_response' ||
-        ipcData.request_type === 'evaluated_response'
+        ipcData.request_type === 'evaluated_response' ||
+        ipcData.request_type === 'reset_response'
       ) {
-        console.log('Response type:', ipcData.request_type);
-
         // Parse the json_value as the SweepModel
         const data = JSON.parse(ipcData.json_value);
         if (data.sweep_model) {

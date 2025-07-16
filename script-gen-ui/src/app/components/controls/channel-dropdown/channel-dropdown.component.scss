@@ -14,17 +14,17 @@
 //   padding: 4px;
 // }
 
-.dropdown {
+.channel-dropdown {
   display: flex;
   flex-direction: column;
   width: 100%;
 }
 
-.dropdown label {
+.channel-dropdown label {
   margin-bottom: 5px;
 }
 
-.dropdown select {
+.channel-dropdown select {
   width: 100%;
   background-color: var(--vscode-input-background);
   color: var(--vscode-input-foreground);
@@ -33,13 +33,10 @@
   padding: 4px;
 }
 
-.dropdown select:disabled {
-  background-color: var(
-    --vscode-editorWidget-background,
-    var(--vscode-input-background)
-  );
-  color: var(--vscode-disabledForeground, var(--vscode-input-foreground));
-  opacity: 0.6;
-  cursor: not-allowed;
-  border-color: var(--vscode-editorWidget-border);
+.channel-dropdown select.invalid-select {
+  border: 2px solid var(--vscode-editorOverviewRuler-errorForeground);
+}
+
+.invalid-option {
+  color: var(--vscode-editorOverviewRuler-errorForeground);
 }

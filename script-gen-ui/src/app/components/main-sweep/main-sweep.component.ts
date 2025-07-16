@@ -35,6 +35,8 @@ import { BrowserModule } from '@angular/platform-browser';
 import { PlotContainerComponent } from './plot-container/plot-container.component';
 import { InputNumericComponent } from '../controls/input-numeric/input-numeric.component';
 import { ListComponent } from './list/list.component';
+import { BannerDisplayComponent } from './banner-display/banner-display.component';
+import { StatusMsg } from '../../model/sweep_data/statusMsg';
 
 @Component({
   selector: 'app-main-sweep',
@@ -51,6 +53,7 @@ import { ListComponent } from './list/list.component';
     TimingComponent,
     PlotContainerComponent,
     ListComponent,
+    BannerDisplayComponent,
   ],
   templateUrl: './main-sweep.component.html',
   styleUrls: ['./main-sweep.component.scss'],
@@ -106,7 +109,11 @@ export class MainSweepComponent implements OnChanges {
 
   sweepPoints: ParameterInt | undefined;
   isListSweep = false; // list sweep checkbox
-  sweepListsWithNames: { chanName: string; list: ParameterFloat[] }[] = [];
+  sweepListsWithNames: {
+    chanName: string;
+    list: ParameterFloat[];
+    isDeviceValid: boolean;
+  }[] = [];
 
   showStepListStates: Record<string, boolean> = {}; // step list pop up box boolean tracking
 
@@ -116,6 +123,8 @@ export class MainSweepComponent implements OnChanges {
   isStepExpanded = false;
   isSweepExpanded = false;
   channelsExpanderState: Map<string, boolean> = new Map<string, boolean>();
+  statusMsg: StatusMsg | undefined;
+  private statusMsgTimeout: number | undefined;
 
   constructor(private webSocketService: WebSocketService) {}
 
@@ -198,6 +207,7 @@ export class MainSweepComponent implements OnChanges {
       this.isListSweep = this.sweepGlobalParameters.list_sweep;
       // this.list = this.sweepChannels[0].list;
       this.updateSweepListsWithNames();
+      this.updateStatusMsg();
 
       this.biasChannels.forEach((biasChannel) => {
         const uuid = biasChannel.common_chan_attributes.uuid;
@@ -263,14 +273,36 @@ export class MainSweepComponent implements OnChanges {
     this.sweepChannels.forEach((sweepChannel) =>
       this.updateSweepChannelsConfig(sweepChannel)
     );
-    console.log('listOfSweepPointsUpdate', this.sweepListsWithNames);
   }
 
   updateSweepListsWithNames() {
-    this.sweepListsWithNames = this.sweepChannels.map((sweep) => ({
-      chanName: sweep.start_stop_channel.common_chan_attributes.chan_name, // or the correct property for channel name
-      list: sweep.start_stop_channel.list, // ParameterFloat[]
-    }));
+    this.sweepListsWithNames = this.sweepChannels.map((sweep) => {
+      const matchingDevice = this.deviceList.find(
+        (device) =>
+          device._id ===
+          sweep.start_stop_channel.common_chan_attributes.device_id
+      );
+      return {
+        chanName: sweep.start_stop_channel.common_chan_attributes.chan_name,
+        list: sweep.start_stop_channel.list,
+        isDeviceValid: matchingDevice ? matchingDevice.is_valid : false,
+      };
+    });
+  }
+
+  updateStatusMsg() {
+    if (this.sweepConfig && this.sweepConfig.status_msg) {
+      this.statusMsg = this.sweepConfig.status_msg;
+
+      // Clear any previous timeout
+      if (this.statusMsgTimeout !== undefined) {
+        window.clearTimeout(this.statusMsgTimeout);
+      }
+      // Set a new timeout to clear the statusMsg after 5 seconds
+      this.statusMsgTimeout = window.setTimeout(() => {
+        this.statusMsg = undefined;
+      }, 5000);
+    }
   }
 
   sweepPointsUpdatefromList(points: number) {

@@ -1,0 +1,17 @@
+<div class="channel-dropdown">
+  <label for="channel-dropdown">{{ label }}</label>
+  <select
+    id="channel-dropdown"
+    [ngClass]="{ 'invalid-select': selected && !selected.isValid }"
+    [value]="selected?.value"
+    (change)="onSelectionChanged($event)"
+  >
+    <option
+      *ngFor="let option of options"
+      [value]="option.value"
+      [ngClass]="{ 'invalid-option': !option.isValid }"
+    >
+      {{ option.value }}
+    </option>
+  </select>
+</div>

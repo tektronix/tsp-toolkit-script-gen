@@ -4,9 +4,14 @@ import {
   EventEmitter,
   forwardRef,
   Input,
-  Output, OnInit,
+  Output,
+  OnInit,
 } from '@angular/core';
-import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
+import {
+  ControlValueAccessor,
+  FormsModule,
+  NG_VALUE_ACCESSOR,
+} from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { BrowserModule } from '@angular/platform-browser';
 
@@ -26,6 +31,7 @@ import { BrowserModule } from '@angular/platform-browser';
 })
 export class InputNumericComponent implements ControlValueAccessor, OnInit {
   @Input() label: string | undefined;
+  @Input() disabled = false;
 
   @Input() automationID: string | undefined;
 

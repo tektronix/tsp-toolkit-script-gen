@@ -4,7 +4,8 @@ import {
   Input,
   Output,
   EventEmitter,
-  forwardRef, OnInit,
+  forwardRef,
+  OnInit,
 } from '@angular/core';
 import {
   ControlValueAccessor,
@@ -35,6 +36,7 @@ export class DropdownComponent implements ControlValueAccessor, OnInit {
 
   @Input() selected: string | undefined;
   @Input() options: string[] = [];
+  @Input() disabled = false;
   // @Input() unit: string | undefined;
   @Output() selectedChange = new EventEmitter<string>();
 

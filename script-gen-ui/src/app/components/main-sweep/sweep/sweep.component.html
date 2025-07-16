@@ -9,14 +9,22 @@
   <div
     class="expander"
     [style.background-color]="
-      isActive ? 'var(--vscode-activityBar-background)' : 'transparent'
+      selectedDeviceOption?.isValid
+        ? isActive
+          ? 'var(--vscode-activityBar-background)'
+          : 'transparent'
+        : 'var(--vscode-editorOverviewRuler-errorForeground)'
     "
   >
-    <div style="display: flex;">
+    <div style="display: flex">
       <mat-icon (click)="toggleSweepChannel()" class="h3">
-        {{ isSweepExpanded ? 'expand_more' : 'chevron_right' }}
+        {{ isSweepExpanded ? "expand_more" : "chevron_right" }}
       </mat-icon>
-      <h3 tabindex="0" (click)="toggleSweepChannel()" (keydown)="handleKeydown($event)">
+      <h3
+        tabindex="0"
+        (click)="toggleSweepChannel()"
+        (keydown)="handleKeydown($event)"
+      >
         {{ chanName }}
       </h3>
     </div>
@@ -26,15 +34,15 @@
   </div>
   <div *ngIf="isSweepExpanded" class="input-group">
     <div>
-      <app-dropdown
-        [(ngModel)]="deviceID"
+      <app-channel-dropdown
+        [(ngModel)]="selectedDeviceOption"
         [label]="'ID'"
-        [selected]="deviceID"
-        [options]="dropdownDeviceList"
-        *ngIf="deviceID"
-        name="deviceID"
+        [selected]="selectedDeviceOption"
+        [options]="deviceOptionList"
+        *ngIf="selectedDeviceOption"
+        name="selectedDeviceOption"
         (selectedChange)="onDeviceIDChange($event)"
-      ></app-dropdown>
+      ></app-channel-dropdown>
     </div>
     <div class="sweep-start-stop-container">
       <app-input-plain
@@ -44,6 +52,7 @@
         *ngIf="start"
         name="start"
         (inputChange)="submitSweepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>
       <app-input-plain
         [(ngModel)]="stop.value"
@@ -52,6 +61,7 @@
         *ngIf="stop"
         name="stop"
         (inputChange)="submitSweepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>
     </div>
     <div>
@@ -62,6 +72,7 @@
         *ngIf="sourceFunction"
         name="sourceFunction"
         (toggleOptionChange)="submitSweepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-toggle>
     </div>
     <div>
@@ -73,6 +84,7 @@
         *ngIf="sourceRange"
         name="sourceRange"
         (selectedChange)="submitSweepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-dropdown>
     </div>
     <div>
@@ -84,6 +96,7 @@
         *ngIf="measFunction"
         name="measFunction"
         (selectedChange)="submitSweepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-dropdown>
     </div>
     <div>
@@ -95,6 +108,7 @@
         *ngIf="measRange"
         name="measRange"
         (selectedChange)="submitSweepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-dropdown>
     </div>
     <div>
@@ -105,6 +119,7 @@
         *ngIf="style"
         name="style"
         (toggleOptionChange)="submitSweepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-toggle>
     </div>
     <div>
@@ -116,6 +131,7 @@
         *ngIf="senseMode"
         name="senseMode"
         (selectedChange)="submitSweepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-dropdown>
     </div>
     <div>
@@ -126,6 +142,7 @@
         *ngIf="sourceLimitI"
         name="sourceLimitI"
         (inputChange)="submitSweepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>
     </div>
     <div>
@@ -136,6 +153,7 @@
         *ngIf="sourceLimitV"
         name="sourceLimitV"
         (inputChange)="submitSweepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>
     </div>
   </div>

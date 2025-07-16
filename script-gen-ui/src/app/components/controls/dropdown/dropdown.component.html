@@ -4,6 +4,7 @@
     [id]="automationID"
     [value]="selected"
     (change)="onSelectionChanged($event)"
+    [disabled]="disabled"
   >
     <!-- <option *ngIf="defaultOption" [value]="defaultOption">{{ defaultOption }}</option> -->
     <option *ngFor="let option of options" [value]="option">

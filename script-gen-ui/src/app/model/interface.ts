@@ -99,12 +99,29 @@ export interface ISweepGlobalParameters {
 
 export interface IDevice {
   node_id: string;
+  slot_id: string;
+  chan_num: number;
   _id: string;
-  device_type: DeviceType;
 
   model: string;
-  fw_version: string;
+  device_type: DeviceType;
+
   in_use: boolean;
+  is_valid: boolean;
+
+  fw_version: string;
+}
+
+export enum StatusType {
+  Info,
+  Warning,
+  Error,
+}
+
+export interface IStatusMsg {
+  status_type: StatusType;
+  message: string;
+  time_stamp: string;
 }
 
 export interface ISweepConfig {
@@ -115,6 +132,7 @@ export interface ISweepConfig {
   step_global_parameters: IStepGlobalParameters;
   sweep_global_parameters: ISweepGlobalParameters;
   device_list: IDevice[];
+  status_msg?: IStatusMsg;
 }
 
 export interface ISweepModel {

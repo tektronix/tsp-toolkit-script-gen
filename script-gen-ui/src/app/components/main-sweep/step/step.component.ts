@@ -6,7 +6,6 @@ import {
   SimpleChanges,
   OnChanges,
   ElementRef,
-  OnInit,
 } from '@angular/core';
 import {
   ParameterInt,
@@ -18,6 +17,7 @@ import { StepChannel } from '../../../model/chan_data/stepChannel';
 import { CommonChanAttributes } from '../../../model/chan_data/defaultChannel';
 import { StepGlobalParameters } from '../../../model/sweep_data/stepSweepConfig';
 import { Device } from '../../../model/device_data/device';
+import { Option } from '../../../model/chan_data/defaultChannel';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -27,6 +27,7 @@ import { InputNumericComponent } from '../../controls/input-numeric/input-numeri
 import { InputPlainComponent } from '../../controls/input-plain/input-plain.component';
 import { InputToggleComponent } from '../../controls/input-toggle/input-toggle.component';
 import { ListComponent } from '../list/list.component';
+import { ChannelDropdownComponent } from '../../controls/channel-dropdown/channel-dropdown.component';
 
 @Component({
   selector: 'app-step',
@@ -39,18 +40,19 @@ import { ListComponent } from '../list/list.component';
     CommonModule,
     MatIconModule,
     DropdownComponent,
+    ChannelDropdownComponent,
     InputNumericComponent,
     InputPlainComponent,
     InputToggleComponent,
     ListComponent,
   ],
 })
-export class StepComponent implements OnChanges, OnInit {
+export class StepComponent implements OnChanges {
   commonChanAttributes: CommonChanAttributes | undefined;
   chanName = '';
-  deviceID = '';
+  selectedDeviceOption: Option | undefined;
   uuid = '';
-  dropdownDeviceList: string[] = [];
+  deviceOptionList: Option[] = [];
 
   sourceRange: ChannelRange | undefined;
   sourceFunction: ParameterString | undefined;
@@ -96,6 +98,84 @@ export class StepComponent implements OnChanges, OnInit {
 
   @Output() listOfStepPoints = new EventEmitter<ParameterFloat[]>();
   stepPointsList: ParameterFloat[][] = [];
+  stepListsWithNames: {
+    chanName: string;
+    list: ParameterFloat[];
+    isDeviceValid: boolean;
+  }[] = [];
+  expandedStepChannels: Record<string, boolean> = {};
+
+  constructor(public elementRef: ElementRef) {}
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['stepChannel']) {
+      // Handle the change in biasChannel here if needed
+      this.updateAll();
+    }
+  }
+
+  updateAll() {
+    if (this.stepChannel && this.stepGlobalParameters) {
+      this.commonChanAttributes =
+        this.stepChannel.start_stop_channel.common_chan_attributes;
+      this.chanName = this.commonChanAttributes.chan_name;
+      this.uuid = this.commonChanAttributes.uuid;
+
+      this.sourceFunction = this.commonChanAttributes.source_function;
+      this.measFunction = this.commonChanAttributes.meas_function;
+      this.sourceRange = this.commonChanAttributes.source_range;
+      this.measRange = this.commonChanAttributes.meas_range;
+      this.sourceLimitI = this.commonChanAttributes.source_limiti;
+      this.sourceLimitV = this.commonChanAttributes.source_limitv;
+      this.senseMode = this.commonChanAttributes.sense_mode;
+
+      this.start = this.stepChannel.start_stop_channel.start;
+      this.stop = this.stepChannel.start_stop_channel.stop;
+      this.style = this.stepChannel.start_stop_channel.style;
+
+      this.stepPoints = this.stepGlobalParameters.step_points;
+      this.stepToSweepDelay = this.stepGlobalParameters.step_to_sweep_delay;
+      this.listStep = this.stepGlobalParameters.list_step;
+      // this.listStep = true;
+      this.list = this.stepChannel.start_stop_channel.list;
+
+      if (this.deviceList) {
+        this.deviceOptionList = this.deviceList
+          .filter(
+            (device) =>
+              !device.in_use ||
+              device._id === this.commonChanAttributes?.device_id
+          ) // Include current device even if in use
+          .map((device) => new Option(device._id, device.is_valid)); // Create Option objects
+
+        // Set the selected device option based on the step channel's device ID
+        this.selectedDeviceOption = this.deviceOptionList.find(
+          (option) => option.value === this.commonChanAttributes?.device_id // Match by device ID
+        );
+      }
+
+      this.updateStepListsWithNames();
+    }
+  }
+
+  updateStepListsWithNames() {
+    if (this.stepChannel) {
+      const matchingDevice = this.deviceList.find(
+        (device) =>
+          device._id ===
+          this.stepChannel?.start_stop_channel.common_chan_attributes.device_id
+      );
+      this.stepListsWithNames = [
+        {
+          chanName:
+            this.stepChannel.start_stop_channel.common_chan_attributes
+              .chan_name,
+          list: this.stepChannel.start_stop_channel.list,
+          isDeviceValid: matchingDevice ? matchingDevice.is_valid : false,
+        },
+      ];
+    }
+  }
 
   toggleFocus(state: boolean): void {
     this.isFocused = state;
@@ -121,71 +201,6 @@ export class StepComponent implements OnChanges, OnInit {
     });
   }
 
-  expandedStepChannels: Record<string, boolean> = {};
-
-  constructor(public elementRef: ElementRef) {}
-
-  ngOnInit() {
-    this.updateStepListsWithNames();
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['stepChannel']) {
-      // Handle the change in biasChannel here if needed
-      this.updateAll();
-    }
-  }
-
-  stepListsWithNames: { chanName: string; list: ParameterFloat[] }[] = [];
-
-  updateStepListsWithNames() {
-    if (this.stepChannel) {
-      this.stepListsWithNames = [
-        {
-          chanName:
-            this.stepChannel.start_stop_channel.common_chan_attributes
-              .chan_name,
-          list: this.stepChannel.start_stop_channel.list,
-        },
-      ];
-    }
-  }
-
-  updateAll() {
-    if (this.stepChannel && this.stepGlobalParameters) {
-      this.commonChanAttributes =
-        this.stepChannel.start_stop_channel.common_chan_attributes;
-      this.chanName = this.commonChanAttributes.chan_name;
-      this.deviceID = this.commonChanAttributes.device_id;
-      this.uuid = this.commonChanAttributes.uuid;
-
-      this.sourceFunction = this.commonChanAttributes.source_function;
-      this.measFunction = this.commonChanAttributes.meas_function;
-      this.sourceRange = this.commonChanAttributes.source_range;
-      this.measRange = this.commonChanAttributes.meas_range;
-      this.sourceLimitI = this.commonChanAttributes.source_limiti;
-      this.sourceLimitV = this.commonChanAttributes.source_limitv;
-      this.senseMode = this.commonChanAttributes.sense_mode;
-
-      this.start = this.stepChannel.start_stop_channel.start;
-      this.stop = this.stepChannel.start_stop_channel.stop;
-      this.style = this.stepChannel.start_stop_channel.style;
-
-      this.stepPoints = this.stepGlobalParameters.step_points;
-      this.stepToSweepDelay = this.stepGlobalParameters.step_to_sweep_delay;
-      this.listStep = this.stepGlobalParameters.list_step;
-      // this.listStep = true;
-      this.list = this.stepChannel.start_stop_channel.list;
-
-      if (this.deviceList) {
-        this.dropdownDeviceList = this.deviceList
-          .filter((device) => !device.in_use) // Filter devices where in_use is false
-          .map((device) => device._id);
-        this.dropdownDeviceList.push(this.deviceID); // Add the current device ID to the list
-      }
-    }
-  }
-
   toggleStepChannel(): void {
     this.isStepExpanded = !this.isStepExpanded;
     // this.expandedStepChannels[stepName] = !this.expandedStepChannels[stepName];
@@ -196,7 +211,7 @@ export class StepComponent implements OnChanges, OnInit {
   }
 
   removeStep() {
-    this.emitStepChannelDelete.emit(this.deviceID);
+    this.emitStepChannelDelete.emit(this.selectedDeviceOption?.value || '');
   }
 
   getStepChanConfigFromComponent(): StepChannel {
@@ -205,7 +220,7 @@ export class StepComponent implements OnChanges, OnInit {
         common_chan_attributes: {
           uuid: this.uuid,
           chan_name: this.chanName,
-          device_id: this.deviceID,
+          device_id: this.selectedDeviceOption?.value || '',
           source_function: this.sourceFunction!,
           meas_function: this.measFunction!,
           source_range: this.sourceRange!,
@@ -217,7 +232,7 @@ export class StepComponent implements OnChanges, OnInit {
         start: this.start!,
         stop: this.stop!,
         style: this.style!,
-        list: this.list
+        list: this.list,
       },
     });
   }
@@ -234,12 +249,12 @@ export class StepComponent implements OnChanges, OnInit {
     this.emitStepData.emit(this.getStepChanConfigFromComponent());
   }
 
-  onDeviceIDChange($event: string) {
+  onDeviceIDChange($event: Option) {
     if (this.stepChannel) {
       this.emitStepChannelIdChange.emit({
         oldChanId:
           this.stepChannel.start_stop_channel.common_chan_attributes.device_id,
-        newChanId: $event,
+        newChanId: $event.value,
       });
     }
   }
@@ -256,10 +271,9 @@ export class StepComponent implements OnChanges, OnInit {
   listOfStepPointsUpdate(
     points: { chanName: string; list: ParameterFloat[] }[]
   ) {
-    this.stepListsWithNames = points;
+    //this.stepListsWithNames = points;
     this.list = points[0].list;
-    // this.submitStepData();
-    this.submitStepGlobalParamsData();
+    this.submitStepData();
   }
 
   stepPointsUpdatefromList(steps: number) {

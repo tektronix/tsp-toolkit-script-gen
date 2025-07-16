@@ -33,14 +33,19 @@ impl fmt::Display for DeviceType {
 /// Represents a device in one of the mainframe slots.
 #[derive(Debug, Clone, Serialize)]
 pub struct Device {
-    node_id: String,
+    pub node_id: String,
+    pub slot_id: String,
+    pub chan_num: i32,
     pub _id: String,
+
+    pub model: String,
     pub device_type: DeviceType,
 
-    model: String,
-    fw_version: String,
     pub in_use: bool,
+    //used to indicate if the device matches current system configuration or not
+    pub is_valid: bool,
 
+    fw_version: String,
     #[serde(skip)]
     pub metadata: MetadataEnum,
 }
@@ -53,11 +58,17 @@ impl<'de> Deserialize<'de> for Device {
         #[derive(Deserialize)]
         struct DeviceData {
             node_id: String,
+            slot_id: String,
+            chan_num: i32,
             _id: String,
-            device_type: DeviceType,
+
             model: String,
-            fw_version: String,
+            device_type: DeviceType,
+
             in_use: bool,
+            is_valid: bool,
+
+            fw_version: String,
         }
 
         let device_data = DeviceData::deserialize(deserializer)?;
@@ -70,11 +81,17 @@ impl<'de> Deserialize<'de> for Device {
 
         Ok(Device {
             node_id: device_data.node_id,
+            slot_id: device_data.slot_id,
+            chan_num: device_data.chan_num,
             _id: device_data._id,
-            device_type: device_data.device_type,
+
             model: device_data.model,
-            fw_version: device_data.fw_version,
+            device_type: device_data.device_type,
+
             in_use: device_data.in_use,
+            is_valid: device_data.is_valid,
+
+            fw_version: device_data.fw_version,
             metadata,
         })
     }
@@ -84,12 +101,17 @@ impl Default for Device {
     fn default() -> Self {
         Device {
             node_id: String::new(),
+            slot_id: String::new(),
+            chan_num: 0,
             _id: String::new(),
-            device_type: DeviceType::Unknown,
 
             model: String::new(),
-            fw_version: String::new(),
+            device_type: DeviceType::Unknown,
+
             in_use: false,
+            is_valid: true,
+
+            fw_version: String::new(),
             metadata: MetadataEnum::Base(BaseMetadata::default()),
         }
     }
@@ -112,14 +134,14 @@ impl Device {
         mainframe_name: String,
         mainframe_model: String,
         slot: &Slot,
-        channel_id: i32,
+        chan_num: i32,
     ) -> Self {
         let device_type = match MODEL_MAP.get(&slot.module) {
             Some(&"Smu") => DeviceType::Smu,
             Some(&"Psu") => DeviceType::Psu,
             _ => DeviceType::Unknown, // Handle unknown device types
         };
-        let (node_id, _id) = Device::parse_id(mainframe_name, slot, channel_id, &device_type);
+        let (node_id, _id) = Device::parse_id(mainframe_name, slot, chan_num, &device_type);
         let metadata = match device_type {
             DeviceType::Smu => MetadataEnum::Msmu60(Msmu60Metadata::new()),
             DeviceType::Psu => MetadataEnum::Mpsu50(Mpsu50Metadata::new()),
@@ -127,12 +149,17 @@ impl Device {
         };
         Device {
             node_id,
+            slot_id: slot.slot_id.clone(),
+            chan_num,
             _id,
-            device_type,
 
             model: slot.module.clone(),
-            fw_version: String::new(),
+            device_type,
+
             in_use: false,
+            is_valid: true, // Default to true, can be updated later
+
+            fw_version: String::new(),
             metadata,
         }
     }
@@ -202,6 +229,14 @@ impl Device {
     /// Returns metadata associated with this device type
     pub fn get_metadata(&self) -> MetadataEnum {
         self.metadata.clone()
+    }
+
+    pub fn update_node_info(&mut self, node_id: String) {
+        let parts: Vec<&str> = self._id.split('.').collect();
+        if parts.len() == 3 {
+            self._id = format!("{}.{}.{}", node_id, parts[1], parts[2]);
+        }
+        self.node_id = node_id;
     }
 }
 

@@ -9,7 +9,11 @@
   <div
     class="expander"
     [style.background-color]="
-      isActive ? 'var(--vscode-activityBar-background)' : 'transparent'
+      selectedDeviceOption?.isValid
+        ? isActive
+          ? 'var(--vscode-activityBar-background)'
+          : 'transparent'
+        : 'var(--vscode-editorOverviewRuler-errorForeground)'
     "
   >
     <div style="display: flex">
@@ -30,15 +34,15 @@
   </div>
   <div *ngIf="isBiasChanExpanded" class="input-group">
     <div>
-      <app-dropdown
-        [(ngModel)]="deviceID"
+      <app-channel-dropdown
+        [(ngModel)]="selectedDeviceOption"
         [label]="'ID'"
-        [selected]="deviceID"
-        [options]="dropdownDeviceList"
+        [selected]="selectedDeviceOption"
+        [options]="deviceOptionList"
         (selectedChange)="onDeviceIDChange($event)"
-        *ngIf="deviceID"
-        name="deviceID"
-      ></app-dropdown>
+        *ngIf="selectedDeviceOption"
+        name="selectedDeviceOption"
+      ></app-channel-dropdown>
     </div>
     <div>
       <app-input-plain
@@ -48,6 +52,7 @@
         *ngIf="bias"
         name="bias"
         (inputChange)="submitBiasData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>
     </div>
     <div>
@@ -58,6 +63,7 @@
         *ngIf="sourceFunction"
         name="sourceFunction"
         (toggleOptionChange)="submitBiasData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-toggle>
     </div>
     <div>
@@ -69,6 +75,7 @@
         *ngIf="sourceRange"
         name="sourceRange"
         (change)="submitBiasData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-dropdown>
     </div>
     <div>
@@ -80,6 +87,7 @@
         *ngIf="measFunction"
         name="measFunction"
         (selectedChange)="submitBiasData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-dropdown>
     </div>
     <div>
@@ -91,6 +99,7 @@
         *ngIf="measRange"
         name="measRange"
         (selectedChange)="submitBiasData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-dropdown>
     </div>
     <div>
@@ -102,6 +111,7 @@
         *ngIf="senseMode"
         name="senseMode"
         (selectedChange)="submitBiasData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-dropdown>
     </div>
     <div>
@@ -112,6 +122,7 @@
         *ngIf="sourceLimitI"
         name="sourceLimitI"
         (inputChange)="submitBiasData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>
     </div>
     <div>
@@ -122,6 +133,7 @@
         *ngIf="sourceLimitV"
         name="sourceLimitV"
         (inputChange)="submitBiasData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>
     </div>
   </div>

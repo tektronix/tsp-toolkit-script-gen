@@ -77,7 +77,7 @@ impl SmuTiming {
             BaseMetadata::OFF_VALUE.to_string(),
             BaseMetadata::ON_VALUE.to_string(),
         ];
-        self.source_auto_delay.value = BaseMetadata::ON_VALUE.to_string();
+        self.source_auto_delay.value = BaseMetadata::OFF_VALUE.to_string();
 
         self.measure_auto_delay.range = vec![
             BaseMetadata::OFF_VALUE.to_string(),
@@ -124,16 +124,6 @@ impl SmuTiming {
 
     fn evaluate_nplc(&mut self, limit: &NumberLimit) {
         self.nplc.value = limit.limit(self.nplc.value);
-
-        // The NPLC resolution for our instrument is 0.00001 -> round *down* the new NPLC value
-        // to closest (N * 0.00001)
-        let res = self.nplc.value.rem_euclid(0.00001);
-        if res != 0.0 {
-            let temp = (self.nplc.value / 0.00001).floor() * 0.00001;
-            println!("NPLC value rounded to: {}", temp);
-            // Make sure it is still within hard limits
-            self.nplc.value = limit.limit(temp);
-        }
     }
 
     fn evaluate_aperture(&mut self, limit: &NumberLimit) {

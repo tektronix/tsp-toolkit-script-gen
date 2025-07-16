@@ -14,8 +14,8 @@ impl Mpsu50Metadata {
     pub fn new() -> Self {
         let mut base = BaseMetadata::new();
         // Add additional key-value pairs for Mpsu50Metadata
-        base.add_option("source_meas.rangev", vec!["AUTO", "50 V"]);
-        base.add_option("source_meas.rangei", vec!["AUTO", "5 A"]);
+        base.add_option("source_meas.rangev", vec!["50 V"]);
+        base.add_option("source_meas.rangei", vec!["5 A"]);
 
         base.add_default("source_meas.range.defaultv", "50 V");
         base.add_default("source_meas.range.defaulti", "5 A");

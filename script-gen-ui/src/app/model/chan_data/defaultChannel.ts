@@ -58,3 +58,13 @@ export class CommonChanAttributes {
     return json;
   }
 }
+
+export class Option {
+  value: string;
+  isValid: boolean;
+
+  constructor(value: string, isValid: boolean) {
+    this.value = value;
+    this.isValid = isValid;
+  }
+}

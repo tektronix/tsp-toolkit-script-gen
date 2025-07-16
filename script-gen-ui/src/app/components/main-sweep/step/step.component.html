@@ -9,7 +9,11 @@
   <div
     class="expander"
     [style.background-color]="
-      isActive ? 'var(--vscode-activityBar-background)' : 'transparent'
+      selectedDeviceOption?.isValid
+        ? isActive
+          ? 'var(--vscode-activityBar-background)'
+          : 'transparent'
+        : 'var(--vscode-editorOverviewRuler-errorForeground)'
     "
   >
     <div style="display: flex">
@@ -26,15 +30,15 @@
   </div>
   <div *ngIf="isStepExpanded" class="input-group">
     <div>
-      <app-dropdown
-        [(ngModel)]="deviceID"
+      <app-channel-dropdown
+        [(ngModel)]="selectedDeviceOption"
         [label]="'ID'"
-        [selected]="deviceID"
-        [options]="dropdownDeviceList"
+        [selected]="selectedDeviceOption"
+        [options]="deviceOptionList"
         (selectedChange)="onDeviceIDChange($event)"
-        *ngIf="deviceID"
-        name="deviceID"
-      ></app-dropdown>
+        *ngIf="selectedDeviceOption"
+        name="selectedDeviceOption"
+      ></app-channel-dropdown>
     </div>
     <div class="numeric-control">
       <app-input-numeric
@@ -43,6 +47,7 @@
         *ngIf="stepPoints"
         name="stepPoints"
         (inputChange)="submitStepGlobalParamsData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-numeric>
     </div>
     <div>
@@ -53,6 +58,7 @@
         *ngIf="stepToSweepDelay"
         name="stepToSweepDelay"
         (inputChange)="submitStepGlobalParamsData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>
     </div>
     <div class="step-start-stop-container">
@@ -63,6 +69,7 @@
         *ngIf="start"
         name="start"
         (inputChange)="submitStepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>
       <app-input-plain
         [(ngModel)]="stop.value"
@@ -71,6 +78,7 @@
         *ngIf="stop"
         name="stepStop"
         (inputChange)="submitStepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>
     </div>
     <div>
@@ -81,6 +89,7 @@
         *ngIf="sourceFunction"
         name="sourceFunction"
         (toggleOptionChange)="submitStepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-toggle>
     </div>
     <div>
@@ -92,6 +101,7 @@
         *ngIf="sourceRange"
         name="sourceRange"
         (selectedChange)="submitStepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-dropdown>
     </div>
     <div>
@@ -103,6 +113,7 @@
         *ngIf="measFunction"
         name="measFunction"
         (selectedChange)="submitStepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-dropdown>
     </div>
     <div>
@@ -114,6 +125,7 @@
         *ngIf="measRange"
         name="measRange"
         (selectedChange)="submitStepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-dropdown>
     </div>
     <div>
@@ -124,6 +136,7 @@
         *ngIf="style"
         name="style"
         (toggleOptionChange)="submitStepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-toggle>
     </div>
     <div class="checkbox">
@@ -134,16 +147,24 @@
           [(ngModel)]="listStep"
           name="listStep"
           (change)="submitStepGlobalParamsData()"
-          style="margin-top: 4.2vh;"
+          style="margin-top: 4.2vh"
+          [disabled]="!selectedDeviceOption?.isValid"
         />
-        <label for="list" style="margin-top: 4.0vh; margin-left: 5px;" >List</label>
+        <label for="list" style="margin-top: 4vh; margin-left: 5px">List</label>
       </div>
-      <div style="margin-top: 2.7vh; margin-left: 3vw;">
-        <button class="timing" (click)="showStepListPopup()">Edit</button>
+      <div style="margin-top: 2.7vh; margin-left: 3vw">
+        <button
+          class="timing"
+          (click)="showStepListPopup()"
+          [disabled]="!selectedDeviceOption?.isValid"
+        >
+          Edit
+        </button>
         <app-list
           *ngIf="showStepList"
           [listsWithNames]="stepListsWithNames"
           [noOfPointsOrSteps]="stepPoints?.value"
+          [isNoOfPointsOrSteps]="selectedDeviceOption?.isValid ?? false"
           (closeList)="closeStepListPopup()"
           (listOfPoints)="listOfStepPointsUpdate($event)"
           (updatedStepsOrPoints)="stepPointsUpdatefromList($event)"
@@ -159,6 +180,7 @@
         *ngIf="senseMode"
         name="senseMode"
         (selectedChange)="submitStepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-dropdown>
     </div>
     <div>
@@ -169,6 +191,7 @@
         *ngIf="sourceLimitI"
         name="sourceLimitI"
         (inputChange)="submitStepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>
     </div>
     <div>
@@ -179,6 +202,7 @@
         *ngIf="sourceLimitV"
         name="sourceLimitV"
         (inputChange)="submitStepData()"
+        [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>
     </div>
   </div>

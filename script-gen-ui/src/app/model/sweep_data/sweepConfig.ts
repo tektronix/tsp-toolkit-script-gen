@@ -2,7 +2,15 @@ import { BiasChannel } from '../chan_data/biasChannel';
 import { StepChannel } from '../chan_data/stepChannel';
 import { SweepChannel } from '../chan_data/sweepChannel';
 import { Device } from '../device_data/device';
-import { IBiasChannel, IDevice, IGlobalParameters, IStepChannel, ISweepChannel, ISweepConfig } from '../interface';
+import {
+  IBiasChannel,
+  IDevice,
+  IGlobalParameters,
+  IStepChannel,
+  ISweepChannel,
+  ISweepConfig,
+} from '../interface';
+import { StatusMsg } from './statusMsg';
 import { StepGlobalParameters, SweepGlobalParameters } from './stepSweepConfig';
 import { SweepTimingConfig } from './SweepTimingConfig';
 
@@ -28,6 +36,7 @@ export class SweepConfig {
   step_global_parameters: StepGlobalParameters;
   sweep_global_parameters: SweepGlobalParameters;
   device_list: Device[];
+  status_msg?: StatusMsg;
 
   constructor(data: ISweepConfig) {
     this.global_parameters = new GlobalParameters(data.global_parameters);
@@ -49,6 +58,9 @@ export class SweepConfig {
     this.device_list = data.device_list.map(
       (device: IDevice) => new Device(device)
     );
+    this.status_msg = data.status_msg
+      ? new StatusMsg(data.status_msg)
+      : undefined;
   }
 
   toJSON() {

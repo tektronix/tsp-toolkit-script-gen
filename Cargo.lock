@@ -1849,6 +1849,7 @@ version = "0.1.0"
 name = "script-gen-manager"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "phf",
  "phf_macros 0.10.0",
  "script-aggregator",

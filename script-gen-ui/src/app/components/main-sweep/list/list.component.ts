@@ -1,4 +1,10 @@
-import { Component, EventEmitter, Input, Output, OnChanges } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+  OnChanges,
+} from '@angular/core';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { ParameterFloat } from '../../../model/sweep_data/SweepTimingConfig';
 import { FormsModule } from '@angular/forms';
@@ -10,27 +16,47 @@ import { InputNumericComponent } from '../../controls/input-numeric/input-numeri
 
 @Component({
   selector: 'app-list',
-  imports: [FormsModule, CommonModule, BrowserModule, MatIconModule, InputPlainComponent, InputNumericComponent, DragDropModule],
+  imports: [
+    FormsModule,
+    CommonModule,
+    BrowserModule,
+    MatIconModule,
+    InputPlainComponent,
+    InputNumericComponent,
+    DragDropModule,
+  ],
   templateUrl: './list.component.html',
-  styleUrl: './list.component.scss'
+  styleUrl: './list.component.scss',
 })
 export class ListComponent implements OnChanges {
   @Input() noOfPointsOrSteps: number | undefined;
-  @Input() listsWithNames: { chanName: string, list: ParameterFloat[] }[] = [];
+  @Input() isNoOfPointsOrSteps = true;
+  @Input() listsWithNames: {
+    chanName: string;
+    list: ParameterFloat[];
+    isDeviceValid: boolean;
+  }[] = [];
   @Output() closeList = new EventEmitter<void>();
-  @Output() listOfPoints = new EventEmitter<{ chanName: string, list: ParameterFloat[] }[]>();
+  @Output() listOfPoints = new EventEmitter<
+    { chanName: string; list: ParameterFloat[] }[]
+  >();
   @Output() updatedStepsOrPoints = new EventEmitter<number>();
 
   rowIndices: number[] = [];
 
   getRowIndices(): number[] {
-    return this.listsWithNames.length > 0 ? Array.from({length: this.listsWithNames[0].list.length}, (_, i) => i) : [];
+    return this.listsWithNames.length > 0
+      ? Array.from({ length: this.listsWithNames[0].list.length }, (_, i) => i)
+      : [];
   }
 
   ngOnChanges() {
     console.log('listsWithNames:', this.listsWithNames);
     if (this.listsWithNames.length > 0) {
-      this.rowIndices = Array.from({length: this.listsWithNames[0].list.length}, (_, i) => i);
+      this.rowIndices = Array.from(
+        { length: this.listsWithNames[0].list.length },
+        (_, i) => i
+      );
     } else {
       this.rowIndices = [];
     }
@@ -40,7 +66,7 @@ export class ListComponent implements OnChanges {
     this.closeList.emit();
   }
 
-  onEnter(){
+  onEnter() {
     this.listOfPoints.emit(this.listsWithNames);
   }
 

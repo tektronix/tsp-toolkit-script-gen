@@ -37,13 +37,14 @@ impl ScriptModel {
     }
 
     /// Converts the script chunks to a script including ordering, indent and substitution.
-    pub fn to_script(&mut self, sweep_config: &SweepConfig) {
+    pub fn to_script(&mut self, sweep_config: &SweepConfig, file_path: &str) {
         let mut script_buffer = ScriptBuffer::new();
         script_buffer.set_auto_indent(true);
         for chunk in self.chunks.iter_mut() {
             chunk.to_script(sweep_config, &mut script_buffer);
         }
-        let file_path = "C:\\ScriptGen\\Snippet.txt";
+        //let file_path = "C:\\ScriptGen\\Snippet.txt";
+        println!("Writing script to file: {}", file_path);
         let path = Path::new(file_path);
 
         // Check if file exists, if not, create the file and its parent directory if needed

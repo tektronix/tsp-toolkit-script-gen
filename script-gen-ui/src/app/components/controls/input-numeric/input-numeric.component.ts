@@ -32,9 +32,7 @@ import { BrowserModule } from '@angular/platform-browser';
 export class InputNumericComponent implements ControlValueAccessor, OnInit {
   @Input() label: string | undefined;
   @Input() disabled = false;
-
   @Input() automationID: string | undefined;
-
   @Output() inputChange = new EventEmitter<number>();
 
   private _value: number | undefined;

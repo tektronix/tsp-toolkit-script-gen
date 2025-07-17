@@ -84,6 +84,7 @@
       </div>
       <div [ngClass]="{ disabled: measureAutoDelay?.value !== 'OFF' }">
         <app-input-plain
+          automationID="measureDelay"
           [(ngModel)]="measureDelay.value"
           [label]="'Measure Delay'"
           [unit]="measureDelay.unit"
@@ -96,6 +97,7 @@
     <div id="PSUTiming" class="popup-container">
       <div>
         <app-dropdown
+          automationID="rate"
           [(ngModel)]="rate.value"
           [label]="'Rate'"
           [selected]="rate.value"

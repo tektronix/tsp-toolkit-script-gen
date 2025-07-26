@@ -12,6 +12,11 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { BrowserModule } from '@angular/platform-browser';
 
+
+declare const acquireVsCodeApi: unknown;
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const vscode = typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : { postMessage: () => {} };
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -76,7 +81,13 @@ export class AppComponent implements OnInit, OnDestroy {
         } else {
           console.error('sweep_model property is missing in the data');
         }
-      } else if (ipcData.request_type === 'empty_system_config_error') {
+      } 
+      
+      else if (ipcData.request_type === 'open_script') {
+        vscode.postMessage({ command: 'open_script' });
+      } 
+      
+      else if (ipcData.request_type === 'empty_system_config_error') {
         // handle empty system config error
         console.log('Empty system config error received');
       } else {

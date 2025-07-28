@@ -119,7 +119,7 @@ async fn ws_index(
                     }
                 }
                 Message::Text(msg) => {
-                    println!("Received input from client in session: {msg}");
+                    // println!("Received input from client in session: {msg}");
                     match serde_json::from_str::<IpcData>(&msg) {
                         Ok(ipc_data) => {
                             if ipc_data.request_type == "get_data" {
@@ -128,7 +128,7 @@ async fn ws_index(
                                 let mut data_model = app_state.data_model.lock().await;
                                 let response =
                                     data_model.process_data_from_client(ipc_data.json_value);
-                                println!("processed data from client");
+                                println!("processed data from client {}", response);
                                 // Send generate script signal
                                 if let Err(e) = gen_script_tx.send(()) {
                                     eprintln!("Failed to send signal: {e}");
@@ -292,7 +292,6 @@ pub async fn start(mut script_model: ScriptModel) -> anyhow::Result<()> {
 
         while let Some(line) = reader.next_line().await.unwrap() {
             //println!("Received from stdin: {line}");
-
             let trimmed_line = line.trim();
             if trimmed_line == "shutdown" {
                 println!("Received shutdown command from stdin, shutting down...");
@@ -323,17 +322,33 @@ pub async fn start(mut script_model: ScriptModel) -> anyhow::Result<()> {
                 }
                 println!("instrument data requested"); // getting the system configuration for new session
             } else if trimmed_line.contains("request_type") {
-                // if receiving the saved JSON
+                // both the functions process_data_from_client and process_data_from_saved_config expect sweep_config, process_data_from_client receives sweep_config directly from client
+                // process_data_from_saved_config receives sweep_model from saved JSON, this sweep_model has the sweep_config
                 let mut data_model = app_state.data_model.lock().await;
                 match serde_json::from_str::<IpcData>(trimmed_line) {
                     Ok(ipc_data) => {
-                        let response =
-                            data_model.process_data_from_saved_config(ipc_data.json_value);
-                        println!("processed data from saved config");
-                        // Send data to the client and generate script signal
-                        let mut session = app_state.session.lock().await;
-                        if let Some(session) = session.as_mut() {
-                            session.text(response).await.unwrap();
+                        match serde_json::from_str::<serde_json::Value>(&ipc_data.json_value) {
+                            Ok(json_obj) => {
+                                if let Some(sweep_model) = json_obj.get("sweep_model") {
+                                    if let Ok(sweep_model_str) = serde_json::to_string(sweep_model)
+                                    {
+                                        let response = data_model
+                                            .process_data_from_saved_config(sweep_model_str);
+                                        println!("processed data from saved config {}", response);
+                                        let mut session = app_state.session.lock().await;
+                                        if let Some(session) = session.as_mut() {
+                                            session.text(response).await.unwrap();
+                                        }
+                                    } else {
+                                        eprintln!("Failed to serialize sweep_model to string");
+                                    }
+                                } else {
+                                    eprintln!("'sweep_model' field not found in json_value");
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("Failed to parse json_value as JSON: {}", e);
+                            }
                         }
                     }
                     Err(e) => {

@@ -24,7 +24,7 @@ export const REVERSE_PREFIXES: Record<string, number> = {
 };
 
 export function parseScientificInput(input: string): string {
-  const regex = /^([\d.]+)(e([+-]?\d+))?\s*([a-zA-Zµ]*)?\s*([a-zA-Z]+)$/;
+  const regex = /^(-?[\d.]+)(e([+-]?\d+))?\s*([a-zA-Zµ]*)?\s*([a-zA-Z]+)$/;
   const match = input.match(regex);
 
   if (!match) {
@@ -53,7 +53,7 @@ export function parseScientificInput(input: string): string {
 }
 
 export function parseToDecimal(input: string): number | null {
-  const regex = /^([\d.]+)(e([+-]?\d+))?\s*([a-zA-Zµ]*)?\s*([a-zA-Z]+)$/;
+  const regex = /^(-?[\d.]+)(e([+-]?\d+))?\s*([a-zA-Zµ]*)?\s*([a-zA-Z]+)$/;
   const match = input.match(regex);
 
   if (!match) {

@@ -37,6 +37,7 @@
       <app-channel-dropdown
         [(ngModel)]="selectedDeviceOption"
         [label]="'ID'"
+        automationID="Id"
         [selected]="selectedDeviceOption"
         [options]="deviceOptionList"
         (selectedChange)="onDeviceIDChange($event)"
@@ -46,6 +47,7 @@
     </div>
     <div>
       <app-input-plain
+        automationID="SourceValue"
         [(ngModel)]="bias.value"
         [label]="'Source Value'"
         [unit]="bias.unit"
@@ -57,6 +59,7 @@
     </div>
     <div>
       <app-input-toggle
+        automationID="SourceFunction"
         [(ngModel)]="sourceFunction.value"
         [label]="'Source Function'"
         [options]="sourceFunction.range"
@@ -68,6 +71,7 @@
     </div>
     <div>
       <app-dropdown
+        automationID="SourceRange"
         [(ngModel)]="sourceRange.value"
         [label]="'Source Range'"
         [selected]="sourceRange.value"
@@ -80,6 +84,7 @@
     </div>
     <div>
       <app-dropdown
+        automationID="MeasureFunction"
         [(ngModel)]="measFunction.value"
         [label]="'Measure Function'"
         [selected]="measFunction.value"
@@ -92,6 +97,7 @@
     </div>
     <div>
       <app-dropdown
+        automationID="MeasureRange"
         [(ngModel)]="measRange.value"
         [label]="'Measure Range'"
         [selected]="measRange.value"
@@ -104,6 +110,7 @@
     </div>
     <div>
       <app-dropdown
+        automationID="SenseMode"
         [(ngModel)]="senseMode.value"
         [label]="'Sense Mode'"
         [selected]="senseMode.value"
@@ -116,6 +123,7 @@
     </div>
     <div>
       <app-input-plain
+        automationID="SourceLimitI"
         [(ngModel)]="sourceLimitI.value"
         [label]="'Source Limit I'"
         [unit]="sourceLimitI.unit"
@@ -127,6 +135,7 @@
     </div>
     <div>
       <app-input-plain
+        automationID="SourceLimitV"
         [(ngModel)]="sourceLimitV.value"
         [label]="'Source Limit V'"
         [unit]="sourceLimitV.unit"

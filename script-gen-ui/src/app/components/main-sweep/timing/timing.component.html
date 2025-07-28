@@ -9,7 +9,7 @@
       <div class="measure-count">
         <div>
           <app-input-numeric
-          automationID="measureCount"
+          automationID="MeasureCount"
           [(ngModel)]="measureCount.value"
           [label]="'Measure Count (per step)'"
           *ngIf="measureCount"
@@ -33,7 +33,7 @@
       </div>
       <div *ngIf="nplcType?.value === 'NPLC'">
         <app-input-numeric
-          automationID="nplc"
+          automationID="NPLC Textbox"
           [(ngModel)]="nplc.value"
           [label]="'NPLC'"
           *ngIf="nplc"
@@ -42,7 +42,7 @@
       </div>
       <div *ngIf="nplcType?.value === 'Aperture'">
         <app-input-plain
-          automationID="aperture"
+          automationID="Aperture Textbox"
           [(ngModel)]="aperture.value"
           [label]="'Aperture'"
           [unit]="aperture.unit"
@@ -52,7 +52,7 @@
       </div>
       <div>
         <app-dropdown
-          automationID="sourceAutoDelay"
+          automationID="SourceAutoDelay"
           [(ngModel)]="sourceAutoDelay.value"
           [label]="'Source Auto Delay'"
           [selected]="sourceAutoDelay.value"
@@ -63,7 +63,7 @@
       </div>
       <div [ngClass]="{ disabled: sourceAutoDelay?.value !== 'OFF' }">
         <app-input-plain
-          automationID="sourceDelay"
+          automationID="SourceDelay"
           [(ngModel)]="sourceDelay.value"
           [label]="'Source Delay'"
           [unit]="sourceDelay.unit"
@@ -73,7 +73,7 @@
       </div>
       <div>
         <app-dropdown
-          automationID="measureAutoDelay"
+          automationID="MeasureAutoDelay"
           [(ngModel)]="measureAutoDelay.value"
           [label]="'Measure Auto Delay'"
           [selected]="measureAutoDelay.value"
@@ -84,7 +84,7 @@
       </div>
       <div [ngClass]="{ disabled: measureAutoDelay?.value !== 'OFF' }">
         <app-input-plain
-          automationID="measureDelay"
+          automationID="MeasureDelay"
           [(ngModel)]="measureDelay.value"
           [label]="'Measure Delay'"
           [unit]="measureDelay.unit"
@@ -97,7 +97,7 @@
     <div id="PSUTiming" class="popup-container">
       <div>
         <app-dropdown
-          automationID="rate"
+          automationID="Rate"
           [(ngModel)]="rate.value"
           [label]="'Rate'"
           [selected]="rate.value"

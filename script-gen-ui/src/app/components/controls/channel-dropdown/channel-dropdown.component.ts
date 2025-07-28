@@ -34,6 +34,7 @@ export class ChannelDropdownComponent implements ControlValueAccessor, OnInit {
   @Input() label: string | undefined;
   @Input() selected: Option | undefined;
   @Input() options: Option[] = [];
+  @Input() automationID: string|undefined;
   // @Input() unit: string | undefined;
   @Output() selectedChange = new EventEmitter<Option>();
 

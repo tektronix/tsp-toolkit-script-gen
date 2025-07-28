@@ -1,7 +1,7 @@
 <div class="input-numeric">
-  <label [attr.for]="automationID">{{ label }}</label>
+  <label for="input">{{ label }}</label>
   <input
-    [id]="automationID"
+    [attr.aria-label]="automationID"
     type="text"
     [value]="displayValue"
     (blur)="onBlur($event)"

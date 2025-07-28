@@ -30,6 +30,7 @@ import { BrowserModule } from '@angular/platform-browser';
 })
 export class InputToggleComponent implements ControlValueAccessor {
   @Input() label: string | undefined;
+  @Input() automationID: string | undefined;
   @Input() options: string[] = [];
   @Input() selectedOption: string | undefined;
   @Input() disabled = false;

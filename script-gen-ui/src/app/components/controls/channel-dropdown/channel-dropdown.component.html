@@ -2,6 +2,7 @@
   <label for="channel-dropdown">{{ label }}</label>
   <select
     id="channel-dropdown"
+    [attr.aria-label]="automationID"
     [ngClass]="{ 'invalid-select': selected && !selected.isValid }"
     [value]="selected?.value"
     (change)="onSelectionChanged($event)"

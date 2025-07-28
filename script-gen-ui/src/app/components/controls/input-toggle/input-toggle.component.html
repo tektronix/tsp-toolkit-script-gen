@@ -1,7 +1,7 @@
 <div class="toggle-container">
   <span *ngIf="label" class="toggle-label">{{ label }}</span>
   <div class="toggle-options-box">
-    <table>
+    <table [attr.aria-label]="automationID">
       <tr>
         <td
           *ngFor="let option of options"

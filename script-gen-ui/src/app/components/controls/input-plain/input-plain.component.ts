@@ -51,13 +51,10 @@ export class InputPlainComponent implements ControlValueAccessor, OnInit {
 
   get displayValue(): string {
     const parsedValue = parseScientificInput(`${this._value} ${this.unit}`);
-    // console.log('parsed value : ', parsedValue);
-
     // If parseScientificInput returns a valid value, update _displayValue
     if (parsedValue && parsedValue !== 'Invalid input') {
       this._displayValue = parsedValue;
     }
-    // console.log('displayvalue : ', this._displayValue);
     // Return the cached _displayValue or fallback to default
     return (
       this._displayValue ||
@@ -67,8 +64,6 @@ export class InputPlainComponent implements ControlValueAccessor, OnInit {
 
   set displayValue(val: string) {
     const decimalValue = parseToDecimal(val);
-    // console.log('displayvalue',this.displayValue);
-    // console.log('decimal value :',decimalValue);
     if (decimalValue !== null) {
       this._value = decimalValue;
 
@@ -106,10 +101,10 @@ export class InputPlainComponent implements ControlValueAccessor, OnInit {
       const previousValue = this.displayValue;
       this.displayValue = inputElement.value;
 
-      // If the input is invalid, revert to the previous value
       if (parseToDecimal(inputElement.value) === null) {
-        // console.log('Reverting to previous valid value:', previousValue);
-        inputElement.value = previousValue;
+        inputElement.value = previousValue; // If the input is invalid, revert to the previous value
+      } else {
+        inputElement.value = this.displayValue; // Update the input element with the parsed value
       }
     }
   }

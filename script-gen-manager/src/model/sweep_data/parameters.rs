@@ -30,6 +30,16 @@ impl ParameterInt {
             value,
         }
     }
+
+    pub fn limit(&mut self, min: i32, max: i32) {
+        if self.value >= min && self.value <= max {
+            return;
+        } else if self.value < min {
+            self.value = min
+        } else {
+            self.value = max
+        }
+    }
 }
 
 impl ParameterFloat {

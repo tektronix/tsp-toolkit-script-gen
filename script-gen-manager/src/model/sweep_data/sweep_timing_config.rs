@@ -1,15 +1,17 @@
 use serde::{Deserialize, Serialize};
 
-use crate::instr_metadata::base_metadata::BaseMetadata;
+use crate::{
+    instr_metadata::base_metadata::BaseMetadata, model::sweep_data::parameters::ParameterInt,
+};
 
 use super::{
-    number_limit::{CommonTimingLimit, NumberLimit, SmuTimingLimit},
+    number_limit::{NumberLimit, SmuTimingLimit},
     parameters::{ParameterFloat, ParameterString},
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SweepTimingConfig {
-    pub measure_count: ParameterFloat,
+    pub measure_count: ParameterInt,
     pub smu_timing: SmuTiming,
     pub psu_timing: PsuTiming,
 }
@@ -17,18 +19,13 @@ pub struct SweepTimingConfig {
 impl SweepTimingConfig {
     pub fn new() -> Self {
         SweepTimingConfig {
-            measure_count: ParameterFloat::new("measureCount", 1.0, None),
+            measure_count: ParameterInt::new("measureCount", 1),
             smu_timing: SmuTiming::new(),
             psu_timing: PsuTiming::new(),
         }
     }
 
     pub fn evaluate(&mut self) {
-        let common_timing_limits = CommonTimingLimit::new();
-        //TODO: verify if additional validation is needed
-        self.measure_count.value = common_timing_limits
-            .measure_count_limits
-            .limit(self.measure_count.value);
         self.smu_timing.evaluate();
         self.psu_timing.evaluate();
     }

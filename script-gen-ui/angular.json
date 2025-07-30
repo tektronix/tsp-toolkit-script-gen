@@ -109,6 +109,7 @@
     "schematicCollections": [
       "angular-eslint",
       "angular-eslint"
-    ]
+    ],
+    "analytics": false
   }
 }

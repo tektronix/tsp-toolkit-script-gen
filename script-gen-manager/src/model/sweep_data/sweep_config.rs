@@ -356,6 +356,12 @@ impl SweepConfig {
     pub fn evaluate(&mut self) {
         self.update_channel_devices();
         self.global_parameters.evaluate();
+        self.step_global_parameters.step_points.limit(1, 60000);
+        self.sweep_global_parameters.sweep_points.limit(1, 60000);
+        self.global_parameters
+            .sweep_timing_config
+            .measure_count
+            .limit(1, 60000);
         for bias_channel in &mut self.bias_channels {
             bias_channel.evaluate();
         }

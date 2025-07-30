@@ -33,6 +33,7 @@ export class InputNumericComponent implements ControlValueAccessor, OnInit {
   @Input() label: string | undefined;
   @Input() disabled = false;
   @Input() automationID: string | undefined;
+  @Input() floatAllowed = false;
   @Output() inputChange = new EventEmitter<number>();
 
   private _value: number | undefined;
@@ -42,26 +43,17 @@ export class InputNumericComponent implements ControlValueAccessor, OnInit {
     console.log('InputNumericComponent initialized with label:', this.label);
   }
 
-  get displayValue(): string {
-    // if(this._value){
-    //   this._value = Math.floor(this._value);
-    //   console.log('displayvalue : ', this._value);
-    //   return `${this._value}`;
-    // }
-    return this._value !== undefined ? `${this._value}` : '';
+  get displayValue(): number | undefined {
+    return this._value;
   }
 
-  set displayValue(val: string) {
-    const parsedValue = parseFloat(val);
-    if (!isNaN(parsedValue)) {
-      this._value = Math.floor(parsedValue);
-      if (this.onChange) {
-        this.onChange(this._value);
-      }
-      this.inputChange.emit(this._value);
-    } else {
-      // this._value = undefined;
+  set displayValue(val: number) {
+
+    this._value = val;
+    if (this.onChange) {
+      this.onChange(this._value);
     }
+    this.inputChange.emit(this._value);
   }
 
   writeValue(value: number): void {
@@ -85,17 +77,24 @@ export class InputNumericComponent implements ControlValueAccessor, OnInit {
   onInputChange(event: Event): void {
     const inputElement = event.target as HTMLInputElement;
 
-    if (this.displayValue !== inputElement.value) {
-      let value = parseFloat(inputElement.value);
-      value = Math.floor(value);
+    if (this.displayValue !== inputElement.valueAsNumber) {
+      // Store previous value for fallback
+      const previousValue = this.displayValue;
 
-      // Ensure the value is not negative
-      if (isNaN(value) || value < 0) {
-        value = 1; // Set to 1 if the value is invalid or negative
+      let value = inputElement.valueAsNumber;
+
+      // Only update if the value is valid (not NaN)
+      if (!isNaN(value)) {
+        if (!this.floatAllowed) {
+          value = Math.floor(value);
+          inputElement.value = `${value}`;
+        }
+        this.displayValue = value;
+      } else {
+        // Revert to the previous valid value
+        inputElement.value = `${previousValue}`;
       }
 
-      this.displayValue = `${value}`;
-      inputElement.value = `${value}`; // Update the input field with the validated value
     }
   }
 

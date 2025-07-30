@@ -55,3 +55,10 @@
   cursor: not-allowed;
   border-color: var(--vscode-editorWidget-border);
 }
+
+/* Hide the spinner buttons for number inputs */
+:host input[type=number]::-webkit-inner-spin-button, 
+:host input[type=number]::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
+}

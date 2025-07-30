@@ -34,6 +34,7 @@
       <div *ngIf="nplcType?.value === 'NPLC'">
         <app-input-numeric
           automationID="NPLC Textbox"
+          [floatAllowed]= "true"
           [(ngModel)]="nplc.value"
           [label]="'NPLC'"
           *ngIf="nplc"

@@ -523,7 +523,8 @@ impl SweepModel {
                     .global_parameters
                     .sweep_timing_config
                     .measure_count
-                    .value,
+                    .value
+                    .into(),
             ),
         );
 

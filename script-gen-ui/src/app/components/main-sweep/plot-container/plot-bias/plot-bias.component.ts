@@ -267,14 +267,24 @@ export class PlotBiasComponent
     }
 
     if (this.sourceRange && this.bias) {
-      const max = parseToDecimal(this.sourceRange.value);
+      let max: number | null = null;
+      if (this.sourceRange.value === 'AUTO') {
+        const range = this.sourceRange.range
+          .map((range) => parseToDecimal(range))
+          .filter((value): value is number => value !== null && !isNaN(value));
+        if (range.length > 0) {
+          max = Math.max(...range);
+        }
+      } else {
+        max = parseToDecimal(this.sourceRange.value);
+      }
       if (typeof max === 'number' && !isNaN(max)) {
         const maxRange = PlotUtils.computeMaxRange(-max, max);
         const minRange = PlotUtils.computeMinRange(-max, max);
         this.plotLayout.yaxis.range = [minRange, maxRange];
         this.plotLayout.yaxis2.range = [minRange, maxRange];
         this.plotLayout.yaxis2.dtick = 2 * maxRange;
-        const dtick = 2 * maxRange / 4; // Divide plot horizontally into 4 intervals, the maxRange is for one quadrant
+        const dtick = (2 * maxRange) / 4; // Divide plot horizontally into 4 intervals, the maxRange is for one quadrant
         this.plotLayout.yaxis.dtick = dtick;
         this.plotLayout.yaxis.tick0 = -maxRange;
         this.plotLayout.yaxis2.tick0 = -maxRange;

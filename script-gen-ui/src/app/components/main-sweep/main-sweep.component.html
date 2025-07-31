@@ -7,8 +7,8 @@
 <div class="parent-container">
   <div class="input-container" style="overflow: auto; max-height: 100vh; min-width: min-content">
     <div class="timing-autorangebox">
-      <div>
-        <button class="timing" (click)="enableTiming()">Timing</button>
+      <div  [attr.aria-label]="'timingTab'">
+        <button class="timing" (click)="enableTiming()"  [attr.aria-label]="'timing'">Timing</button>
         <app-timing
           *ngIf="showTiming"
           [sweepTimingConfig]="sweepTimingConfig"
@@ -25,14 +25,14 @@
 
     <div class="expander">
       <div style="display: flex">
-        <button (click)="toggleBias()" class="h3-button">
+        <button (click)="toggleBias()" class="h3-button" [attr.aria-label]="'BiasExpander'">
           <mat-icon>{{
             isBiasExpanded ? "expand_more" : "chevron_right"
           }}</mat-icon>
         </button>
         <h3>Bias</h3>
       </div>
-      <button class="button-icon" (click)="addBias()">
+      <button class="button-icon" [attr.aria-label]="'addBias'" (click)="addBias()">
         <mat-icon>add</mat-icon>
       </button>
     </div>
@@ -65,7 +65,7 @@
 
     <div class="expander">
       <div style="display: flex">
-        <button (click)="toggleStep()" class="h3-button">
+        <button (click)="toggleStep()" class="h3-button" [attr.aria-label]="'StepExpander'">
           <mat-icon>{{
             isStepExpanded ? "expand_more" : "chevron_right"
           }}</mat-icon>
@@ -124,14 +124,14 @@
 
     <div class="expander">
       <div style="display: flex">
-        <button (click)="toggleSweep()" class="h3-button">
+        <button (click)="toggleSweep()" class="h3-button" [attr.aria-label]="'SweepExpander'">
           <mat-icon>{{
             isSweepExpanded ? "expand_more" : "chevron_right"
           }}</mat-icon>
         </button>
         <h3>Sweep</h3>
       </div>
-      <button class="button-icon" (click)="addSweep()">
+      <button class="button-icon" [attr.aria-label]="'addSweep'" (click)="addSweep()">
         <mat-icon>add</mat-icon>
       </button>
     </div>
@@ -143,6 +143,7 @@
             [label]="'Number of Points'"
             *ngIf="sweepPoints"
             name="sweepPoints"
+            automationID="SweepPoints"
             (inputChange)="updateSweepGlobalParameters()"
           ></app-input-numeric>
         </div>
@@ -154,6 +155,7 @@
               type="checkbox"
               id="isListSweep"
               [(ngModel)]="isListSweep"
+              [attr.aria-label]="'listSweep'"
               name="isListSweep"
               (change)="updateSweepGlobalParameters()"
             />

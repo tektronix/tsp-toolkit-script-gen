@@ -1,5 +1,6 @@
 <div
   class="component-box"
+  [attr.aria-label]="'Bias Component'"
   [ngClass]="{ active: isActive }"
   [style.border]="isActive ? '1px solid ' + color : null"
   [style.background-color]="
@@ -17,9 +18,15 @@
     "
   >
     <div style="display: flex">
-      <mat-icon (click)="toggleBiasChannel()" class="h3">
-        {{ isBiasChanExpanded ? "expand_more" : "chevron_right" }}
-      </mat-icon>
+      <button class="h3-button" [attr.aria-label]="'biasExpander'">
+        <mat-icon
+          (click)="toggleBiasChannel()"
+          [attr.aria-label]="'biasExpander'"
+          class="h3"
+        >
+          {{ isBiasChanExpanded ? "expand_more" : "chevron_right" }}
+        </mat-icon>
+      </button>
       <h3
         tabindex="0"
         (click)="toggleBiasChannel()"
@@ -28,7 +35,11 @@
         {{ chanName }}
       </h3>
     </div>
-    <button class="delete-button-icon" (click)="removeBias()">
+    <button
+      class="delete-button-icon"
+      [attr.aria-label]="'Delete Bias'"
+      (click)="removeBias()"
+    >
       <mat-icon>delete</mat-icon>
     </button>
   </div>

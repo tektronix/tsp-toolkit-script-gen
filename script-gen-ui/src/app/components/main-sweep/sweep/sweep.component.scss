@@ -121,6 +121,13 @@
     padding-right: 5px;
   }
 
+  .h3-button{
+  background-color: transparent;
+  color: currentColor;
+  border: none;
+  padding: 0;
+}
+
   .chan-name-input {
     border: 1px solid var(--vscode-editorWidget-border);
     border-radius: 5px;

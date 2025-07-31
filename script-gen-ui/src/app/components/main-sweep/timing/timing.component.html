@@ -4,7 +4,9 @@
     <div>
       <div class="popup-header">
         <h3 id="timingLabel">Timing</h3>
-        <mat-icon (click)="okTiming()" class="button">close</mat-icon>
+        <button (click)="okTiming()" class="button" [attr.aria-label]="'closeTiming'">
+          <mat-icon>close</mat-icon>
+        </button>
       </div>
       <div class="measure-count">
         <div>
@@ -28,6 +30,7 @@
           [options]="nplcType.range"
           *ngIf="nplcType"
           name="nplcType"
+          automationID="selectedType"
           (toggleOptionChange)="submitTimingData()"
         ></app-input-toggle>
       </div>

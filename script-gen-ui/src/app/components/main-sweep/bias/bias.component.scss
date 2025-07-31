@@ -101,12 +101,20 @@
   border: none;
 }
 
+
 .h3 {
   padding: 0;
   display: flex;
   margin-top: 8px;
   margin-bottom: 5px;
   padding-right: 5px;
+}
+
+.h3-button{
+  background-color: transparent;
+  color: currentColor;
+  border: none;
+  padding: 0;
 }
 
 .delete-button-icon {

@@ -1,5 +1,6 @@
 <div
   class="component-box"
+  [attr.aria-label]="'Sweep Component'"
   [ngClass]="{ active: isActive }"
   [style.border]="isActive ? '1px solid ' + color : null"
   [style.background-color]="
@@ -17,9 +18,15 @@
     "
   >
     <div style="display: flex">
-      <mat-icon (click)="toggleSweepChannel()" class="h3">
-        {{ isSweepExpanded ? "expand_more" : "chevron_right" }}
-      </mat-icon>
+      <button class="h3-button" [attr.aria-label]="'sweepExpander'">
+        <mat-icon
+          (click)="toggleSweepChannel()"
+          [attr.aria-label]="'sweepExpander'"
+          class="h3"
+        >
+          {{ isSweepExpanded ? "expand_more" : "chevron_right" }}
+        </mat-icon>
+      </button>
       <h3
         tabindex="0"
         (click)="toggleSweepChannel()"
@@ -28,7 +35,11 @@
         {{ chanName }}
       </h3>
     </div>
-    <button class="delete-button-icon" (click)="removeSweep()">
+    <button
+      class="delete-button-icon"
+      [attr.aria-label]="'Delete Sweep'"
+      (click)="removeSweep()"
+    >
       <mat-icon>delete</mat-icon>
     </button>
   </div>
@@ -37,6 +48,7 @@
       <app-channel-dropdown
         [(ngModel)]="selectedDeviceOption"
         [label]="'ID'"
+        automationID="Id"
         [selected]="selectedDeviceOption"
         [options]="deviceOptionList"
         *ngIf="selectedDeviceOption"
@@ -51,6 +63,7 @@
         [unit]="start.unit"
         *ngIf="start"
         name="start"
+        automationID="SweepStart"
         (inputChange)="submitSweepData()"
         [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>
@@ -60,6 +73,7 @@
         [unit]="stop.unit"
         *ngIf="stop"
         name="stop"
+        automationID="SweepStop"
         (inputChange)="submitSweepData()"
         [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>
@@ -71,6 +85,7 @@
         [options]="sourceFunction.range"
         *ngIf="sourceFunction"
         name="sourceFunction"
+        automationID="SourceFunction"
         (toggleOptionChange)="submitSweepData()"
         [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-toggle>
@@ -83,6 +98,7 @@
         [options]="sourceRange.range"
         *ngIf="sourceRange"
         name="sourceRange"
+        automationID="SourceRange"
         (selectedChange)="submitSweepData()"
         [disabled]="!selectedDeviceOption?.isValid"
       ></app-dropdown>
@@ -95,6 +111,7 @@
         [options]="measFunction.range"
         *ngIf="measFunction"
         name="measFunction"
+        automationID="MeasureFunction"
         (selectedChange)="submitSweepData()"
         [disabled]="!selectedDeviceOption?.isValid"
       ></app-dropdown>
@@ -107,6 +124,7 @@
         [options]="measRange.range"
         *ngIf="measRange"
         name="measRange"
+        automationID="MeasureRange"
         (selectedChange)="submitSweepData()"
         [disabled]="!selectedDeviceOption?.isValid"
       ></app-dropdown>
@@ -118,6 +136,7 @@
         [options]="style.range"
         *ngIf="style"
         name="style"
+        automationID="style"
         (toggleOptionChange)="submitSweepData()"
         [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-toggle>
@@ -130,6 +149,7 @@
         [options]="senseMode.range"
         *ngIf="senseMode"
         name="senseMode"
+        automationID="SenseMode"
         (selectedChange)="submitSweepData()"
         [disabled]="!selectedDeviceOption?.isValid"
       ></app-dropdown>
@@ -141,6 +161,7 @@
         [unit]="sourceLimitI.unit"
         *ngIf="sourceLimitI"
         name="sourceLimitI"
+        automationID="SourceLimitI"
         (inputChange)="submitSweepData()"
         [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>
@@ -152,6 +173,7 @@
         [unit]="sourceLimitV.unit"
         *ngIf="sourceLimitV"
         name="sourceLimitV"
+        automationID="SourceLimitV"
         (inputChange)="submitSweepData()"
         [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>

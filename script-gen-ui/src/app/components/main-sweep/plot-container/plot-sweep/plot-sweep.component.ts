@@ -260,15 +260,19 @@ export class PlotSweepComponent
         (_, i) => startValue + i * stepSize
       ).flat();
 
-      this.plotData1.y = Array.from(
-        { length: this.numSteps },
-        () => sweepValues
-      ).flat();
-
-      this.plotData1.x = Array.from({ length: this.numSteps }, (_, i) =>
-        Array.from({ length: numberOfPoints }, (_, j) => i + j / numberOfPoints)
-      ).flat();
+      this.generatePlotData(sweepValues, numberOfPoints);
     }
+  }
+
+  private generatePlotData(sweepValues: number[], numberOfPoints: number) {
+    const numSteps = this.numSteps || 0;
+    this.plotData1.y = Array.from(
+      { length: numSteps },
+      () => sweepValues
+    ).flat().concat(sweepValues[sweepValues.length - 1]);
+
+    this.plotData1.x = Array.from({ length: numSteps }, (_, i) => Array.from({ length: numberOfPoints }, (_, j) => i + j / numberOfPoints)
+    ).flat().concat(numSteps);
   }
 
   // the plots are rendered only after the DOM is created, so we need to render them after the DOM is loaded
@@ -331,7 +335,7 @@ export class PlotSweepComponent
     if (this.style?.value === 'LOG') {
       if (this.start && this.stop && this.numSteps && this.numPoints) {
         const numberOfPoints = this.numPoints.value;
-        const numSteps = this.numSteps;
+        // const numSteps = this.numSteps;
         const startValue = this.start.value > 0 ? this.start.value : 1e-12;
         const stopValue = this.stop.value > 0 ? this.stop.value : 1e-12;
         const stepFactor = Math.pow(
@@ -344,14 +348,7 @@ export class PlotSweepComponent
           (_, i) => startValue * Math.pow(stepFactor, i)
         );
 
-        this.plotData1.y = Array.from(
-          { length: numSteps },
-          () => sweepValues
-        ).flat();
-
-        this.plotData1.x = Array.from({ length: numSteps }, (_, i) =>
-          sweepValues.map((_, j) => i + j / numberOfPoints)
-        ).flat();
+        this.generatePlotData(sweepValues, numberOfPoints);
 
         console.log('LOG sweep plotData1.x:', this.plotData1.x);
         console.log('LOG sweep plotData1.y:', this.plotData1.y);
@@ -367,17 +364,11 @@ export class PlotSweepComponent
     // console.log('listSweep: step and sweep', this.listSweep, this.numPoints, this.numSteps);
     if (this.listSweep && this.numPoints && this.numSteps) {
       const numberOfPoints = this.numPoints.value;
-      const numSteps = this.numSteps;
+      // const numSteps = this.numSteps;
 
       const sweepValues = this.listSweep.map((pf) => pf?.value ?? 0);
-      this.plotData1.y = Array.from(
-        { length: numSteps },
-        () => sweepValues
-      ).flat();
 
-      this.plotData1.x = Array.from({ length: numSteps }, (_, i) =>
-        Array.from({ length: numberOfPoints }, (_, j) => i + j / numberOfPoints)
-      ).flat();
+      this.generatePlotData(sweepValues, numberOfPoints);
 
       this.plotData1.line.shape = 'hv';
       // console.log('List sweep plotData1.x:', this.plotData1.x);

@@ -58,6 +58,8 @@ export class TimingComponent implements OnDestroy, OnChanges {
 
   timingOption: 'smuTiming' | 'psuTiming' = 'smuTiming';
 
+  boundaryElement = 'app-root';
+
   @Input() sweepTimingConfig: SweepTimingConfig | undefined;
   @Output() ok = new EventEmitter<void>();
   @Output() emitTimingData = new EventEmitter<void>();

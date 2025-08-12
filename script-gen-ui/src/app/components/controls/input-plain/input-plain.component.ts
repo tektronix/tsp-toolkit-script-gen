@@ -50,7 +50,7 @@ export class InputPlainComponent implements ControlValueAccessor, OnInit {
   // TODO: have to make the rounding off based on the resolution defined for each range
 
   get displayValue(): string {
-    const parsedValue = parseScientificInput(`${this._value} ${this.unit}`);
+    const parsedValue = parseScientificInput(`${this._value} ${this.unit}`, this.unit);
     // If parseScientificInput returns a valid value, update _displayValue
     if (parsedValue && parsedValue !== 'Invalid input') {
       this._displayValue = parsedValue;
@@ -63,7 +63,7 @@ export class InputPlainComponent implements ControlValueAccessor, OnInit {
   }
 
   set displayValue(val: string) {
-    const decimalValue = parseToDecimal(val);
+    const decimalValue = parseToDecimal(val,this.unit);
     if (decimalValue !== null) {
       this._value = decimalValue;
 
@@ -96,12 +96,11 @@ export class InputPlainComponent implements ControlValueAccessor, OnInit {
 
   onInputChange(event: Event): void {
     const inputElement = event.target as HTMLInputElement;
-
     if (this.displayValue !== inputElement.value) {
       const previousValue = this.displayValue;
       this.displayValue = inputElement.value;
 
-      if (parseToDecimal(inputElement.value) === null) {
+      if (parseToDecimal(inputElement.value, this.unit) === null) {
         inputElement.value = previousValue; // If the input is invalid, revert to the previous value
       } else {
         inputElement.value = this.displayValue; // Update the input element with the parsed value

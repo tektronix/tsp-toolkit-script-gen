@@ -23,8 +23,8 @@ export const REVERSE_PREFIXES: Record<string, number> = {
   'T': 12,
 };
 
-export function parseScientificInput(input: string): string {
-  const regex = /^(-?[\d.]+)(e([+-]?\d+))?\s*([a-zA-Zµ]*)?\s*([a-zA-Z]+)$/;
+export function parseScientificInput(input: string, unit: string | undefined): string {
+  const regex = /^(-?[\d.]+)(e([+-]?\d+))?\s*([a-zA-Zµ]?)\s*([a-zA-Z]+)?$/;
   const match = input.match(regex);
 
   if (!match) {
@@ -38,7 +38,7 @@ export function parseScientificInput(input: string): string {
   let numericValue = parseFloat(value) * Math.pow(10, parseInt(exponent || '0'));
 
   if (numericValue === 0) {
-    return `0 ${baseUnit}`;
+    return `0 ${baseUnit || unit}`;
   }
 
   const existingExponent = REVERSE_PREFIXES[normalizedPrefix || ''] || 0;
@@ -49,18 +49,21 @@ export function parseScientificInput(input: string): string {
   const roundedValue = parseFloat(scaledValue.toFixed(3));
   const newPrefix = finalExponent === 0 ? '' : SCIENTIFIC_PREFIXES[finalExponent] || `e${finalExponent}`;
 
-  return `${roundedValue} ${newPrefix}${baseUnit || ''}`;
+  return `${roundedValue} ${newPrefix}${baseUnit || unit || ''}`;
 }
 
-export function parseToDecimal(input: string): number | null {
-  const regex = /^(-?[\d.]+)(e([+-]?\d+))?\s*([a-zA-Zµ]*)?\s*([a-zA-Z]+)$/;
+export function parseToDecimal(input: string, unit?: string | undefined): number | null {
+  const regex = /^(-?[\d.]+)(e([+-]?\d+))?\s*([a-zA-Zµ]?)\s*([a-zA-Z]+)?$/;
   const match = input.match(regex);
 
   if (!match) {
     return null; // Invalid input
   }
 
-  const [, value, , exponent, prefix] = match;
+  const [, value, , exponent, prefix, baseUnit] = match;
+  if (baseUnit && baseUnit !== unit) {
+    return null; // Incompatible units
+  }
   let normalizedPrefix = prefix;
   if (normalizedPrefix === 'µ') normalizedPrefix = 'u';
 

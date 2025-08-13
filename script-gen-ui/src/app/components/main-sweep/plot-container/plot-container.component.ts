@@ -1,12 +1,27 @@
-import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, Input, ViewChildren, QueryList } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  AfterViewInit,
+  ViewChild,
+  ElementRef,
+  Input,
+  ViewChildren,
+  QueryList, OnDestroy,
+} from '@angular/core';
 import { BiasChannel } from '../../../model/chan_data/biasChannel';
 import { StepChannel } from '../../../model/chan_data/stepChannel';
 import { SweepChannel } from '../../../model/chan_data/sweepChannel';
-import { StepGlobalParameters, SweepGlobalParameters } from '../../../model/sweep_data/stepSweepConfig';
+import {
+  StepGlobalParameters,
+  SweepGlobalParameters,
+} from '../../../model/sweep_data/stepSweepConfig';
 import { PlotBiasComponent } from './plot-bias/plot-bias.component';
 import { PlotStepComponent } from './plot-step/plot-step.component';
 import { PlotSweepComponent } from './plot-sweep/plot-sweep.component';
-import { ParameterFloat, ParameterInt } from '../../../model/sweep_data/SweepTimingConfig';
+import {
+  ParameterFloat,
+  ParameterInt,
+} from '../../../model/sweep_data/SweepTimingConfig';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,11 +30,19 @@ import { BrowserModule } from '@angular/platform-browser';
 @Component({
   selector: 'app-plot-container',
   standalone: true,
-  imports: [FormsModule, BrowserModule, CommonModule, MatIconModule, PlotBiasComponent, PlotStepComponent, PlotSweepComponent],
+  imports: [
+    FormsModule,
+    BrowserModule,
+    CommonModule,
+    MatIconModule,
+    PlotBiasComponent,
+    PlotStepComponent,
+    PlotSweepComponent,
+  ],
   templateUrl: './plot-container.component.html',
   styleUrls: ['./plot-container.component.scss'],
 })
-export class PlotContainerComponent implements OnInit, AfterViewInit {
+export class PlotContainerComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('plotContainer', { static: false }) plotContainer!: ElementRef;
   @Input() biasChannels: BiasChannel[] = [];
   @Input() stepChannels: StepChannel[] = [];
@@ -33,9 +56,12 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
   @Input() activeComponent: 'bias' | 'step' | 'sweep' | null = null; // Accept active component
   @Input() activeIndex: number | null = null; // Accept active index
 
-  @ViewChildren(PlotBiasComponent) plotBiasComponents!: QueryList<PlotBiasComponent>;
-  @ViewChildren(PlotStepComponent) plotStepComponents!: QueryList<PlotStepComponent>;
-  @ViewChildren(PlotSweepComponent) plotSweepComponents!: QueryList<PlotSweepComponent>;
+  @ViewChildren(PlotBiasComponent)
+  plotBiasComponents!: QueryList<PlotBiasComponent>;
+  @ViewChildren(PlotStepComponent)
+  plotStepComponents!: QueryList<PlotStepComponent>;
+  @ViewChildren(PlotSweepComponent)
+  plotSweepComponents!: QueryList<PlotSweepComponent>;
 
   numberOfSteps: ParameterInt | undefined;
   plotDataX: number[] = [];
@@ -83,9 +109,9 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
     },
     yaxis2: {
       title: {
-        font: {color: 'white'}
+        font: { color: 'white' },
       },
-      tickfont: {color: 'white'},
+      tickfont: { color: 'white' },
       anchor: 'x',
       overlaying: 'y',
       side: 'left',
@@ -121,6 +147,7 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
     dragmode: false,
     autosize: false,
     height: 150,
+    width: 700,
     margin: {
       l: 40,
       r: 20,
@@ -143,9 +170,13 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
       },
     ],
   };
-  plotConfig: { staticPlot: boolean; responsive: boolean} | undefined;
+  plotConfig: { staticPlot: boolean; responsive: boolean } | undefined;
 
-  // constructor() {}
+  originalBackgroundColor = '';
+  activeBackgroundColor = '';
+  mutationObserver: MutationObserver | undefined;
+
+  constructor(public elementRef: ElementRef) {}
 
   ngOnInit(): void {
     this.plotDataX = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -165,7 +196,10 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     this.plotBiasComponents.changes.subscribe(() => {
-      console.log('Updated plotBiasComponents:', this.plotBiasComponents.toArray());
+      console.log(
+        'Updated plotBiasComponents:',
+        this.plotBiasComponents.toArray()
+      );
     });
   }
 
@@ -173,12 +207,20 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
     return this.colorMap.get(uuid) || 'gray'; // Retrieve color from colorMap
   }
 
-  getActiveStyle(uuid: string, componentType: 'bias' | 'step' | 'sweep', index: number): {backgroundColor:string, color:string} {
-    const isActive = this.activeComponent === componentType && this.activeIndex === index;
-    const backgroundColor = this.colorMap.get(uuid) || 'var(--vscode-activityBar-border)';
+  getActiveStyle(
+    uuid: string,
+    componentType: 'bias' | 'step' | 'sweep',
+    index: number
+  ): { backgroundColor: string; color: string } {
+    const isActive =
+      this.activeComponent === componentType && this.activeIndex === index;
+    const backgroundColor =
+      this.colorMap.get(uuid) || 'var(--vscode-activityBar-border)';
 
     return {
-      backgroundColor: isActive ? backgroundColor : 'var(--vscode-activityBar-border)',
+      backgroundColor: isActive
+        ? backgroundColor
+        : 'var(--vscode-activityBar-border)',
       color: isActive ? 'black' : 'white',
     };
   }
@@ -189,7 +231,11 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
   }
 
   scrollToPlot(componentType: 'bias' | 'step' | 'sweep', index: number): void {
-    let plotComponent: PlotBiasComponent | PlotStepComponent | PlotSweepComponent | undefined;
+    let plotComponent:
+      | PlotBiasComponent
+      | PlotStepComponent
+      | PlotSweepComponent
+      | undefined;
 
     if (componentType === 'bias') {
       plotComponent = this.plotBiasComponents.toArray()[index];
@@ -200,11 +246,53 @@ export class PlotContainerComponent implements OnInit, AfterViewInit {
     }
 
     if (plotComponent) {
-      const element = (plotComponent).elementRef.nativeElement; // Access the DOM element
+      const element = plotComponent.elementRef.nativeElement; // Access the DOM element
       element.scrollIntoView({
         behavior: 'smooth', // Smooth scrolling
-        block: 'center',    // Align to the center of the viewport
+        block: 'center', // Align to the center of the viewport
       });
+    }
+  }
+
+   getCssVariableValue(variableName: string): string {
+    const root = document.documentElement;
+    const value = getComputedStyle(root).getPropertyValue(variableName).trim();
+    return value;
+  }
+
+  rgbToHex(rgb: string): string {
+    const match = rgb.match(/\d+/g);
+    if (!match) return rgb;
+    const [r, g, b] = match.map(Number);
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+  }
+  initializePlot(): void {
+    const backgroundColor = this.getCssVariableValue('--vscode-editor-background');
+    const backgroundColorHex = backgroundColor.startsWith('rgb')
+      ? this.rgbToHex(backgroundColor)
+      : backgroundColor;
+    this.originalBackgroundColor = backgroundColorHex;
+    // Subclasses should set plotLayout.paper_bgcolor and plotLayout.plot_bgcolor
+    const activeBg = this.getCssVariableValue('--vscode-activityErrorBadge-foreground');
+    this.activeBackgroundColor = activeBg.startsWith('rgb')
+      ? this.rgbToHex(activeBg)
+      : activeBg;
+  }
+  observeThemeChanges(onThemeChange: () => void): void {
+    const root = document.documentElement;
+    this.mutationObserver = new MutationObserver(() => {
+      this.initializePlot();
+      onThemeChange();
+    });
+    this.mutationObserver.observe(root, {
+      attributes: true,
+      attributeFilter: ['style'],
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.mutationObserver) {
+      this.mutationObserver.disconnect();
     }
   }
 }

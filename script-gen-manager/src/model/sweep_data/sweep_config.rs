@@ -35,6 +35,12 @@ pub struct SweepConfig {
     // base_metadata: BaseMetadata,
 }
 
+impl Default for SweepConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SweepConfig {
     pub fn new() -> Self {
         SweepConfig {
@@ -366,10 +372,14 @@ impl SweepConfig {
             bias_channel.evaluate();
         }
         for step_channel in &mut self.step_channels {
-            step_channel.start_stop_channel.evaluate();
+            step_channel
+                .start_stop_channel
+                .evaluate(self.step_global_parameters.step_points.value as usize);
         }
         for sweep_channel in &mut self.sweep_channels {
-            sweep_channel.start_stop_channel.evaluate();
+            sweep_channel
+                .start_stop_channel
+                .evaluate(self.sweep_global_parameters.sweep_points.value as usize);
         }
     }
 
@@ -422,7 +432,6 @@ impl SweepConfig {
         self.device_list.iter_mut().for_each(|device| {
             if device._id == chan_id {
                 device.in_use = false;
-                return;
             }
         });
     }

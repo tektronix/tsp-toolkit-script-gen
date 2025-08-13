@@ -49,6 +49,8 @@ export class PlotBiasComponent
   private mutationObserver: MutationObserver | undefined;
   private originalBackgroundColor = '';
   activeBackgroundColor = '';
+  windowHeight = window.innerHeight;
+  windowWidth = window.innerWidth;
 
   plotLayout = {
     xaxis: {
@@ -149,6 +151,7 @@ export class PlotBiasComponent
     dragmode: false,
     autosize: false,
     height: 150,
+    width: this.windowWidth * 0.58,
     margin: {
       l: 40,
       r: 20,
@@ -243,21 +246,12 @@ export class PlotBiasComponent
 
   @HostListener('window:resize')
   onResize(): void {
+    this.windowHeight = window.innerHeight;
+    this.windowWidth = window.innerWidth;
     console.log('Window resized');
-    console.log('plotDivID:', this.plotDivID);
-
-    const container = document.getElementById(this.plotDivID);
-    if (container) {
-      console.log(
-        'Container dimensions:',
-        container.offsetWidth,
-        container.offsetHeight
-      );
-    }
-
-    if (this.plotDivID) {
-      Plotly.Plots.resize(this.plotDivID);
-    }
+    this.plotLayout.width = (this.windowWidth * 58) / 100;
+    this.renderPlot();
+    console.log('Plot resized to:', this.plotLayout.width);
   }
 
   private updatePlotLayout(): void {

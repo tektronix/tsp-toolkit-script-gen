@@ -93,10 +93,7 @@ impl DataModel {
     pub fn process_data_from_saved_config(&mut self, data: String) -> String {
         match serde_json::from_str::<SweepModel>(&data) {
             Ok(mut sweep_model) => {
-                println!(
-                    "Successfully deserialized saved JSON in server: {:?}",
-                    sweep_model
-                );
+                println!("Successfully deserialized saved JSON in server: {sweep_model:?}");
                 sweep_model.sweep_config.evaluate();
 
                 self.sweep_model = sweep_model.clone();
@@ -107,7 +104,7 @@ impl DataModel {
                 )
             }
             Err(e) => {
-                println!("Failed to deserialize saved JSON: {}", e);
+                println!("Failed to deserialize saved JSON: {e}");
                 self.serialize_empty_response("error", "Failed to process saved sweep model")
             }
         }

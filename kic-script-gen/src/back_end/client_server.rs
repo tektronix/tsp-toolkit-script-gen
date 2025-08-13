@@ -66,7 +66,7 @@ impl AppState {
         // let new_wf: Script_Path = Script_Path::default();
         // let pat = serde_json::to_string(&new_wf).unwrap();
         // println!("{pat}");
-        println!("Updating work folder from JSON: {}", json_value);
+        println!("Updating work folder from JSON: {json_value}");
         let mut work_folder_guard = self.work_folder.lock().await;
         if let Ok(value) = serde_json::from_str::<ScriptPath>(json_value) {
             let filename: String = format!("{}.tsp", value.session.clone());
@@ -82,7 +82,7 @@ impl AppState {
                     return;
                 }
                 *work_folder_guard = Some(path_file.to_string_lossy().to_string());
-                println!("Work folder updated to: {:?}", work_folder_guard);
+                println!("Work folder updated to: {work_folder_guard:?}");
             } else {
                 println!(
                     "Work folder does not exist: {:?}",
@@ -90,7 +90,7 @@ impl AppState {
                 );
             }
         } else {
-            println!("Failed to parse work folder from JSON: {}", json_value);
+            println!("Failed to parse work folder from JSON: {json_value}");
         }
     }
 }
@@ -128,7 +128,7 @@ async fn ws_index(
                                 let mut data_model = app_state.data_model.lock().await;
                                 let response =
                                     data_model.process_data_from_client(ipc_data.json_value);
-                                println!("processed data from client {}", response);
+                                println!("processed data from client {response}");
                                 // Send generate script signal
                                 if let Err(e) = gen_script_tx.send(()) {
                                     eprintln!("Failed to send signal: {e}");
@@ -302,11 +302,11 @@ pub async fn start(mut script_model: ScriptModel) -> anyhow::Result<()> {
             } else if trimmed_line.contains("systems") {
                 let mut data_model = app_state.data_model.lock().await;
                 let response = data_model.process_system_config(trimmed_line);
-                println!("{}", response);
+                println!("{response}");
                 // Send generate script signal
                 if !response.contains("error") {
                     if let Err(e) = app_state.gen_script_tx.send(()) {
-                        eprintln!("Failed to send signal: {}", e);
+                        eprintln!("Failed to send signal: {e}");
                     }
                 }
                 let mut session = app_state.session.lock().await;
@@ -334,7 +334,7 @@ pub async fn start(mut script_model: ScriptModel) -> anyhow::Result<()> {
                                     {
                                         let response = data_model
                                             .process_data_from_saved_config(sweep_model_str);
-                                        println!("processed data from saved config {}", response);
+                                        println!("processed data from saved config {response}");
                                         let mut session = app_state.session.lock().await;
                                         if let Some(session) = session.as_mut() {
                                             session.text(response).await.unwrap();
@@ -347,12 +347,12 @@ pub async fn start(mut script_model: ScriptModel) -> anyhow::Result<()> {
                                 }
                             }
                             Err(e) => {
-                                eprintln!("Failed to parse json_value as JSON: {}", e);
+                                eprintln!("Failed to parse json_value as JSON: {e}");
                             }
                         }
                     }
                     Err(e) => {
-                        eprintln!("Failed to deserialize IpcData from stdin: {}", e);
+                        eprintln!("Failed to deserialize IpcData from stdin: {e}");
                     }
                 }
             }

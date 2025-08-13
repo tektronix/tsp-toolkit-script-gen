@@ -81,35 +81,35 @@ h4 {
   padding: 5px;
 }
 
-  .step-start-stop-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 97%;
-  }
+.step-start-stop-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 97%;
+}
 
-  .step-start-stop-container input-plain {
-    flex: 1;
-    margin-right: 10px;
-  }
+.step-start-stop-container input-plain {
+  flex: 1;
+  margin-right: 10px;
+}
 
-  .step-start-stop-container::ng-deep app-input-plain:first-child input{
-    border-bottom-right-radius: 0;
-    border-top-right-radius: 0;
-    padding: 4px 0px 4px 4px;
-  }
+.step-start-stop-container::ng-deep app-input-plain:first-child input {
+  border-bottom-right-radius: 0;
+  border-top-right-radius: 0;
+  padding: 4px 0px 4px 4px;
+}
 
-  .step-start-stop-container::ng-deep app-input-plain:last-child input{
-    border-left: none;
-    border-bottom-left-radius: 0;
-    border-top-left-radius: 0;
-  }
+.step-start-stop-container::ng-deep app-input-plain:last-child input {
+  border-left: none;
+  border-bottom-left-radius: 0;
+  border-top-left-radius: 0;
+}
 
-  .step-start-stop-container input-plain:last-child {
-    margin-right: 0;
-    border-left: none;
-    border-radius: none;
-  }
+.step-start-stop-container input-plain:last-child {
+  margin-right: 0;
+  border-left: none;
+  border-radius: none;
+}
 
 // .stop{
 //   width: 94%;
@@ -141,7 +141,7 @@ h4 {
   border: none;
 }
 
-.h3-button{
+.h3-button {
   background-color: transparent;
   color: currentColor;
   border: none;
@@ -161,13 +161,39 @@ h4 {
   margin-right: auto;
 }
 
+// .checkbox input[type="checkbox"]:checked {
+//   background-color: #2196f3; // or your preferred color
+//   border-color: #2196f3;
+// }
+
+// .checkbox input[type="checkbox"]:checked::after {
+//   content: '';
+//   position: absolute;
+//   left: 5px;
+//   top: 1px;
+//   width: 5px;
+//   height: 10px;
+//   border: solid blue;
+//   border-width: 0 2px 2px 0;
+//   transform: rotate(45deg);
+//   display: block;
+// }
+
 .checkbox input {
   margin-top: 3.5vh;
   box-sizing: border-box;
   // appearance: none;
   padding: 1.3vh;
   border-radius: 3px;
+  // appearance: none;
 }
+
+// .checkbox input[type="checkbox"] {
+//   appearance: none;
+//   width: 18px;
+//   height: 18px;
+//   // border: 2px solid #888;
+// }
 
 .input-group input[type="checkbox"]:disabled {
   opacity: 0.6;

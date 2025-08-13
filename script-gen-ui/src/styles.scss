@@ -1,10 +1,32 @@
 /* You can add global styles to this file, and also import other style files */
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif;
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
   // background-color: var(--vscode-activityErrorBadge-foreground);
 }
 
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+.wait-cursor,
+.wait-cursor * {
+  cursor: wait !important;
+}
+
+.wait-cursor input,
+.wait-cursor input:focus,
+.wait-cursor textarea,
+.wait-cursor textarea:focus {
+  cursor: wait !important;
+}

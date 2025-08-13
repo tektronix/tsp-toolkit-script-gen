@@ -7,6 +7,7 @@ import {
   OnInit,
   OnChanges,
   SimpleChanges,
+  HostListener,
 } from '@angular/core';
 import { SweepChannel } from '../../../../model/chan_data/sweepChannel';
 import { CommonChanAttributes } from '../../../../model/chan_data/defaultChannel';
@@ -53,6 +54,9 @@ export class PlotSweepComponent
   private mutationObserver: MutationObserver | undefined;
   private originalBackgroundColor = '';
   activeBackgroundColor = '';
+  windowHeight = window.innerHeight;
+  windowWidth = window.innerWidth;
+  plotWidth = this.windowWidth * 0.58;
 
   sweepDivID = '';
 
@@ -174,6 +178,7 @@ export class PlotSweepComponent
     dragmode: false,
     autosize: false,
     height: 150,
+    width: this.windowWidth * 0.58,
     margin: {
       l: 40,
       r: 20,
@@ -202,6 +207,13 @@ export class PlotSweepComponent
   private plotData = [this.plotData1, this.plotData2];
 
   constructor(public elementRef: ElementRef) {}
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['isActive'] && !changes['isActive'].isFirstChange()) {
+      // console.log('isActive changed:', changes['isActive'].currentValue);
+      this.renderPlot(); // Re-render the plot when isActive changes
+    }
+  }
 
   ngOnInit() {
     if (
@@ -239,16 +251,30 @@ export class PlotSweepComponent
     this.observeThemeChanges();
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['isActive'] && !changes['isActive'].isFirstChange()) {
-      // console.log('isActive changed:', changes['isActive'].currentValue);
-      this.renderPlot(); // Re-render the plot when isActive changes
+  // the plots are rendered only after the DOM is created, so we need to render them after the DOM is loaded
+  ngAfterViewInit(): void {
+    if (this.style?.value == 'LIN' && this.list == false) {
+      this.sweepValues();
+    } else if (this.list == true) {
+      this.sweepListPlot();
+    } else if (this.style?.value == 'LOG' && this.list == false) {
+      this.updatePlotStyle();
     }
+    this.renderPlot();
   }
 
-  sweepValues() {
-    if (this.start && this.stop && this.numSteps && this.numPoints) {
-      this.plotData1.line.shape = 'hv';
+  @HostListener('window:resize')
+  onResize(): void {
+    this.windowHeight = window.innerHeight;
+    this.windowWidth = window.innerWidth;
+    console.log('Window resized');
+    this.plotLayout.width = (this.windowWidth * 58) / 100;
+    this.renderPlot();
+    console.log('Plot resized to:', this.plotLayout.width);
+  }
+
+  private sweepValues() {
+    if (this.start && this.stop && this.numPoints) {
       const numberOfPoints = this.numPoints.value;
       const startValue = this.start.value;
       const stopValue = this.stop.value;
@@ -260,31 +286,49 @@ export class PlotSweepComponent
         (_, i) => startValue + i * stepSize
       ).flat();
 
-      this.generatePlotData(sweepValues, numberOfPoints);
+      this.generatePlotData(sweepValues, 'LIN');
     }
   }
 
-  private generatePlotData(sweepValues: number[], numberOfPoints: number) {
-    const numSteps = this.numSteps || 0;
-    this.plotData1.y = Array.from(
-      { length: numSteps },
-      () => sweepValues
-    ).flat().concat(sweepValues[sweepValues.length - 1]);
+  private generatePlotDataxy(sweepValues: number[]) {
+    if (this.numPoints && this.numSteps) {
+      const numSteps = this.numSteps;
+      const numberOfPoints = this.numPoints?.value;
+      this.plotData1.y = Array.from({ length: numSteps }, () => sweepValues)
+        .flat()
+        .concat(sweepValues[sweepValues.length - 1]);
 
-    this.plotData1.x = Array.from({ length: numSteps }, (_, i) => Array.from({ length: numberOfPoints }, (_, j) => i + j / numberOfPoints)
-    ).flat().concat(numSteps);
+      this.plotData1.x = Array.from({ length: numSteps }, (_, i) =>
+        Array.from({ length: numberOfPoints }, (_, j) => i + j / numberOfPoints)
+      )
+        .flat()
+        .concat(numSteps);
+    }
   }
 
-  // the plots are rendered only after the DOM is created, so we need to render them after the DOM is loaded
-  ngAfterViewInit(): void {
-    if (this.style?.value == 'LIN' && this.list == false) {
-      this.sweepValues();
-    } else if (this.style?.value == 'LIN' && this.list == true) {
-      this.sweepListPlot();
-    } else if (this.style?.value == 'LOG' && this.list == false) {
-      this.updatePlotStyle();
+  private generatePlotData(sweepValues: number[], type: string) {
+    if (this.numPoints && this.numSteps) {
+      const targetLength = this.plotWidth / this.numPoints.value;
+      if (this.numPoints?.value > targetLength) {
+        if (type == 'LIN') {
+          const interpolated = PlotUtils.linearInterpolation(
+            sweepValues,
+            targetLength
+          );
+          sweepValues = interpolated.y;
+        } else if (type == 'LOG' || type == 'LIST') {
+          const interpolated = PlotUtils.minMaxInterpolation(
+            sweepValues,
+            targetLength
+          );
+          sweepValues = interpolated.y;
+        }
+        this.generatePlotDataxy(sweepValues);
+      } else {
+        this.generatePlotDataxy(sweepValues);
+      }
+      this.plotLayout.xaxis.dtick = this.numSteps / 10;
     }
-    this.renderPlot();
   }
 
   private updatePlotLayout(): void {
@@ -335,7 +379,6 @@ export class PlotSweepComponent
     if (this.style?.value === 'LOG') {
       if (this.start && this.stop && this.numSteps && this.numPoints) {
         const numberOfPoints = this.numPoints.value;
-        // const numSteps = this.numSteps;
         const startValue = this.start.value > 0 ? this.start.value : 1e-12;
         const stopValue = this.stop.value > 0 ? this.stop.value : 1e-12;
         const stepFactor = Math.pow(
@@ -348,33 +391,16 @@ export class PlotSweepComponent
           (_, i) => startValue * Math.pow(stepFactor, i)
         );
 
-        this.generatePlotData(sweepValues, numberOfPoints);
-
-        console.log('LOG sweep plotData1.x:', this.plotData1.x);
-        console.log('LOG sweep plotData1.y:', this.plotData1.y);
+        this.generatePlotData(sweepValues, 'LOG');
       }
-    } else {
-      this.plotLayout.xaxis.type = 'linear';
-      this.sweepValues();
     }
-    this.renderPlot();
   }
 
   private sweepListPlot(): void {
-    // console.log('listSweep: step and sweep', this.listSweep, this.numPoints, this.numSteps);
-    if (this.listSweep && this.numPoints && this.numSteps) {
-      const numberOfPoints = this.numPoints.value;
-      // const numSteps = this.numSteps;
-
+    if (this.listSweep) {
       const sweepValues = this.listSweep.map((pf) => pf?.value ?? 0);
-
-      this.generatePlotData(sweepValues, numberOfPoints);
-
-      this.plotData1.line.shape = 'hv';
-      // console.log('List sweep plotData1.x:', this.plotData1.x);
-      // console.log('List sweep plotData1.y:', this.plotData1.y);
+      this.generatePlotData(sweepValues, 'LIST');
     }
-    this.renderPlot();
   }
 
   private initializePlot(): void {

@@ -38,3 +38,7 @@
   height: 12px; /* Adjust height as needed */
   margin: 0 10px; /* Adjust spacing as needed */
 }
+
+.wait-cursor, .wait-cursor * {
+  cursor: wait !important;
+}

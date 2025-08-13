@@ -2,7 +2,10 @@ use std::{any::Any, collections::HashMap};
 
 use crate::{
     instr_metadata::base_metadata::BaseMetadata,
-    model::{chan_data::channel_range::ChannelRange, sweep_data::sweep_config::SweepConfig},
+    model::{
+        chan_data::channel_range::ChannelRange,
+        sweep_data::{parameters::ParameterFloat, sweep_config::SweepConfig},
+    },
 };
 
 use super::function::FunctionModel;
@@ -79,7 +82,7 @@ impl SweepModel {
     fn define_bias_channels(&mut self, sweep_config: &SweepConfig) {
         let mut index = 1;
         for bias_channel in sweep_config.bias_channels.iter() {
-            let instr_name = format!("bias{}", index);
+            let instr_name = format!("bias{index}");
             self.attributes.bias_names.push(instr_name.clone());
 
             self.val_replacement_map.insert(
@@ -177,7 +180,7 @@ impl SweepModel {
     fn define_step_channels(&mut self, sweep_config: &SweepConfig) {
         let mut index = 1;
         for step_channel in sweep_config.step_channels.iter() {
-            let instr_name = format!("step{}", index);
+            let instr_name = format!("step{index}");
             self.attributes.step_names.push(instr_name.clone());
 
             self.val_replacement_map.insert(
@@ -300,10 +303,17 @@ impl SweepModel {
                 self.format(step_channel.start_stop_channel.stop.value),
             );
 
+            self.process_list(
+                sweep_config.step_global_parameters.list_step,
+                &step_channel.start_stop_channel.list,
+                instr_name,
+                sweep_config.step_global_parameters.step_points.value as usize,
+            );
+
             index += 1;
         }
 
-        let step_count = if self.attributes.step_names.len() > 0 {
+        let step_count = if !self.attributes.step_names.is_empty() {
             sweep_config
                 .step_global_parameters
                 .step_points
@@ -313,7 +323,7 @@ impl SweepModel {
             String::from("1")
         };
 
-        let step_to_sweep_delay = if self.attributes.step_names.len() > 0 {
+        let step_to_sweep_delay = if !self.attributes.step_names.is_empty() {
             self.format(
                 sweep_config
                     .step_global_parameters
@@ -337,10 +347,36 @@ impl SweepModel {
         }
     }
 
+    fn process_list(
+        &mut self,
+        is_list: bool,
+        list: &Vec<ParameterFloat>,
+        instr_name: String,
+        len: usize, // Default length for list values
+    ) {
+        //Default value for list is nil
+        let mut list_values = "nil".to_string();
+
+        if is_list {
+            let mut new_list = list
+                .iter()
+                .map(|item| item.value.to_string())
+                .collect::<Vec<_>>();
+            if !new_list.is_empty() && new_list.len() > len {
+                new_list.truncate(len);
+            }
+
+            //Fill in list values
+            list_values = format!("{{ {} }}", new_list.join(", "));
+        }
+        self.val_replacement_map
+            .insert(instr_name.clone() + ":LIST", list_values);
+    }
+
     fn define_sweep_channels(&mut self, sweep_config: &SweepConfig) {
         let mut index = 1;
         for sweep_channel in sweep_config.sweep_channels.iter() {
-            let instr_name = format!("sweep{}", index);
+            let instr_name = format!("sweep{index}");
             self.attributes.sweep_names.push(instr_name.clone());
 
             self.val_replacement_map.insert(
@@ -461,6 +497,13 @@ impl SweepModel {
             self.val_replacement_map.insert(
                 instr_name.clone() + ":STOP",
                 self.format(sweep_channel.start_stop_channel.stop.value),
+            );
+
+            self.process_list(
+                sweep_config.sweep_global_parameters.list_sweep,
+                &sweep_channel.start_stop_channel.list,
+                instr_name,
+                sweep_config.sweep_global_parameters.sweep_points.value as usize,
             );
 
             index += 1;

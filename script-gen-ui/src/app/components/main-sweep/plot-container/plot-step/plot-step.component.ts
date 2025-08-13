@@ -2,9 +2,11 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
+  HostListener,
   Input,
   OnDestroy,
   OnInit,
+  SimpleChanges, OnChanges,
 } from '@angular/core';
 import { StepChannel } from '../../../../model/chan_data/stepChannel';
 import { ChannelRange } from '../../../../model/chan_data/channelRange';
@@ -29,7 +31,7 @@ import { PlotUtils } from '../plot-utils';
   templateUrl: './plot-step.component.html',
   styleUrl: './plot-step.component.scss',
 })
-export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
+export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy, OnChanges {
   @Input() stepChannel: StepChannel | undefined;
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
 
@@ -56,6 +58,9 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
   private mutationObserver: MutationObserver | undefined;
   private originalBackgroundColor = '';
   activeBackgroundColor = '';
+  windowHeight = window.innerHeight;
+  windowWidth = window.innerWidth;
+  plotWidth = this.windowWidth * 0.58;
 
   commonChanAttributes: CommonChanAttributes | undefined;
   chanName = 'step1';
@@ -170,6 +175,7 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
     dragmode: false,
     autosize: false,
     height: 150,
+    width: this.windowWidth * 0.58,
     margin: {
       l: 40,
       r: 20,
@@ -198,6 +204,13 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
   private plotData = [this.plotData1, this.plotData2];
 
   constructor(public elementRef: ElementRef) {}
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['isActive'] && !changes['isActive'].isFirstChange()) {
+      // console.log('isActive changed:', changes['isActive'].currentValue);
+      this.renderPlot(); // Re-render the plot when isActive changes
+    }
+  }
 
   ngOnInit() {
     if (this.stepChannel && this.stepGlobalParameters) {
@@ -229,25 +242,11 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
     this.observeThemeChanges();
   }
 
-  stepListPlot() {
-    if (this.listStep && this.stepPoints) {
-      const stepValues = this.listStep.map((pf) => pf?.value ?? 0);
-      this.plotData1.x = Array.from(
-        { length: this.stepPoints.value },
-        (_, i) => i
-      );
-      this.plotData1.y = stepValues.slice(0, this.stepPoints.value);
-      this.plotData1.line.shape = 'hv';
-      console.log('generated step list data:', this.plotData1);
-    }
-    this.renderPlot();
-  }
-
   // the plots are rendered only after the DOM is created, so we need to render them after the DOM is loaded
   ngAfterViewInit(): void {
     if (this.style?.value == 'LIN' && this.list == false) {
       this.stepValues();
-    } else if (this.style?.value == 'LIN' && this.list == true) {
+    } else if (this.list == true) {
       this.stepListPlot();
     } else if (this.style?.value == 'LOG' && this.list == false) {
       this.updatePlotStyle();
@@ -255,23 +254,72 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
     this.renderPlot();
   }
 
-  stepValues() {
+  @HostListener('window:resize')
+  onResize(): void {
+    this.windowHeight = window.innerHeight;
+    this.windowWidth = window.innerWidth;
+    console.log('Window resized');
+    this.plotLayout.width = (this.windowWidth * 58) / 100;
+    this.renderPlot();
+    console.log('Plot resized to:', this.plotLayout.width);
+  }
+
+  private generatePlotData(yData: number[], type: string): void {
+    if (this.stepPoints) {
+      const targetLength = Math.max(2, Math.floor(this.plotWidth));
+      let xData: number[] = [];
+
+      if (this.stepPoints.value > targetLength) {
+        if (type == 'LIN') {
+          const interpolated = PlotUtils.linearInterpolation(
+            yData,
+            targetLength
+          );
+          xData = interpolated.x;
+          yData = interpolated.y;
+        } else if (type == 'LOG' || type == 'LIST') {
+          const interpolated = PlotUtils.minMaxInterpolation(
+            yData,
+            targetLength
+          );
+          xData = interpolated.x;
+          yData = interpolated.y;
+        }
+      } else {
+        xData = Array.from({ length: this.stepPoints.value }, (_, i) => i)
+          .concat(this.stepPoints.value)
+          .flat();
+      }
+      this.plotData1.x = xData;
+      this.plotData1.y = yData;
+      console.log('Plot data generated:', { x: this.plotData1.x, y: this.plotData1.y });
+      this.plotLayout.xaxis.dtick = this.stepPoints.value / 10;
+    }
+  }
+
+  private stepListPlot() {
+    if (this.listStep && this.stepPoints && this.stop) {
+      const stepValues = this.listStep
+        .map((pf) => pf?.value ?? 0)
+        .concat(this.listStep[this.listStep.length - 1]?.value ?? 0);
+      this.generatePlotData(stepValues, 'LIST');
+    }
+    this.renderPlot();
+  }
+
+  private stepValues() {
     if (this.start && this.stop && this.stepPoints) {
+      document.body.classList.add('wait-cursor'); // Force wait cursor everywhere
       const stepSize =
         (this.stop.value - this.start.value) / (this.stepPoints.value - 1);
-      this.plotData1.x = Array.from(
+      const yData = Array.from(
         { length: this.stepPoints.value },
-        (_, i) => i
-      )
-        .concat(this.stepPoints.value)
-        .flat();
-      this.plotData1.y = Array.from(
-        { length: this.stepPoints?.value ?? 0 },
         (_, i) => (this.start?.value ?? 0) + i * stepSize
-      )
-        .concat(this.stop?.value ?? 0)
-        .flat();
+      ).concat(this.stop?.value ?? 0);
+
+      this.generatePlotData(yData, 'LIN');
     }
+    document.body.classList.remove('wait-cursor'); // Restore cursor after rendering
   }
 
   private updatePlotLayout(): void {
@@ -326,22 +374,18 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy {
       if (this.start && this.stop && this.stepPoints) {
         const startValue = this.start.value > 0 ? this.start.value : 1e-12;
         const stopValue = this.stop.value > 0 ? this.stop.value : 1e-12;
+        const numPoints = this.stepPoints.value;
         const stepFactor = Math.pow(
           stopValue / startValue,
-          1 / (this.stepPoints.value - 1)
+          1 / (numPoints - 1)
         );
 
-        this.plotData1.x = Array.from(
-          { length: this.stepPoints.value },
-          (_, i) => i
-        )
-          .concat(this.stepPoints.value)
-          .flat();
-        this.plotData1.y = Array.from(
-          { length: this.stepPoints.value },
+        const yData = Array.from(
+          { length: numPoints },
           (_, i) => startValue * Math.pow(stepFactor, i)
-        );
-        console.log('plotData1', this.plotData1);
+        ).concat(this.stop.value);
+
+        this.generatePlotData(yData, 'LOG');
       }
     } else {
       this.stepValues();

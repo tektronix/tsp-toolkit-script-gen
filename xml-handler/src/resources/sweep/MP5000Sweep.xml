@@ -90,7 +90,7 @@
 
         ---@class Measure
         ---@field nplc number | nil
-        ---@field aperature number | nil
+        ---@field aperture number | nil
         ---@field rate `CONSTANTS.RATE_FAST` | `CONSTANTS.RATE_NORMAL` | nil
         ---@field autozero boolean Whether autozero should be turned on or not
         ---@field count integer The number of measurments to take
@@ -332,8 +332,8 @@
                             -- nplc
                             if self.measure.nplc ~= nil then
                                 self.channel.measure.nplc = self.measure.nplc
-                            elseif self.measure.aperature ~= nil then
-                                self.channel.measure.aperature = self.measure.aperature
+                            elseif self.measure.aperture ~= nil then
+                                self.channel.measure.aperture = self.measure.aperture
                             end
                             -- count
                             self.channel.measure.count = self.measure.count
@@ -1237,10 +1237,10 @@
                     values = { start = %START%, stop = %STOP%, count = %STEP-COUNT% },
 
                     --IF log sweep --
-                    values = { start = %START%, stop = %STOP%, count = %STEP-COUNT%},
+                    values = { start = %START%, stop = %STOP%, count = %STEP-COUNT% },
 
                     --IF LIST --
-                    values = { list = {%LIST%}},
+                    values = { list = %LIST%},
 
                     range = %SRANGE%,
                     limiti = %LIMITI%,
@@ -1322,10 +1322,10 @@
                     values = { start = %START%, stop = %STOP%, count = %SWEEP-POINTS% },
 
                     --IF log sweep
-                    values = { start = %START%, stop = %STOP%, count = %SWEEP-POINTS%},
+                    values = { start = %START%, stop = %STOP%, count = %SWEEP-POINTS% },
 
                     --IF LIST
-                    values = { list = {%LIST%}},
+                    values = { list = %LIST%},
 
                     range = %SRANGE%,
                     limiti = %LIMITI%,

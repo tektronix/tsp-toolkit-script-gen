@@ -33,13 +33,30 @@
 	<substitute name="MEASURE-DELAY">%MEASURE-DELAY%</substitute>
 	<substitute name="EFFECTIVE-FILTER-COUNT">%EFFECTIVE-FILTER-COUNT%</substitute>
 	<snippet>
+        ---@diagnostic disable: deprecated
+        reset(true)
+
+        LOGEVENTS = false
+
+        local lognumber = 0
+        local function logevent(device, message)
+            if LOGEVENTS then
+                device.slot.trigger.model.addblock.logevent(device.trigger_model, device.trigger_model .. lognumber,
+                    device.slot.trigger.model.LOG_INFO1, device.channel_idx .. &quot;: &quot; .. message)
+                lognumber = lognumber + 1
+            end
+        end
+
+        ----------------------------------------------------------------------------
+        -- START OF SWEEP SEGMENT ... do not modify this section
+        ----------------------------------------------------------------------------
         --------------------------------------------------------------------------------
         -- DO NOT EDIT! Scroll to end of file to find editable portion -----------------
         --------------------------------------------------------------------------------
         --#region Util
 
         CONSTANTS = {
-            AUTO = "AUTO",
+            AUTO = &quot;AUTO&quot;,
             localnode = 0,
             SENSE_2WIRE = 0,
             SENSE_4WIRE = 1,
@@ -60,24 +77,25 @@
         ---@field steps Device[]
         ---@field sweeps Device[]
 
-        ---@class LogValues
+        ---@class CountedValueRange
         ---@field start number The start value of the sweep
         ---@field stop number The stop value of the sweep
         ---@field count number the number of steps to take in the sweep
 
+        ---@class LogValues
+        ---@field log CountedValueRange The range the log sweep should encompass
+
         ---@class LinearValues
-        ---@field start number The start value of the sweep
-        ---@field stop number The stop value of the sweep
-        ---@field count number the number of steps to take in the sweep
+        ---@field linear CountedValueRange The range the linear sweep should encompass
 
         ---@class ListValues
         ---@field list number[] The list of values for this list sweep
 
-        ---@class ScalarValues
+        ---@class ScalarValue
         ---@field scalar number The value to source
 
         ---@class Source
-        ---@field values ScalarValues | LogValues | LinearValues | ListValues The value or values to source
+        ---@field values ScalarValue | LogValues | LinearValues | ListValues The value or values to source
         ---@field range number | `CONSTANTS.AUTO` The range to use, or Auto
         ---@field limiti number The current limit
         ---@field limitv number The voltage limit
@@ -90,13 +108,13 @@
 
         ---@class Measure
         ---@field nplc number | nil
-        ---@field aperture number | nil
+        ---@field aperature number | nil
         ---@field rate `CONSTANTS.RATE_FAST` | `CONSTANTS.RATE_NORMAL` | nil
-        ---@field autozero boolean Whether autozero should be turned on or not
+        -- ---@field autozero boolean Whether autozero should be turned on or not
         ---@field count integer The number of measurments to take
-        ---@field filter_enable boolean Whether to enable the filter or not
+        -- ---@field filter_enable boolean Whether to enable the filter or not
         ---@field filter_type any | nil The type of measure filter to use
-        ---@field delay number The time to delay before measuring
+        ---@field delay number | nil The time to delay before measuring
         ---@field func `CONSTANTS.FUNC_DC_CURRENT` | `CONSTANTS.FUNC_DC_VOLTAGE` | `CONSTANTS.FUNC_DC_OHMS` | `CONSTANTS.FUNC_DC_POWER` | `CONSTANTS.FUNC_DC_IV_COMBINED`
         ---@field buffers Buffer[] The buffers to read into.
 
@@ -132,9 +150,9 @@
 
         ---@class Model
         ---@field common nil | ModelComponent The model component used for all all device roles
-        ---@field bias nil | ModelComponent The model component used for only "bias" device roles
-        ---@field step nil | ModelComponent The model component used for only "step" device roles
-        ---@field sweep nil | ModelComponent The model component used for only "sweep" device roles
+        ---@field bias nil | ModelComponent The model component used for only &quot;bias&quot; device roles
+        ---@field step nil | ModelComponent The model component used for only &quot;step&quot; device roles
+        ---@field sweep nil | ModelComponent The model component used for only &quot;sweep&quot; device roles
 
         ---@class ModelComponent
         ---@field reset fun(self: Device) The function used to reset the device
@@ -142,16 +160,19 @@
         ---@field trigger_model_setup fun(self: Device) The function used to set up the trigger model
         ---@field trigger_model_initiate fun(self: Device) The function used to initiate the trigger model
 
-        UTILITY                     = {
+        UTILITY = {
+            TOTAL_COUNT = 0,
+            STEP_COUNT = 0,
+            SWEEP_COUNT = 0,
             ---@type table&lt;any, {event_id: number, used: boolean}&gt;
             event_ids = {},
             init_slot_event_ids = function(slot, event_numbers)
                 -- make sure we only add these once.
                 if UTILITY.event_ids[slot] == nil then
-                    UTILITY.event_id[slot] = {}
+                    UTILITY.event_ids[slot] = {}
                     for k, v in ipairs(event_numbers) do
                         table.insert(UTILITY.event_ids[slot],
-                            { event_id = slot.trigger.model["EVENT_NOTIFY" .. v], used = false })
+                            { event_id = slot.trigger.model[&quot;EVENT_NOTIFY&quot; .. v], used = false })
                     end
                 end
             end,
@@ -160,6 +181,7 @@
             ---@return number | nil
             get_slot_event_id = function(slot)
                 if not UTILITY.event_ids[slot] then
+                    error(&quot;Event ids for given slot were not initialized&quot;)
                     return nil
                 end
                 for k, v in ipairs(UTILITY.event_ids[slot]) do
@@ -168,6 +190,7 @@
                         return v.event_id
                     end
                 end
+                error(&quot;No event ids were available for the given slot&quot;)
                 return nil
             end,
 
@@ -208,27 +231,41 @@
             make_waitall = function(tm, model, block_name, events)
                 local single_make_waitall = function(tm, model, block_name, events)
                     if table.getn(events) == 1 then
-                        tm.addblock.wait(model, block_name, events[1])
+                        if events[1] ~= nil then
+                            tm.addblock.wait(model, block_name, events[1])
+                        end
                         return nil
                     elseif table.getn(events) &gt; 1 then
                         local first = events[1]
-                        local next = {}
-                        local remainder = {}
-                        for i, v in ipairs(events) do
-                            if i &gt; 1 then
-                                next[table.getn(next)] = v
-                            elseif i &gt; 4 then
-                                remainder[table.getn(remainder)] = v
+                        if table.getn(events) == 2 then
+                            local second = events[2]
+                            if second ~= nil then
+                                tm.addblock.wait(model, block_name, first, trigger.WAIT_AND, second)
+                            else
+                                tm.addblock.wait(model, block_name, first)
                             end
+                            return
+                        else
+                            events = table.remove(events, 1)
+                            local next = {}
+                            local remainder = {}
+                            for i, v in ipairs(events) do
+                                if i &gt; 1 and v ~= nil then
+                                    next[table.getn(next) + 1] = v
+                                elseif i &gt; 4 then
+                                    remainder[table.getn(remainder) + 1] = v
+                                end
+                            end
+                            tm.addblock.wait(model, block_name, first, trigger.WAIT_AND, unpack(next))
+                            return remainder
                         end
-                        tm.addblock.wait(model, block_name, first, trigger.CLEAR_NEVER, trigger.WAIT_AND, unpack(next))
-                        return remainder
                     end
                 end
                 local iteration = 1
                 local remaining = events
-                while remaining ~= nil do
+                while remaining ~= nil and table.getn(remaining) &gt; 0 do
                     remaining = single_make_waitall(tm, model, block_name .. iteration, remaining)
+                    iteration = iteration + 1
                 end
             end,
 
@@ -248,23 +285,31 @@
                             self.node.trigger.timer[2].reset()
                             self.node.trigger.timer[3].reset()
                             self.node.trigger.timer[4].reset()
-                            for _, v in ipairs(self.slot.trigger.model.table()) do
-                                self.slot.trigger.model.abort(v)
-                                self.slot.trigger.model.delete(v)
-                            end
+                            --for _, v in ipairs(self.slot.trigger.model.table()) do
+                            self.slot.trigger.model.abort()
+                            self.slot.trigger.model.delete(self.node_name .. &quot; Bias Trigger Model&quot;)
+                            self.slot.trigger.model.delete(self.node_name .. &quot; Step Trigger Model&quot;)
+                            self.slot.trigger.model.delete(self.node_name .. &quot; Sweep Trigger Model&quot;)
+                            --    self.slot.trigger.model.delete(v)
+                            --end
                         end,
                         --- Configures this MSMU60-2
                         ---@param self Device
                         config = function(self)
-                            UTILITY.init_slot_event_ids(self.slot, { 1, 2, 3, 4, 5, 6, 7, 8})
+                            UTILITY.init_slot_event_ids(self.slot, { 1, 2, 3, 4, 5, 6, 7, 8 })
                             -- Sense setting --
-                            self.slot.sense = self.sense
+                            if self.sense == CONSTANTS.SENSE_2WIRE then
+                                self.channel.sense = self.channel.SENSE_2WIRE
+                            elseif self.sense == CONSTANTS.SENSE_4WIRE then
+                                self.channel.sense = self.channel.SENSE_4WIRE
+                            end
+
                             local event_id = UTILITY.get_slot_event_id(self.slot)
                             if event_id then
                                 self.event = event_id
                             else
-                                error("Unable to assign event ID to channel: all event IDs for slot[" ..
-                                    self.slot_idx .. "] have been consumed.")
+                                error(&quot;Unable to assign event ID to channel: all event IDs for slot[&quot; ..
+                                    self.slot_idx .. &quot;] have been consumed.&quot;)
                                 exit()
                             end
 
@@ -289,21 +334,21 @@
                             elseif self.source.values.log ~= nil then
                                 if self.source.func == CONSTANTS.FUNC_DC_VOLTAGE then
                                     self.channel.source.func = self.slot.smu.FUNC_DC_VOLTAGE
-                                    local log = self.source.values
+                                    local log = self.source.values.log
                                     self.channel.trigger.source.logv(log.start, log.stop, log.count)
                                 elseif self.source.func == CONSTANTS.FUNC_DC_CURRENT then
                                     self.channel.source.func = self.slot.smu.FUNC_DC_CURRENT
-                                    local log = self.source.values
+                                    local log = self.source.values.log
                                     self.channel.trigger.source.logi(log.start, log.stop, log.count)
                                 end
-                            else
+                            elseif self.source.values.linear ~= nil then
                                 if self.source.func == CONSTANTS.FUNC_DC_VOLTAGE then
                                     self.channel.source.func = self.slot.smu.FUNC_DC_VOLTAGE
-                                    local lin = self.source.values
+                                    local lin = self.source.values.linear
                                     self.channel.trigger.source.linearv(lin.start, lin.stop, lin.count)
                                 elseif self.source.func == CONSTANTS.FUNC_DC_CURRENT then
                                     self.channel.source.func = self.slot.smu.FUNC_DC_CURRENT
-                                    local lin = self.source.values
+                                    local lin = self.source.values.linear
                                     self.channel.trigger.source.lineari(lin.start, lin.stop, lin.count)
                                 end
                             end
@@ -322,9 +367,9 @@
                                 end
                             end
                             -- limiti
-                            self.channel.limiti = self.source.limiti
+                            self.channel.source.limiti = self.source.limiti
                             -- limitv
-                            self.channel.limitv = self.source.limitv
+                            self.channel.source.limitv = self.source.limitv
                             -- delay
                             self.channel.source.delay = self.source.delay
 
@@ -332,15 +377,17 @@
                             -- nplc
                             if self.measure.nplc ~= nil then
                                 self.channel.measure.nplc = self.measure.nplc
-                            elseif self.measure.aperture ~= nil then
-                                self.channel.measure.aperture = self.measure.aperture
+                            elseif self.measure.aperature ~= nil then
+                                self.channel.measure.aperature = self.measure.aperature
                             end
                             -- count
                             self.channel.measure.count = self.measure.count
                             -- TODO: filter_enable
                             -- TODO: filter_type
                             -- delay
-                            self.channel.measure.delay = self.measure.delay
+                            if self.measure.delay ~= nil then
+                                self.channel.measure.delay = self.measure.delay
+                            end
                             -- func, buffers
                             if self.measure.func == CONSTANTS.FUNC_DC_IV_COMBINED then
                                 local bufferi, bufferv = nil, nil
@@ -351,7 +398,6 @@
                                         bufferi = x.buffer
                                     end
                                 end
-
                                 self.channel.trigger.measure.iv(bufferi, bufferv)
                             elseif self.measure.func == CONSTANTS.FUNC_DC_CURRENT then
                                 self.channel.trigger.measure.i(self.measure.buffers[1].buffer)
@@ -384,52 +430,83 @@
                         ---@param sweep_event any | nil The event ID associated with all the sweep steps completing (only one)
                         ---@param bias_complete_events any[] | nil The event ID(s) associated with all other bias steps completing. Should only be passed to one bias channel.
                         trigger_model_setup = function(self, bias_event, step_event, sweep_event, bias_complete_events)
-                            self.trigger_model = self.node_name .. " Bias Trigger Model"
+                            local tm_add = self.slot.trigger.model.addblock
+                            local block = {
+                                bias = self.channel_idx..&quot;_bias&quot;,
+                                waitall_bias = self.channel_idx..&quot;_waitall_bias_&quot;,
+                                bias_notify = self.channel_idx..&quot;_bias_notify&quot;,
+                                wait_step= self.channel_idx..&quot;_wait_step&quot;,
+                                waitall_sweep = self.channel_idx..&quot;_wait_sweep&quot;,
+                                measure = self.channel_idx..&quot;_bias_measure&quot;,
+                                waitall_bias_meas = self.channel_idx..&quot;_waitall_bias_meas_&quot;,
+                                meas_notify = self.channel_idx..&quot;_bias_meas_notify&quot;,
+                                waitall_sweep_step_meas = self.channel_idx..&quot;_bias_wait_sweep_step_meas&quot;,
+                                loop = self.channel_idx..&quot;_loop&quot;,
+
+                            }
+                            self.trigger_model = self.node_name .. &quot; Bias Trigger Model&quot;
                             self.slot.trigger.model.create(self.trigger_model)
-                            local bias_block = self.node_name .. " bias"
-                            self.slot.trigger.model.addblock.source.action.bias(self.trigger_model, bias_block, self.channel_idx)
+
+                            logevent(self, &quot;START&quot;)
+                            tm_add.source.action.bias(self.trigger_model, block.bias, self.channel_idx)
 
                             if bias_complete_events then
                                 -- Add an optional wait for other sweep events only on the first bias-instrument
                                 UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                    self.node_name .. "bias_waitall_block_",
+                                    block.waitall_bias,
                                     bias_complete_events)
+                                logevent(self, &quot;WAIT ALL BIASES DONE&quot;)
                             end
 
-                            local bias_done_notify_block = self.node_name .. " bias_done"
-                            self.slot.trigger.model.addblock.notify(self.trigger_model, bias_done_notify_block, self.event)
-                            local bias_wait_sweep_block = self.node_name .. " bias_wait_sweep"
-                            self.slot.trigger.model.addblock.wait(self.trigger_model, bias_wait_sweep_block, sweep_event)
-                            local bias_measure_block = self.node_name .. " bias_measure"
-                            self.slot.trigger.model.addblock.measure(self.trigger_model, bias_measure_block, self.channel_idx)
+                            logevent(self, &quot;BIAS NOTIFY&quot;)
+                            -- Notify other channels that the bias is complete.
+                            tm_add.notify(self.trigger_model, block.bias_notify, self.event)
+
+                            -- Wait for the primary sweeper and/or stepper to complete
+                            if sweep_event ~= nil then
+                                tm_add.wait(self.trigger_model, block.wait_sweep,sweep_event, self.slot.trigger.model.CLEAR_NEVER)
+                                logevent(self, &quot;WAIT SWEEP DONE&quot;)
+                            elseif step_event ~= nil then
+                                tm_add.wait(self.trigger_model, block.wait_step, step_event, self.slot.trigger.model.CLEAR_NEVER)
+                                logevent(self, &quot;WAIT STEP DONE&quot;)
+                            end
+
+                            logevent(self, &quot;BIAS MEASURE&quot;)
+                            -- Measure using the configured number of measurements.
+                            tm_add.measure(self.trigger_model, block.measure, self.channel_idx)
 
                             -- Wait for other bias-instrument measurements to complete
                             if bias_complete_events then
                                 -- Add an optional wait for other sweep events only on the first bias-instrument
                                 UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                    self.node_name .. "bias_other_waitall_measure_block_",
+                                    block.waitall_bias_meas,
                                     bias_complete_events)
+                                logevent(self, &quot;WAIT ALL BIAS MEAS&quot;)
                             end
 
-                            -- Notify other channels that this channel's measurements are complete
-                            local bias_measure_done_notify_block = self.node_name .. " bias_measure_done"
-                            self.slot.trigger.model.addblock.notify(self.trigger_model, bias_measure_done_notify_block,
+                            logevent(self, &quot;BIAS MEAS NOTIFY&quot;)
+                            -- Notify other channels that this channel&apos;s measurements are complete
+                            tm_add.notify(self.trigger_model, block.meas_notify,
                                 self.event)
 
-                            -- Wait on step and sweep measure completion
+                            -- Wait on primary step and sweep measure completion
                             UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                self.node_name .. "bias_waitall_measure_block_",
+                                block.waitall_sweep_step_meas,
                                 { sweep_event, step_event })
-
-                            local bias_wait_measure_block = self.node_name .. " bias_wait_measure_block"
-                            self.slot.trigger.model.addblock.wait(self.trigger_model, bias_wait_measure_block,
-                                sweep_event)
+                            logevent(self, &quot;BIAS WAIT SWEEP|STEP DONE&quot;)
 
 
-                            local bias_counter_block = self.node_name .. " bias_counter"
-                            self.slot.trigger.model.addblock.branch.counter(self.trigger_model, bias_counter_block,
-                                bias_wait_sweep_block,
-                                TOTAL_COUNT)
+                            -- Loop back to `bias_wait_sweep_block` until all iterations are complete
+                            if sweep_event ~= nil then
+                                tm_add.branch.counter(self.trigger_model, block.loop,
+                                    block.wait_sweep,
+                                    UTILITY.TOTAL_COUNT)
+                            elseif step_event ~= nil then
+                                tm_add.branch.counter(self.trigger_model, block.loop,
+                                    block.wait_step,
+                                    UTILITY.TOTAL_COUNT)
+
+                            end
                         end,
                     },
                     step = {
@@ -440,52 +517,124 @@
                         ---@param sweep_event any The event that indicates the sweepsare fully started.
                         ---@param step_complete_events any[] | nil The event ID(s) associated with all other steps completing. Should only be passed to one bias channel.
                         trigger_model_setup = function(self, bias_event, step_event, sweep_event, step_complete_events)
-                            self.trigger_model = self.node_name .. " Step Trigger Model"
+                            local tm_add = self.slot.trigger.model.addblock
+                            local block = {
+                                wait_bias = self.channel_idx .. &quot;_step_wait_bias&quot;,
+                                step = self.channel_idx .. &quot;_step_step&quot;,
+                                waitall_steps = self.channel_idx .. &quot;_step_waitall_&quot;,
+                                step_notify = self.channel_idx .. &quot;_step_done&quot;,
+                                wait_sweep = self.channel_idx .. &quot;_step_wait_sweep&quot;,
+                                measure = self.channel_idx .. &quot;_step_measure&quot;,
+                                waitall_step_meas = self.channel_idx .. &quot;_step_other_measure_waitall_&quot;,
+                                meas_notify = self.channel_idx .. &quot;_step_meas done&quot;,
+                                waitall_sweep_bias_meas = self.channel_idx .. &quot;_step_wait_sweep_bias_meas&quot;,
+                                inner_loop = self.channel_idx .. &quot;_step_inner_loop&quot;,
+                                outer_loop = self.channel_idx .. &quot;_step_outer_loop&quot;,
+                                final_notify = self.channel_idx .. &quot;_final_notify&quot;,
+                            }
+                            self.trigger_model = self.node_name .. &quot; Step Trigger Model&quot;
                             self.slot.trigger.model.create(self.trigger_model)
-                            local step_wait_bias_block = self.node_name .. " step_wait_bias"
-                            self.slot.trigger.model.addblock.wait(self.trigger_model, step_wait_bias_block, bias_event)
-                            local step_block = self.node_name .. "step"
-                            self.slot.trigger.model.addblock.source.action.step(self.trigger_model, step_block, self.channel_idx)
 
-                            if step_complete_events then
-                                -- Add an optional wait for other sweep events only on the first stepper
-                                UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                    self.node_name .. "step_waitall_block_",
-                                    step_complete_events)
+                            -- XXX DEBUG
+                            logevent(self, &quot;START&quot;)
+
+                            -- Wait for the bias channel to start sourcing
+                            if bias_event ~= nil then
+                                --logevent(self, &quot;WAIT BIAS STEP&quot;)
+                                tm_add.wait(self.trigger_model, block.wait_bias, bias_event, self.slot.trigger.model.CLEAR_NEVER)
+                                logevent(self, &quot;WAIT BIAS STEP DONE&quot;)
                             end
 
-                            local step_done_notify_block = self.node_name .. "step_done"
-                            self.slot.trigger.model.addblock.notify(self.trigger_model, step_done_notify_block, self.event)
-                            local step_wait_sweep_block = self.node_name .. "step_wait_sweep"
-                            self.slot.trigger.model.addblock.wait(self.trigger_model, step_wait_sweep_block, sweep_event)
-                            local step_measure_block = self.node_name .. "step_measure"
-                            self.slot.trigger.model.addblock.measure(self.trigger_model, step_measure_block, self.channel_idx)
+                            -- XXX DEBUG
+                            --logevent(self, &quot;STEP&quot;)
+
+                            -- Step to the next source value
+                            tm_add.source.action.step(self.trigger_model, block.step, self.channel_idx)
+
+
+                            if step_complete_events ~= nil and table.getn(step_complete_events) &gt; 0 then
+                                -- Add an optional wait for other sweep events only on the first stepper
+                                --logevent(self, &quot;WAIT ALL STEPS&quot;)
+                                UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
+                                    block.waitall_steps,
+                                    step_complete_events)
+                                logevent(self, &quot;WAIT ALL STEPS DONE&quot;)
+                            end
+
+                            -- XXX DEBUG
+                            logevent(self, &quot;STEP NOTIFY&quot;)
+
+                            -- Notify other channels that the steppers are done stepping
+                            tm_add.notify(self.trigger_model, block.step_notify, self.event)
+
+
+                            -- Wait for the sweeper to finish moving to the next source value
+                            if sweep_event ~= nil then
+                                -- XXX DEBUG
+                                local event = tostring(sweep_event)
+                                --logevent(self, &quot;WAIT SWEEP&quot;)
+                                tm_add.wait(self.trigger_model, block.wait_sweep, sweep_event,
+                                    self.slot.trigger.model.CLEAR_NEVER)
+                                logevent(self, &quot;WAIT SWEEP DONE&quot;)
+                            end
+
+
+                            -- XXX DEBUG
+                            --logevent(self, &quot;MEASURE&quot;)
+
+                            -- Measure using the configured number of measurements
+                            tm_add.measure(self.trigger_model, block.measure, self.channel_idx)
 
                             -- wait for all other steppers to finish measuring
-                            if step_complete_events then
+                            if step_complete_events ~= nil and table.getn(step_complete_events) &gt; 0 then
+                                -- XXX DEBUG
+                                --logevent(self, &quot;WAIT ALL STEP MEAS&quot;)
                                 -- Add an optional wait for other sweep events only on the first stepper
                                 UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                    self.node_name .. "step_waitall_measure_block_",
+                                    block.waitall_step_meas,
                                     step_complete_events)
+                                logevent(self, &quot;WAIT ALL STEP MEAS DONE&quot;)
                             end
 
+                            -- XXX DEBUG
+                            logevent(self, &quot;NOTIFY MEAS DONE&quot;)
                             -- notify other channels that measurments have completed for the step channels
-                            local step_measure_done_notify_block = self.node_name .. "step_measure_done"
-                            self.slot.trigger.model.addblock.notify(self.trigger_model, step_measure_done_notify_block,
+                            tm_add.notify(self.trigger_model, block.meas_notify,
                                 self.event)
 
+                            -- XXX DEBUG
+                            --logevent(self, &quot;WAIT SWEEP BIAS MEAS&quot;)
                             -- wait for bias and sweep measurements to complete
-                            UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                self.node_name .. "step_waitall_measure_block_",
+                            UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model, block.waitall_sweep_bias_meas,
                                 { sweep_event, bias_event })
+                            logevent(self, &quot;WAIT SWEEP BIAS MEAS DONE&quot;)
 
-                            local step_sweep_counter_block = self.node_name .. "step_sweep_counter"
-                            self.slot.trigger.model.addblock.branch.counter(self.trigger_model, step_sweep_counter_block,
-                                step_wait_sweep_block,
-                                TOTAL_COUNT)
-                            local step_counter_block = self.node_name .. "step_counter"
-                            self.slot.trigger.model.addblock.branch.counter(self.trigger_model, step_counter_block, step_block,
-                                STEP[3])
+                            -- Loop back to `step_wait_sweep_block` for the number of sweeper steps
+                            if sweep_event ~= nil then
+                                -- XXX DEBUG
+                                logevent(self, &quot;INNER LOOP&quot;)
+                                tm_add.branch.counter(self.trigger_model, block.inner_loop,
+                                    block.wait_sweep,
+                                    UTILITY.SWEEP_COUNT)
+                            end
+
+                            -- Loop back to `step_block` for the number of stepper steps
+                            -- XXX DEBUG
+                            logevent(self, &quot;OUTER LOOP&quot;)
+                            tm_add.branch.counter(self.trigger_model, block.outer_loop, block.step,
+                                UTILITY.STEP_COUNT)
+
+                            logevent(self, &quot;FINAL NOTIFY&quot;)
+                            tm_add.notify(self.trigger_model, block.final_notify, self.event)
+
+                            logevent(self, &quot;FINAL NOTIFY 2&quot;)
+                            tm_add.notify(self.trigger_model, block.final_notify .. &quot;2&quot;, self.event)
+
+                            logevent(self, &quot;FINAL NOTIFY 3&quot;)
+                            tm_add.notify(self.trigger_model, block.final_notify .. &quot;3&quot;, self.event)
+
+                            logevent(self, &quot;FINAL NOTIFY 4&quot;)
+                            tm_add.notify(self.trigger_model, block.final_notify .. &quot;4&quot;, self.event)
                         end,
                     },
 
@@ -497,48 +646,88 @@
                         ---@param sweep_event nil Unused
                         ---@param sweep_complete_events any
                         trigger_model_setup = function(self, bias_event, step_event, sweep_event, sweep_complete_events)
-                            self.trigger_model = self.node_name .. " Sweep Trigger Model"
+                            local tm_add = self.slot.trigger.model.addblock
+                            local block = {
+                                wait_step = self.channel_idx .. &quot;_sweep_wait_step&quot;,
+                                step = self.channel_idx .. &quot;_sweept_step&quot;,
+                                waitall_sweeps = self.channel_idx .. &quot;_sweep_waitall_&quot;,
+                                step_notify = self.channel_idx .. &quot;_sweep_done&quot;,
+                                measure = self.channel_idx .. &quot;_sweep_measure&quot;,
+                                waitall_sweep_meas = self.channel_idx .. &quot;_sweep_other_measure_waitall_&quot;,
+                                meas_notify = self.channel_idx .. &quot;_sweep_meas done&quot;,
+                                inner_loop = self.channel_idx .. &quot;_sweep_inner_loop&quot;,
+                                outer_loop = self.channel_idx .. &quot;_sweep_outer_loop&quot;,
+                            }
+                            self.trigger_model = self.node_name .. &quot; Sweep Trigger Model&quot;
                             self.slot.trigger.model.create(self.trigger_model)
-                            local sweep_wait_step_block = self.node_name .. "sweep_wait_step"
-                            self.slot.trigger.model.addblock.wait(self.trigger_model, sweep_wait_step_block, step_event)
-                            local sweep_block = self.node_name .. "sweep"
-                            self.slot.trigger.model.addblock.source.action.step(self.trigger_model, sweep_block, self
+
+                            -- XXX DEBUG
+                            logevent(self, &quot;START&quot;)
+
+                            if step_event ~= nil then
+                                -- logevent(self, &quot;WAIT STEP&quot;)
+                                tm_add.wait(self.trigger_model, block.wait_step, step_event, self.slot.trigger.model.CLEAR_NEVER)
+                                logevent(self, &quot;WAIT STEP DONE&quot;)
+                            end
+
+                            -- XXX DEBUG
+                            -- logevent(self, &quot;STEP&quot;)
+
+                            tm_add.source.action.step(self.trigger_model, block.step, self
                                 .channel_idx)
 
                             if sweep_complete_events then
+                                -- XXX DEBUG
+                                -- logevent(self, &quot;WAIT ALL SWEEPS&quot;)
                                 -- Add an optional wait for other sweep events only on the first sweeper
                                 UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                    self.node_name .. "sweep_waitall_block_",
+                                    block.waitall_sweeps,
                                     sweep_complete_events)
+                                logevent(self, &quot;WAIT ALL SWEEPS DONE&quot;)
                             end
 
-                            local sweep_done_notify_block = self.node_name .. "sweep_done"
-                            self.slot.trigger.model.addblock.notify(self.trigger_model, sweep_done_notify_block, self.event)
-                            local sweep_measure_block = self.node_name .. "sweep_measure"
-                            self.slot.trigger.model.addblock.measure(self.trigger_model, sweep_measure_block, self.channel_idx)
+                            -- XXX DEBUG
+                            logevent(self, &quot;NOTIFY STEP DONE&quot;)
+                            tm_add.notify(self.trigger_model, block.step_notify, self.event)
+                            -- XXX DEBUG
+                            -- logevent(self, &quot;MEASURE&quot;)
+                            tm_add.measure(self.trigger_model, block.measure, self.channel_idx)
 
                             --TODO: Add notify for when measure completes
                             if sweep_complete_events then
+                                -- XXX DEBUG
+                                -- logevent(self, &quot;WAIT ALL SWEEP MEAS&quot;)
                                 -- Add an optional wait for other sweep events only on the first sweeper
                                 UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                    self.node_name .. "sweep_other_measure_waitall_block_",
+                                    block.waitall_sweep_meas,
                                     sweep_complete_events)
+                                logevent(self, &quot;WAIT ALL SWEEP MEAS DONE&quot;)
                             end
-                            local sweep_measure_done_notify_block = self.node_name .. "sweep_measure_done"
-                            self.slot.trigger.model.addblock.notify(self.trigger_model, sweep_measure_done_notify_block,
+                            -- XXX DEBUG
+                            logevent(self, &quot;NOTIFY MEAS DONE&quot;)
+                            local sweep_measure_done_notify_block = self.node_name .. &quot;sweep_measure_done&quot;
+                            tm_add.notify(self.trigger_model, sweep_measure_done_notify_block,
                                 self.event)
                             --TODO: Add wait on step and sweep measure completes
+                            -- XXX DEBUG
+                            -- logevent(self, &quot;WAIT ALL STEP/BIAS MEAS&quot;)
                             UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                self.node_name .. "sweep_measure_waitall_block_",
+                                block.meas_notify,
                                 { step_event, bias_event })
+                            logevent(self, &quot;WAIT ALL STEP/BIAS MEAS DONE&quot;)
 
-                            local sweep_counter_block = self.node_name "sweep_counter"
-                            self.slot.trigger.model.addblock.branch.counter(self.trigger_model, sweep_counter_block, sweep_block,
-                                SWEEP[3])
-                            local sweep_step_counter_block = self.node_name .. "sweep_step_counter"
-                            self.slot.trigger.model.addblock.branch.counter(self.trigger_model, sweep_step_counter_block,
-                                sweep_wait_step_block,
-                                STEP[3])
+                            -- XXX DEBUG
+                            logevent(self, &quot;INNER LOOP&quot;)
+                            tm_add.branch.counter(self.trigger_model, block.inner_loop, block.step,
+                                UTILITY.SWEEP_COUNT)
+
+                            if step_event ~= nil then
+                                -- XXX DEBUG
+                                logevent(self, &quot;OUTER LOOP&quot;)
+                                tm_add.branch.counter(self.trigger_model, block.outer_loop,
+                                    block.wait_step,
+                                    UTILITY.STEP_COUNT)
+                            end
                         end,
 
                     }
@@ -561,23 +750,23 @@
                             self.node.trigger.timer[2].reset()
                             self.node.trigger.timer[3].reset()
                             self.node.trigger.timer[4].reset()
-                            for _, v in ipairs(self.slot.trigger.model.table()) do
-                                self.slot.trigger.model.abort(v)
-                                self.slot.trigger.model.delete(v)
-                            end
+                            --for _, v in ipairs(self.slot.trigger.model.table()) do
+                            self.slot.trigger.model.abort()
+                            --    self.slot.trigger.model.delete(v)
+                            --end
                         end,
                         --- Configures this MPSU50_2ST
                         ---@param self Device
                         config = function(self)
                             UTILITY.init_slot_event_ids(self.slot, { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 })
                             -- Sense setting --
-                            self.slot.sense = self.sense
+                            self.channel.sense = self.sense
                             local event_id = UTILITY.get_slot_event_id(self.slot)
                             if event_id then
                                 self.event = event_id
                             else
-                                error("Unable to assign event ID to channel: all event IDs for slot[" ..
-                                    self.slot_idx .. "] have been consumed.")
+                                error(&quot;Unable to assign event ID to channel: all event IDs for slot[&quot; ..
+                                    self.slot_idx .. &quot;] have been consumed.&quot;)
                                 exit()
                             end
 
@@ -588,14 +777,14 @@
                             elseif self.source.values.list ~= nil then
                                 self.channel.trigger.source.listv(self.source.values.list)
                             elseif self.source.values.log ~= nil then
-                                local log = self.source.values
+                                local log = self.source.values.log
                                 self.channel.trigger.source.logv(log.start, log.stop, log.count)
-                            else
-                                local lin = self.source.values
+                            elseif self.source.values.linear ~= nil then
+                                local lin = self.source.values.linear
                                 self.channel.trigger.source.linearv(lin.start, lin.stop, lin.count)
                             end
                             -- limiti
-                            self.channel.limiti = self.source.limiti
+                            self.channel.source.limiti = self.source.limiti
 
                             -- Measure Settings --
                             -- nplc
@@ -653,52 +842,57 @@
                         ---@param sweep_event any | nil The event ID associated with all the sweep steps completing (only one)
                         ---@param bias_complete_events any[] | nil The event ID(s) associated with all other bias steps completing. Should only be passed to one bias channel.
                         trigger_model_setup = function(self, bias_event, step_event, sweep_event, bias_complete_events)
-                            self.trigger_model = self.node_name .. " Bias Trigger Model"
+                            self.trigger_model = self.node_name .. &quot; Bias Trigger Model&quot;
                             self.slot.trigger.model.create(self.trigger_model)
-                            local bias_block = self.node_name .. " bias"
+                            local bias_block = self.node_name .. &quot; bias&quot;
                             self.slot.trigger.model.addblock.source.action.bias(self.trigger_model, bias_block, self.channel_idx)
 
                             if bias_complete_events then
                                 -- Add an optional wait for other sweep events only on the first bias-instrument
                                 UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                    self.node_name .. "bias_waitall_block_",
+                                    self.node_name .. &quot;bias_waitall_block_&quot;,
                                     bias_complete_events)
                             end
 
-                            local bias_done_notify_block = self.node_name .. " bias_done"
+                            -- Notify other channels that the bias is complete.
+                            local bias_done_notify_block = self.node_name .. &quot; bias_done&quot;
                             self.slot.trigger.model.addblock.notify(self.trigger_model, bias_done_notify_block, self.event)
-                            local bias_wait_sweep_block = self.node_name .. " bias_wait_sweep"
-                            self.slot.trigger.model.addblock.wait(self.trigger_model, bias_wait_sweep_block, sweep_event)
-                            local bias_measure_block = self.node_name .. " bias_measure"
+
+                            -- Wait for the primary sweeper to complete
+                            --TODO: This should probably be optional if sweep_event is nil, if it is, use step_event instead
+                            local bias_wait_sweep_block = self.node_name .. &quot; bias_wait_sweep&quot;
+                            if sweep_event ~= nil then
+                                self.slot.trigger.model.addblock.wait(self.trigger_model, bias_wait_sweep_block, sweep_event)
+                            end
+
+                            -- Measure using the configured number of measurements.
+                            local bias_measure_block = self.node_name .. &quot; bias_measure&quot;
                             self.slot.trigger.model.addblock.measure(self.trigger_model, bias_measure_block, self.channel_idx)
 
                             -- Wait for other bias-instrument measurements to complete
                             if bias_complete_events then
                                 -- Add an optional wait for other sweep events only on the first bias-instrument
                                 UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                    self.node_name .. "bias_other_waitall_measure_block_",
+                                    self.node_name .. &quot;bias_other_waitall_measure_block_&quot;,
                                     bias_complete_events)
                             end
 
-                            -- Notify other channels that this channel's measurements are complete
-                            local bias_measure_done_notify_block = self.node_name .. " bias_measure_done"
+                            -- Notify other channels that this channel&apos;s measurements are complete
+                            local bias_measure_done_notify_block = self.node_name .. &quot; bias_measure_done&quot;
                             self.slot.trigger.model.addblock.notify(self.trigger_model, bias_measure_done_notify_block,
                                 self.event)
 
-                            -- Wait on step and sweep measure completion
+                            -- Wait on primary step and sweep measure completion
                             UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                self.node_name .. "bias_waitall_measure_block_",
+                                self.node_name .. &quot;bias_waitall_measure_block_&quot;,
                                 { sweep_event, step_event })
 
-                            local bias_wait_measure_block = self.node_name .. " bias_wait_measure_block"
-                            self.slot.trigger.model.addblock.wait(self.trigger_model, bias_wait_measure_block,
-                                sweep_event)
 
-
-                            local bias_counter_block = self.node_name .. " bias_counter"
+                            -- Loop back to `bias_wait_sweep_block` until all iterations are complete
+                            local bias_counter_block = self.node_name .. &quot; bias_counter&quot;
                             self.slot.trigger.model.addblock.branch.counter(self.trigger_model, bias_counter_block,
                                 bias_wait_sweep_block,
-                                TOTAL_COUNT)
+                                UTILITY.TOTAL_COUNT)
                         end,
                     },
                     step = {
@@ -709,55 +903,74 @@
                         ---@param sweep_event any The event that indicates the sweepsare fully started.
                         ---@param step_complete_events any[] | nil The event ID(s) associated with all other steps completing. Should only be passed to one bias channel.
                         trigger_model_setup = function(self, bias_event, step_event, sweep_event, step_complete_events)
-                            self.trigger_model = self.node_name .. " Step Trigger Model"
+                            self.trigger_model = self.node_name .. &quot; Step Trigger Model&quot;
                             self.slot.trigger.model.create(self.trigger_model)
-                            local step_wait_bias_block = self.node_name .. " step_wait_bias"
-                            self.slot.trigger.model.addblock.wait(self.trigger_model, step_wait_bias_block, bias_event)
-                            local step_block = self.node_name .. "step"
+
+                            -- Wait for the bias channel to start sourcing
+                            if bias_event ~= nil then
+                                local step_wait_bias_block = self.node_name .. &quot; step_wait_bias&quot;
+                                self.slot.trigger.model.addblock.wait(self.trigger_model, step_wait_bias_block, bias_event,
+                                    self.slot.trigger.model.CLEAR_NEVER)
+                            end
+
+                            -- Step to the next source value
+                            local step_block = self.node_name .. &quot;step&quot;
                             self.slot.trigger.model.addblock.source.action.step(self.trigger_model, step_block, self.channel_idx)
 
                             if step_complete_events then
                                 -- Add an optional wait for other sweep events only on the first stepper
                                 UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                    self.node_name .. "step_waitall_block_",
+                                    self.node_name .. &quot;step_waitall_block_&quot;,
                                     step_complete_events)
                             end
 
-                            local step_done_notify_block = self.node_name .. "step_done"
+                            -- Notify other channels that the steppers are done stepping
+                            local step_done_notify_block = self.node_name .. &quot;step_done&quot;
                             self.slot.trigger.model.addblock.notify(self.trigger_model, step_done_notify_block, self.event)
-                            local step_wait_sweep_block = self.node_name .. "step_wait_sweep"
-                            self.slot.trigger.model.addblock.wait(self.trigger_model, step_wait_sweep_block, sweep_event)
-                            local step_measure_block = self.node_name .. "step_measure"
+
+                            -- Wait for the sweeper to finish moving to the next source value
+                            --TODO Should be optional depending on whether sweep event is nil
+                            local step_wait_sweep_block = self.node_name .. &quot;step_wait_sweep&quot;
+                            if sweep_event ~= nil then
+                                self.slot.trigger.model.addblock.wait(self.trigger_model, step_wait_sweep_block, sweep_event)
+                            end
+
+                            -- Measure using the configured number of measurements
+                            local step_measure_block = self.node_name .. &quot;step_measure&quot;
                             self.slot.trigger.model.addblock.measure(self.trigger_model, step_measure_block, self.channel_idx)
 
                             -- wait for all other steppers to finish measuring
                             if step_complete_events then
                                 -- Add an optional wait for other sweep events only on the first stepper
                                 UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                    self.node_name .. "step_waitall_measure_block_",
+                                    self.node_name .. &quot;step_waitall_measure_block_&quot;,
                                     step_complete_events)
                             end
 
                             -- notify other channels that measurments have completed for the step channels
-                            local step_measure_done_notify_block = self.node_name .. "step_measure_done"
+                            local step_measure_done_notify_block = self.node_name .. &quot;step_measure_done&quot;
                             self.slot.trigger.model.addblock.notify(self.trigger_model, step_measure_done_notify_block,
                                 self.event)
 
                             -- wait for bias and sweep measurements to complete
                             UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                self.node_name .. "step_waitall_measure_block_",
+                                self.node_name .. &quot;step_waitall_measure_block_&quot;,
                                 { sweep_event, bias_event })
 
-                            local step_sweep_counter_block = self.node_name .. "step_sweep_counter"
-                            self.slot.trigger.model.addblock.branch.counter(self.trigger_model, step_sweep_counter_block,
-                                step_wait_sweep_block,
-                                TOTAL_COUNT)
-                            local step_counter_block = self.node_name .. "step_counter"
+                            -- Loop back to `step_wait_sweep_block` for the number of sweeper steps
+                            if sweep_event ~= nil then
+                                local step_sweep_counter_block = self.node_name .. &quot;step_sweep_counter&quot;
+                                self.slot.trigger.model.addblock.branch.counter(self.trigger_model, step_sweep_counter_block,
+                                    step_wait_sweep_block,
+                                    UTILITY.TOTAL_COUNT)
+                            end
+
+                            -- Loop back to `step_block` for the number of stepper steps
+                            local step_counter_block = self.node_name .. &quot;step_counter&quot;
                             self.slot.trigger.model.addblock.branch.counter(self.trigger_model, step_counter_block, step_block,
-                                STEP[3])
+                                UTILITY.STEP_COUNT)
                         end,
                     },
-
                     sweep = {
                         --- Configure the trigger model for a Step
                         ---@param self Device
@@ -766,48 +979,55 @@
                         ---@param sweep_event nil Unused
                         ---@param sweep_complete_events any
                         trigger_model_setup = function(self, bias_event, step_event, sweep_event, sweep_complete_events)
-                            self.trigger_model = self.node_name .. " Sweep Trigger Model"
+                            self.trigger_model = self.node_name .. &quot; Sweep Trigger Model&quot;
                             self.slot.trigger.model.create(self.trigger_model)
-                            local sweep_wait_step_block = self.node_name .. "sweep_wait_step"
-                            self.slot.trigger.model.addblock.wait(self.trigger_model, sweep_wait_step_block, step_event)
-                            local sweep_block = self.node_name .. "sweep"
+
+                            local sweep_wait_step_block = self.node_name .. &quot;sweep_wait_step&quot;
+                            if step_event ~= nil then
+                                self.slot.trigger.model.addblock.wait(self.trigger_model, sweep_wait_step_block, step_event)
+                            end
+
+                            local sweep_block = self.node_name .. &quot;sweep&quot;
                             self.slot.trigger.model.addblock.source.action.step(self.trigger_model, sweep_block, self
                                 .channel_idx)
 
                             if sweep_complete_events then
                                 -- Add an optional wait for other sweep events only on the first sweeper
                                 UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                    self.node_name .. "sweep_waitall_block_",
+                                    self.node_name .. &quot;sweep_waitall_block_&quot;,
                                     sweep_complete_events)
                             end
 
-                            local sweep_done_notify_block = self.node_name .. "sweep_done"
+                            local sweep_done_notify_block = self.node_name .. &quot;sweep_done&quot;
                             self.slot.trigger.model.addblock.notify(self.trigger_model, sweep_done_notify_block, self.event)
-                            local sweep_measure_block = self.node_name .. "sweep_measure"
+                            local sweep_measure_block = self.node_name .. &quot;sweep_measure&quot;
                             self.slot.trigger.model.addblock.measure(self.trigger_model, sweep_measure_block, self.channel_idx)
 
                             --TODO: Add notify for when measure completes
                             if sweep_complete_events then
                                 -- Add an optional wait for other sweep events only on the first sweeper
                                 UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                    self.node_name .. "sweep_other_measure_waitall_block_",
+                                    self.node_name .. &quot;sweep_other_measure_waitall_block_&quot;,
                                     sweep_complete_events)
                             end
-                            local sweep_measure_done_notify_block = self.node_name .. "sweep_measure_done"
+                            local sweep_measure_done_notify_block = self.node_name .. &quot;sweep_measure_done&quot;
                             self.slot.trigger.model.addblock.notify(self.trigger_model, sweep_measure_done_notify_block,
                                 self.event)
                             --TODO: Add wait on step and sweep measure completes
                             UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                                self.node_name .. "sweep_measure_waitall_block_",
+                                self.node_name .. &quot;sweep_measure_waitall_block_&quot;,
                                 { step_event, bias_event })
 
-                            local sweep_counter_block = self.node_name "sweep_counter"
+                            local sweep_counter_block = self.node_name .. &quot;sweep_counter&quot;
                             self.slot.trigger.model.addblock.branch.counter(self.trigger_model, sweep_counter_block, sweep_block,
-                                SWEEP[3])
-                            local sweep_step_counter_block = self.node_name .. "sweep_step_counter"
-                            self.slot.trigger.model.addblock.branch.counter(self.trigger_model, sweep_step_counter_block,
-                                sweep_wait_step_block,
-                                STEP[3])
+                                UTILITY.SWEEP_COUNT)
+
+                            if step_event ~= nil then
+                                local sweep_step_counter_block = self.node_name .. &quot;sweep_step_counter&quot;
+                                self.slot.trigger.model.addblock.branch.counter(self.trigger_model, sweep_step_counter_block,
+                                    sweep_wait_step_block,
+                                    UTILITY.STEP_COUNT)
+                            end
                         end,
 
                     }
@@ -816,27 +1036,28 @@
 
             ---Gets the proper model implementation based on the model string of the device
             ---@param device DeviceDetails
-            ---@return Model | nil, "smu" | "psu" | nil
+            ---@return Model | nil, &quot;smu&quot; | &quot;psu&quot; | nil
             get_model_from_device = function(device)
-                if device.model == "MSMU60-2" then
-                    return UTILITY.MSMU60_2(), "smu"
+                -- XXX: DEBUG ONLY, REMOVE MSMU200-2
+                if device.model == &quot;MSMU60-2&quot; then
+                    return UTILITY.MSMU60_2(), &quot;smu&quot;
                 end
-                if device.model == "MPSU50-2ST" then
-                    return UTILITY.MPSU50_2ST(), "psu"
+                if device.model == &quot;MPSU50-2ST&quot; then
+                    return UTILITY.MPSU50_2ST(), &quot;psu&quot;
                 end
                 return nil, nil
             end,
 
             ---comment
             ---@param details DeviceDetails The details of the given device
-            ---@param role "bias" | "step" | "sweep" The role the given device should take
+            ---@param role &quot;bias&quot; | &quot;step&quot; | &quot;sweep&quot; The role the given device should take
             ---@return Device
             makedevice = function(details, role)
                 local mt = {}
                 -- get the proper model from the given device
                 local model, ty = UTILITY.get_model_from_device(details)
 
-                -- if the model couldn't be determined, throw an error
+                -- if the model couldn&apos;t be determined, throw an error
                 if model == nil then error([[Unable to determine device model]], 2) end
                 -- get the default component to ensure the proper functions are implemented
                 mt.functions = UTILITY.DEFAULT_COMPONENT()
@@ -859,41 +1080,43 @@
                     return mt.functions[k]
                 end
                 -- This should be a read-only table. Error if there is a call to set something new on the table.
-                mt.__newindex = function() error([[Cannot modify read-only table]], 2) end
+                --mt.__newindex = function() error([[Cannot modify read-only table]], 2) end
+                -- TODO Is it really necessary to make this read-only? If so, this doesn&apos;t work as is.
 
                 -- Set this metatable with the new functions on the given device
                 local device = setmetatable(details, mt) --[[@as Device]]
 
                 -- Compute the values
                 if details.node_idx == 0 then
-                    device.node_name = "localnode"
+                    device.node_name = &quot;localnode&quot;
                     device.node = localnode
                 elseif details.node_idx &gt; 0 and details.node_idx &lt;= 63 then
-                    device.node_name = "node[" .. device.node_idx .. "]"
-                    device.node = node[device.node_idx]
+                    device.node_name = &quot;node[&quot; .. device.node_idx .. &quot;]&quot;
+                    device.node = node[device.node_idx] -- This may be shown as undefined, that is ok
                 else
-                    error("The given node index '" .. device.node_idx .. "' is not a valid node index")
+                    error(&quot;The given node index &apos;&quot; .. device.node_idx .. &quot;&apos; is not a valid node index&quot;)
                 end
 
                 device.slot = device.node.slot[device.slot_idx]
 
-                if ty == "smu" then
+                if ty == &quot;smu&quot; then
                     device.channel = device.slot.smu[device.channel_idx]
-                elseif ty == "psu" then
+                elseif ty == &quot;psu&quot; then
                     device.channel = device.slot.psu[device.channel_idx]
                 else
-                    error("Unable to determine type of device")
+                    error(&quot;Unable to determine type of device&quot;)
                 end
 
-                if details.model ~= device.slot.model then
-                    error(
-                        "The actual model of the given slot '" ..
-                        device.slot.model ..
-                        "' does not match the expected model '" ..
-                        details.model ..
-                        "'. Please check your configuration."
-                    )
-                end
+                -- XXX: DEBUG ONLY, UNCOMMENT
+                --if details.model ~= device.slot.model then
+                --    error(
+                --        &quot;The actual model of the given slot &apos;&quot; ..
+                --        device.slot.model ..
+                --        &quot;&apos; does not match the expected model &apos;&quot; ..
+                --        details.model ..
+                --        &quot;&apos;. Please check your configuration.&quot;
+                --    )
+                --end
                 return device
             end,
 
@@ -901,23 +1124,65 @@
             ---@param details DeviceDetails
             ---@return Device
             makebias = function(details)
-                return UTILITY.makedevice(details, "bias")
+                return UTILITY.makedevice(details, &quot;bias&quot;)
             end,
 
             ---Create a new step device using the given device
             ---@param details DeviceDetails
             ---@return Device
             makestep = function(details)
-                return UTILITY.makedevice(details, "step")
+                return UTILITY.makedevice(details, &quot;step&quot;)
             end,
 
             ---Create a new sweep device using the given device
             ---@param details DeviceDetails
             ---@return Device
             makesweep = function(details)
-                return UTILITY.makedevice(details, "sweep")
+                return UTILITY.makedevice(details, &quot;sweep&quot;)
             end
         }
+
+        ---Initialize data such as the number of sweep steps per step, number of steps, and total number of points
+        ---@param nodes NodesDef
+        local function Init(nodes)
+            local is_step = false
+            local is_sweep = false
+            if nodes.steps and nodes.steps[1] then
+                is_step = true
+                local step = nodes.steps[1]
+                if step.source.values.linear then
+                    UTILITY.STEP_COUNT = step.source.values.linear.count
+                elseif step.source.values.log then
+                    UTILITY.STEP_COUNT = step.source.values.log.count
+                elseif step.source.values.list then
+                    UTILITY.STEP_COUNT = table.getn(step.source.values.list)
+                elseif step.source.values.scalar then
+                    UTILITY.STEP_COUNT = 1
+                end
+            end
+
+            if nodes.sweeps and nodes.sweeps[1] then
+                is_sweep = true
+                local sweep = nodes.sweeps[1]
+                if sweep.source.values.linear then
+                    UTILITY.SWEEP_COUNT = sweep.source.values.linear.count
+                elseif sweep.source.values.log then
+                    UTILITY.SWEEP_COUNT = sweep.source.values.log.count
+                elseif sweep.source.values.list then
+                    UTILITY.SWEEP_COUNT = table.getn(sweep.source.values.list)
+                elseif sweep.source.values.scalar then
+                    UTILITY.SWEEP_COUNT = 1
+                end
+            end
+
+            if is_step and is_sweep then
+                UTILITY.TOTAL_COUNT = UTILITY.SWEEP_COUNT * UTILITY.STEP_COUNT
+            elseif is_step and not is_sweep then
+                UTILITY.TOTAL_COUNT = UTILITY.STEP_COUNT
+            elseif not is_step and is_sweep then
+                UTILITY.TOTAL_COUNT = UTILITY.SWEEP_COUNT
+            end
+        end
 
         ---Resets all components that may be used in the test
         ---@param nodes NodesDef
@@ -954,6 +1219,24 @@
         ---This function configures the trigger line interaction between the channels
         ---@param nodes NodesDef
         local ConfigureTriggerModel = function(nodes)
+            -- If there are one or more bias channels, get the event ID of the first
+            local bias_event = nil
+            if nodes.biases[1] and nodes.biases[1].event then
+                bias_event = nodes.biases[1].event
+            end
+
+            -- If there are one or more step channels, get the event ID of the first
+            local step_event = nil
+            if nodes.steps[1] and nodes.steps[1].event then
+                step_event = nodes.steps[1].event
+            end
+
+            -- If there are one or more sweepers, get the event ID of the first
+            local sweep_event = nil
+            if nodes.sweeps[1] and nodes.sweeps[1].event then
+                sweep_event = nodes.sweeps[1].event
+            end
+
             for i, n in ipairs(nodes.biases) do
                 -- get all the completion events for all other bias channels
                 local bias_complete_events = nil
@@ -970,17 +1253,7 @@
                     end
                 end
 
-                -- If there are one or more steppers, get the event ID of the first
-                local step_event = nil
-                if nodes.steps[1] and nodes.steps[1].event then
-                    step_event = nodes.steps[1].event
-                end
-                -- If there are one or more sweepers, get the event ID of the first
-                local sweep_event = nil
-                if nodes.sweeps[1] and nodes.sweeps[1].event then
-                    sweep_event = nodes.sweeps[1].event
-                end
-                n:trigger_model_setup(nil, step_event, sweep_event, bias_complete_events)
+                n:trigger_model_setup(bias_event, step_event, sweep_event, bias_complete_events)
             end
 
             for i, n in ipairs(nodes.steps) do
@@ -999,17 +1272,7 @@
                     end
                 end
 
-                -- If there are one or more bias channels, get the event ID of the first
-                local bias_event = nil
-                if nodes.steps[1] and nodes.biases[1].event then
-                    bias_event = nodes.biases[1].event
-                end
-                -- If there are one or more sweepers, get the event ID of the first
-                local sweep_event = nil
-                if nodes.sweeps[1] and nodes.sweeps[1].event then
-                    sweep_event = nodes.sweeps[1].event
-                end
-                n:trigger_model_setup(bias_event, nil, sweep_event, step_complete_events)
+                n:trigger_model_setup(bias_event, step_event, sweep_event, step_complete_events)
             end
 
             for i, n in ipairs(nodes.sweeps) do
@@ -1028,17 +1291,7 @@
                     end
                 end
 
-                -- If there are one or more bias channels, get the event ID of the first
-                local bias_event = nil
-                if nodes.sweeps[1] and nodes.biases[1].event then
-                    bias_event = nodes.biases[1].event
-                end
-                -- If there are one or more steppers, get the event ID of the first
-                local step_event = nil
-                if nodes.sweeps[1] and nodes.sweeps[1].event then
-                    step_event = nodes.sweeps[1].event
-                end
-                n:trigger_model_setup(bias_event, step_event, nil, sweep_complete_events)
+                n:trigger_model_setup(bias_event, step_event, sweep_event, sweep_complete_events)
             end
         end
 
@@ -1061,7 +1314,7 @@
         ---This function initiates the trigger models on all channels
         ---@param nodes NodesDef
         local InitiateTriggerModels = function(nodes)
-            for _, n in ipairs(nodes.biases) do
+            for _, n in ipairs(nodes.sweeps) do
                 n:trigger_model_initiate()
             end
 
@@ -1069,7 +1322,7 @@
                 n:trigger_model_initiate()
             end
 
-            for _, n in ipairs(nodes.sweeps) do
+            for _, n in ipairs(nodes.biases) do
                 n:trigger_model_initiate()
             end
         end
@@ -1100,36 +1353,36 @@
 
         --#endregion Util
 
-        --------------------------------------------------------------------------------
-        -- Test start: Edit after this point -------------------------------------------
-        --------------------------------------------------------------------------------
+        --==========================================================================
+        -- Configures a sweeping test.
+        --==========================================================================
+        function _Sweep()
+            --------------------------------------------------------------------------------
+            -- Test start: Edit after this point -------------------------------------------
+            --------------------------------------------------------------------------------
 
-        local errorTag              = &quot;[{error}]&quot;
+            local errorTag         = &quot;[{error}]&quot;
 
-        local numberOfSteps         = %STEP-COUNT%
-        local numberOfSweeps        = %SWEEP-POINTS%
+            local numberOfSteps    = %STEP-COUNT%
+            local numberOfSweeps   = %SWEEP-POINTS%
 
-        local stepToSweepDelay      = %STEP-TO-SWEEP-DELAY%
+            local stepToSweepDelay = %STEP-TO-SWEEP-DELAY%
 
-        local nplc                  = %NPLC%
+            local nplc             = %NPLC%
 
-        local source_delay          = %SOURCE-DELAY%
-        local measure_delay         = %MEASURE-DELAY%
-        local measure_count         = %MEASURE-COUNT%
+            local source_delay     = %SOURCE-DELAY%
+            local measure_delay    = %MEASURE-DELAY%
+            local measure_count    = %MEASURE-COUNT%
 
 
 
-        ---@class NodesDef
-        ---@field biases Device[]
-        ---@field steps Device[]
-        ---@field sweeps Device[]
-        local nodes = {
-            biases = {},
-            steps = {},
-            sweeps = {},
-        }
+            ---@type NodesDef
+            local nodes = {
+                biases = {},
+                steps = {},
+                sweeps = {},
+            }
     </snippet>
-
     <composite repeat="BIAS-DEVICE">
         <substitute name="BIAS-DEVICE:">%MUX%</substitute>
         <substitute name="BIAS-DEVICE:NODE">%NODE%</substitute>
@@ -1150,55 +1403,51 @@
                 slot_idx = %SLOT-IDX%,
                 channel_idx = %CHANNEL-IDX%,
                 model = &quot;%MODEL%&quot;,
-                sense = CONSTANTS[&quot;%SENSE%&quot;],
+                sense = CONSTANTS.%SENSE%, -- must be SENSE_2WIRE or SENSE_4WIRE
                 source = {
                     values = { scalar = %BIAS% },
                     range = %SRANGE%,
-                    offmode = CONSTANTS.OUTPUT_NORMAL,
-                    offfunc = CONSTANTS[&quot;%MFUNCTION%&quot;],
-                    offlimiti = 1e-3, -- fixed constant
-                    offlimitv = 40, -- fixed constant
-                    limiti = %LIMITI%, 
+                    limiti = %LIMITI%,
                     limitv = %LIMITV%,
                     delay = source_delay,
-                    func = CONSTANTS[&quot;%SFUNCTION%&quot;],
+                    func = CONSTANTS.%SFUNCTION%, -- must be FUNC_DC_CURRENT or FUNC_DC_VOLTAGE
                 },
                 measure = {
                     nplc = nplc,
                     count = measure_count,
                     delay = measure_delay,
-                    func = CONSTANTS[&quot;%MFUNCTION%&quot;],
+                    func = CONSTANTS.%MFUNCTION%, -- must be FUNC_DC_CURRENT, FUNC_DC_VOLTAGE, or FUNC_DC_IV_COMBINED
                     buffers = {
         </snippet>
         <composite name = "Current Measurement (for bias)">
             <condition name="BIAS-DEVICE:MFUNCTION">current</condition>
-            <snippet>        
-                {
-                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
-                    type = CONSTANTS.FUNC_DC_CURRENT
-                },
+            <snippet>
+                        {
+                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                            type = CONSTANTS.FUNC_DC_CURRENT
+                        },
             </snippet>
         </composite>
         <composite name = "Voltage Measurement (for bias)">
             <condition name="BIAS-DEVICE:MFUNCTION">voltage</condition>
             <snippet>
-                {
-                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
-                    type = CONSTANTS.FUNC_DC_VOLTAGE
-                },
+                        {
+                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                            type = CONSTANTS.FUNC_DC_VOLTAGE
+                        },
             </snippet>
         </composite>
         <composite name = "IV Measurement (for bias)">
             <condition name="BIAS-DEVICE:MFUNCTION">current,voltage</condition>
             <snippet>
-                {
-                    buffer = %NODE%.slot[%BIAS-DEVICE:SLOT-IDX%].smu[%BIAS-DEVICE:CHANNEL-IDX%].defbuffer1,
-                    type = CONSTANTS.FUNC_DC_CURRENT
-                },
-                {
-                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer2,
-                    type = CONSTANTS.FUNC_DC_VOLTAGE
-                },
+                        {
+                            buffer = %NODE%.slot[%BIAS-DEVICE:SLOT-IDX%].smu[%BIAS-DEVICE:CHANNEL-IDX%].defbuffer1,
+                            type = CONSTANTS.FUNC_DC_CURRENT
+                        },
+                        {
+                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer2,
+                            type = CONSTANTS.FUNC_DC_VOLTAGE
+                        },
             </snippet>
         </composite>
         <snippet>
@@ -1230,60 +1479,77 @@
                 slot_idx = %SLOT-IDX%,
                 channel_idx = %CHANNEL-IDX%,
                 model = &quot;%MODEL%&quot;,
-                sense = CONSTANTS[&quot;%SENSE%&quot;],
+                sense = CONSTANTS.%SENSE%, -- must be SENSE_2WIRE or SENSE_4WIRE
                 source = {
+        </snippet>
 
-                    -- IF linear sweep --
-                    values = { start = %START%, stop = %STOP%, count = %STEP-COUNT% },
+        <composite name="">
+            <condition name="STEP-DEVICE:MODE">LIN</condition>
+            <snippet>
+                    --IF linear sweep
+                    values = { linear = { start = %START%, stop = %STOP%, count = numberOfSteps } },
+            </snippet>
+        </composite>
 
-                    --IF log sweep --
-                    values = { start = %START%, stop = %STOP%, count = %STEP-COUNT% },
+        <composite name="">
+            <condition name="STEP-DEVICE:MODE">LOG</condition>
+            <snippet>
+                    --IF log sweep
+                    values = { log = { start = %START%, stop = %STOP%, count = numberOfSteps } },
+            </snippet>
+        </composite>
 
-                    --IF LIST --
-                    values = { list = %LIST%},
+        <composite name="">
+            <condition name="STEP-DEVICE:MODE">LIST</condition>
+            <snippet>
+                    --IF LIST
+                    values = { list = %LIST% },
+            </snippet>
+        </composite>
 
+        <snippet>
                     range = %SRANGE%,
                     limiti = %LIMITI%,
                     limitv = %LIMITV%,
                     delay = source_delay,
-                    func = CONSTANTS[&quot;%SFUNCTION%&quot;],
+                    func = CONSTANTS.%SFUNCTION%, -- must be FUNC_DC_VOLTAGE or FUNC_DC_CURRENT
                 },
                 measure = {
                     nplc = nplc,
                     count = measure_count,
                     delay = measure_delay,
-                    func = CONSTANTS[&quot;%MFUNCTION%&quot;],
+                    func = CONSTANTS.%MFUNCTION%, -- must be FUNC_DC_VOLTAGE, FUNC_DC_CURRENT, or FUNC_DC_IV_COMBINED
                     buffers = {
         </snippet>
         <composite name="Current Measurement (for step)">
             <condition name="STEP-DEVICE:MFUNCTION">current</condition>
-            <snippet>        
-                {
-                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
-                    type = CONSTANTS.FUNC_DC_CURRENT
-                },
+            <snippet>
+                        {
+                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                            type = CONSTANTS.FUNC_DC_CURRENT
+                        },
             </snippet>
         </composite>
         <composite name="Voltage Measurement (for step)">
             <condition name="STEP-DEVICE:MFUNCTION">voltage</condition>
             <snippet>
-                {
-                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
-                    type = CONSTANTS.FUNC_DC_VOLTAGE
-                },
+                        {
+                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                            type = CONSTANTS.FUNC_DC_VOLTAGE
+                        },
             </snippet>
         </composite>
         <composite name="IV Measurement (for step)">
             <condition name="STEP-DEVICE:MFUNCTION">current,voltage</condition>
             <snippet>
-                {
-                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
-                    type = CONSTANTS.FUNC_DC_CURRENT
-                },
-                {
-                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer2,
-                    type = CONSTANTS.FUNC_DC_VOLTAGE
-                },
+                        {
+                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                            type = CONSTANTS.FUNC_DC_CURRENT
+                        },
+                        {
+                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer2,
+                            type = CONSTANTS.FUNC_DC_VOLTAGE
+                        },
             </snippet>
         </composite>
         <snippet>
@@ -1315,60 +1581,77 @@
                 slot_idx = %SLOT-IDX%,
                 channel_idx = %CHANNEL-IDX%,
                 model = &quot;%MODEL%&quot;,
-                sense = CONSTANTS[&quot;%SENSE%&quot;],
+                sense = CONSTANTS.%SENSE, -- must be SENSE_2WIRE or SENSE_4WIRE
                 source = {
+        </snippet>
 
+        <composite name="">
+            <condition name="SWEEP-DEVICE:MODE">LIN</condition>
+            <snippet>
                     --IF linear sweep
-                    values = { start = %START%, stop = %STOP%, count = %SWEEP-POINTS% },
+                    values = { linear = { start = %START%, stop = %STOP%, count = numberOfSweeps }},
+            </snippet>
+        </composite>
 
+        <composite name="">
+            <condition name="SWEEP-DEVICE:MODE">LOG</condition>
+            <snippet>
                     --IF log sweep
-                    values = { start = %START%, stop = %STOP%, count = %SWEEP-POINTS% },
+                    values = {log = { start = %START%, stop = %STOP%, count = numberOfSweeps }},
+            </snippet>
+        </composite>
 
+        <composite name="">
+            <condition name="SWEEP-DEVICE:MODE">LIST</condition>
+            <snippet>
                     --IF LIST
                     values = { list = %LIST%},
+            </snippet>
+        </composite>
 
+        <snippet>
                     range = %SRANGE%,
                     limiti = %LIMITI%,
                     limitv = %LIMITV%,
                     delay = source_delay,
-                    func = CONSTANTS[&quot;%SFUNCTION%&quot;],
+                    func = CONSTANTS.%SFUNCTION%, -- must be FUNC_DC_VOLTAGE or FUNC_DC_CURRENT
                 },
                 measure = {
                     nplc = nplc,
                     count = measure_count,
                     delay = measure_delay,
-                    func = CONSTANTS[&quot;%MFUNCTION%&quot;],
+                    func = CONSTANTS[&quot;%MFUNCTION%&quot;], -- must be FUNC_DC_VOLTAGE, FUNC_DC_CURRENT, or FUNC_DC_IV_COMBINED
                     buffers = {
         </snippet>
         <composite name="Current Measurement (for sweep)">
             <condition name="SWEEP-DEVICE:MFUNCTION">current</condition>
-            <snippet>        
-                {
-                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
-                    type = CONSTANTS.FUNC_DC_CURRENT
-                },
+            <snippet>
+                        {
+                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                            type = CONSTANTS.FUNC_DC_CURRENT
+                        },
             </snippet>
         </composite>
         <composite name="Voltage Measurement (for sweep)">
             <condition name="SWEEP-DEVICE:MFUNCTION">voltage</condition>
             <snippet>
-                {
-                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
-                    type = CONSTANTS.FUNC_DC_VOLTAGE
-                },
+                        {
+                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                            type = CONSTANTS.FUNC_DC_VOLTAGE
+                        },
             </snippet>
         </composite>
         <composite name="IV Measurement (for sweep)">
             <condition name="SWEEP-DEVICE:MFUNCTION">current,voltage</condition>
             <snippet>
-                {
-                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
-                    type = CONSTANTS.FUNC_DC_CURRENT
-                },
-                {
-                    buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer2,
-                    type = CONSTANTS.FUNC_DC_VOLTAGE
-                },
+                        {
+                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                            type = CONSTANTS.FUNC_DC_CURRENT
+                        },
+                        {
+                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer2,
+                            type = CONSTANTS.FUNC_DC_VOLTAGE
+                        },
             </snippet>
         </composite>
         <snippet>
@@ -1379,11 +1662,17 @@
     </composite>
 
     <snippet>
+        Init(nodes)
         Reset(nodes)
         ConfigureChannels(nodes)
         ConfigureTriggerModel(nodes)
         TurnOnChannels(nodes)
         InitiateTriggerModels(nodes)
+        waitcomplete()
         TurnOffChannels(nodes)
+        waitcomplete()
+    end
+
+    _Sweep()
 	</snippet>
 </composite>

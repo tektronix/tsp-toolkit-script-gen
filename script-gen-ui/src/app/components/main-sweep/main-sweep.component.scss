@@ -277,9 +277,27 @@
 .checkbox input {
   margin-top: 4.2vh;
   box-sizing: border-box;
-  // appearance: none;
+  appearance: none;
   padding: 1.3vh;
   border-radius: 3px;
+}
+
+.checkbox input[type="checkbox"]:checked {
+  border-color: var(--vscode-activityBar-activeBorder);
+}
+
+.checkbox input[type="checkbox"]:checked::after {
+    content: "";
+    left: 5px;
+    top: 1px;
+    width: 5px;
+    height: 10px;
+    border: solid var(--vscode-activityBar-activeBorder);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    display: block;
+    margin: -6.5px -3px -3px -2px;
+    margin-left: -2.5px;
 }
 
 .h3 {

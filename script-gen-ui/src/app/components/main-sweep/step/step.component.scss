@@ -183,17 +183,14 @@ h4 {
 .checkbox input {
   margin-top: 3.5vh;
   box-sizing: border-box;
-  // appearance: none;
   padding: 1.3vh;
-  border-radius: 3px;
-  // appearance: none;
+  border-radius: 4px;
 }
 
 .checkbox input[type="checkbox"] {
   appearance: none;
   width: 18px;
   height: 18px;
-  // border: 2px solid #888;
 }
 
 .input-group input[type="checkbox"]:disabled {

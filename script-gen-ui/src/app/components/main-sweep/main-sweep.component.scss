@@ -113,7 +113,7 @@
   width: 100%;
   margin-bottom: 10px;
   background-color: black;
-  color: #FFFFFF;
+  color: #ffffff;
   border-radius: 5px;
   gap: 2px;
 }
@@ -125,7 +125,7 @@
   width: 100%;
   margin-bottom: 10px;
   background-color: black;
-  color: #FFFFFF;
+  color: #ffffff;
 }
 
 .form-group-dropdown label {
@@ -230,7 +230,14 @@
   border: none;
 }
 
-.timing-autorangebox{
+.button-icon:disabled,
+.button-icon[disabled] {
+  // opacity: 0.3; // it is causing the tooltip to be greyed out as well
+  color: var(--vscode-badge-background); //greying out effect when disabled
+  cursor: not-allowed;
+}
+
+.timing-autorangebox {
   display: flex;
   justify-content: space-between;
   color: var(--vscode-editor-foreground);
@@ -241,7 +248,7 @@
   padding-top: 7px;
 }
 
-.timing{
+.timing {
   border-radius: 13px;
   background-color: transparent;
   color: var(--vscode-activityBarBadge-foreground);
@@ -254,20 +261,20 @@
   padding-right: 15px;
 }
 
-.autorange{
+.autorange {
   display: flex;
 }
 
-.autorange-checkbox{
+.autorange-checkbox {
   margin-right: 10px;
 }
 
-.checkbox{
+.checkbox {
   display: flex;
   justify-content: space-around;
 }
 
-.checkbox input{
+.checkbox input {
   margin-top: 4.2vh;
   box-sizing: border-box;
   // appearance: none;
@@ -275,7 +282,7 @@
   border-radius: 3px;
 }
 
-.h3{
+.h3 {
   padding: 0;
   display: flex;
   margin-top: 8px;
@@ -311,7 +318,7 @@ input:focus {
   padding-right: 15px;
   cursor: pointer;
   position: relative;
-  
+
   &:hover::after {
     content: attr(title);
     position: absolute;

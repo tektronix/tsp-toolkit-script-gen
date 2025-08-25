@@ -37,6 +37,7 @@ import { InputNumericComponent } from '../controls/input-numeric/input-numeric.c
 import { ListComponent } from './list/list.component';
 import { BannerDisplayComponent } from './banner-display/banner-display.component';
 import { StatusMsg } from '../../model/sweep_data/statusMsg';
+import { TooltipComponent } from './tooltip/tooltip.component';
 
 @Component({
   selector: 'app-main-sweep',
@@ -54,6 +55,7 @@ import { StatusMsg } from '../../model/sweep_data/statusMsg';
     PlotContainerComponent,
     ListComponent,
     BannerDisplayComponent,
+    TooltipComponent
   ],
   templateUrl: './main-sweep.component.html',
   styleUrls: ['./main-sweep.component.scss'],
@@ -64,7 +66,6 @@ export class MainSweepComponent implements OnChanges {
   @ViewChildren(SweepComponent) sweepComponents!: QueryList<SweepComponent>;
   @ViewChild(TimingComponent) timingComponent!: TimingComponent;
   @ViewChild(PlotContainerComponent) plotContainer!: PlotContainerComponent;
-
   biasChannels: BiasChannel[] = [];
   stepChannels: StepChannel[] = [];
   sweepChannels: SweepChannel[] = [];
@@ -104,6 +105,9 @@ export class MainSweepComponent implements OnChanges {
   sweepTimingConfig: SweepTimingConfig | undefined;
   showList = false; //Sweep list popup box
   deviceList: Device[] = [];
+  showBiasTooltip = false;
+  showStepTooltip = false;
+  showSweepTooltip = false;
   stepGlobalParameters: StepGlobalParameters | undefined;
   sweepGlobalParameters: SweepGlobalParameters | undefined;
 
@@ -325,6 +329,11 @@ export class MainSweepComponent implements OnChanges {
     // this.buildListSweep();  //the sweepchannels is not updated yet, so the list will not be updated
   }
 
+  hasAvailableChannels(): boolean {
+    if (!this.deviceList) return false;
+    return this.deviceList.some((device) => !device.in_use && device.is_valid);
+  }
+
   toggleBias() {
     this.isBiasExpanded = !this.isBiasExpanded;
   }
@@ -360,12 +369,12 @@ export class MainSweepComponent implements OnChanges {
     const ipcData = new IpcData({
       request_type: 'open_script',
       additional_info: '',
-      json_value: '{}'
+      json_value: '{}',
     });
-    
+
     // Convert to JSON string
     const message = JSON.stringify(ipcData);
-    
+
     // Send request via WebSocket service
     this.webSocketService.send(message);
   }

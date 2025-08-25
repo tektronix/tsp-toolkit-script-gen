@@ -1,0 +1,33 @@
+.tooltip-content {
+  position: absolute;
+  /* z-index: 1000; */
+  background: var(--vscode-button-secondaryHoverBackground);
+  color: var(--vscode-activityBarBadge-foreground);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: smaller;
+  white-space: nowrap;
+  pointer-events: none;
+  /* box-shadow: 0 2px 8px #0003; */
+  display: block !important;
+  opacity: 1 !important;
+  &.bottom {
+    top: 70%;
+    transform: translateX(-75%) translateY(1px);
+  }
+  &.top {
+    left: 10%;
+    bottom: 100%;
+    transform: translateX(-75%) translateY(-1px);
+  }
+  &.left {
+    right: 10%;
+    top: 50%;
+    transform: translateY(-50%) translateX(-75%);
+  }
+  &.right {
+    left: 10%;
+    top: 50%;
+    transform: translateY(-50%) translateX(75%);
+  }
+}

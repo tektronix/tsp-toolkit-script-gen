@@ -5,10 +5,19 @@
   ></app-banner-display>
 </div>
 <div class="parent-container">
-  <div class="input-container" style="overflow: auto; max-height: 100vh; min-width: min-content">
+  <div
+    class="input-container"
+    style="overflow: auto; max-height: 100vh; min-width: min-content; min-height: 40vh;"
+  >
     <div class="timing-autorangebox">
-      <div  [attr.aria-label]="'timingTab'">
-        <button class="timing" (click)="enableTiming()"  [attr.aria-label]="'timing'">Timing</button>
+      <div [attr.aria-label]="'timingTab'">
+        <button
+          class="timing"
+          (click)="enableTiming()"
+          [attr.aria-label]="'timing'"
+        >
+          Timing
+        </button>
         <app-timing
           *ngIf="showTiming"
           [sweepTimingConfig]="sweepTimingConfig"
@@ -17,7 +26,11 @@
         ></app-timing>
       </div>
       <div>
-        <button class="open-script" (click)="openScript()" title="Open generated script">
+        <button
+          class="open-script"
+          (click)="openScript()"
+          title="Open generated script"
+        >
           Open Script
         </button>
       </div>
@@ -25,16 +38,36 @@
 
     <div class="expander">
       <div style="display: flex">
-        <button (click)="toggleBias()" class="h3-button" [attr.aria-label]="'BiasExpander'">
+        <button
+          (click)="toggleBias()"
+          class="h3-button"
+          [attr.aria-label]="'BiasExpander'"
+        >
           <mat-icon>{{
             isBiasExpanded ? "expand_more" : "chevron_right"
           }}</mat-icon>
         </button>
         <h3>Bias</h3>
       </div>
-      <button class="button-icon" [attr.aria-label]="'addBias'" (click)="addBias()">
-        <mat-icon>add</mat-icon>
-      </button>
+      <span style="position: relative; display: flex">
+        <button
+          class="button-icon"
+          [attr.aria-label]="'addBias'"
+          (click)="addBias()"
+          [disabled]="!hasAvailableChannels()"
+          (mouseenter)="showBiasTooltip = true"
+          (mouseleave)="showBiasTooltip = false"
+        >
+          <mat-icon>add</mat-icon>
+          <app-tooltip
+            *ngIf="!hasAvailableChannels() && showBiasTooltip"
+            text="No channels available"
+            position="bottom"
+            [visible]="showBiasTooltip"
+          >
+          </app-tooltip>
+        </button>
+      </span>
     </div>
     <div *ngIf="isBiasExpanded">
       <div *ngFor="let biasChannel of biasChannels; let i = index">
@@ -65,20 +98,36 @@
 
     <div class="expander">
       <div style="display: flex">
-        <button (click)="toggleStep()" class="h3-button" [attr.aria-label]="'StepExpander'">
+        <button
+          (click)="toggleStep()"
+          class="h3-button"
+          [attr.aria-label]="'StepExpander'"
+        >
           <mat-icon>{{
             isStepExpanded ? "expand_more" : "chevron_right"
           }}</mat-icon>
         </button>
         <h3>Step</h3>
       </div>
-      <button
-        *ngIf="stepChannels.length === 0"
-        class="button-icon"
-        (click)="addStep()"
-      >
-        <mat-icon>add</mat-icon>
-      </button>
+      <span style="position: relative; display: flex">
+        <button
+          *ngIf="stepChannels.length === 0"
+          class="button-icon"
+          (click)="addStep()"
+          [disabled]="!hasAvailableChannels()"
+          (mouseenter)="showStepTooltip = true"
+          (mouseleave)="showStepTooltip = false"
+        >
+          <mat-icon>add</mat-icon>
+          <app-tooltip
+            *ngIf="!hasAvailableChannels() && showStepTooltip"
+            text="No channels available"
+            position="bottom"
+            [visible]="showStepTooltip"
+          >
+          </app-tooltip>
+        </button>
+      </span>
     </div>
     <div *ngIf="isStepExpanded">
       <div *ngFor="let stepChannel of stepChannels; let i = index">
@@ -124,16 +173,36 @@
 
     <div class="expander">
       <div style="display: flex">
-        <button (click)="toggleSweep()" class="h3-button" [attr.aria-label]="'SweepExpander'">
+        <button
+          (click)="toggleSweep()"
+          class="h3-button"
+          [attr.aria-label]="'SweepExpander'"
+        >
           <mat-icon>{{
             isSweepExpanded ? "expand_more" : "chevron_right"
           }}</mat-icon>
         </button>
         <h3>Sweep</h3>
       </div>
-      <button class="button-icon" [attr.aria-label]="'addSweep'" (click)="addSweep()">
-        <mat-icon>add</mat-icon>
-      </button>
+      <span style="position: relative; display: flex">
+        <button
+          class="button-icon"
+          [attr.aria-label]="'addSweep'"
+          (click)="addSweep()"
+          [disabled]="!hasAvailableChannels()"
+          (mouseenter)="showSweepTooltip = true"
+          (mouseleave)="showSweepTooltip = false"
+        >
+          <mat-icon>add</mat-icon>
+          <app-tooltip
+            *ngIf="!hasAvailableChannels() && showSweepTooltip"
+            text="No channels available"
+            position="bottom"
+            [visible]="showSweepTooltip"
+          >
+          </app-tooltip>
+        </button>
+      </span>
     </div>
     <div *ngIf="isSweepExpanded">
       <div class="input-group">
@@ -208,7 +277,8 @@
     </div>
   </div>
 
-  <div class="plot-container" style="overflow: auto; max-height: 100vh;">
+  <div class="plot-container">
+    <!-- style="overflow: auto; max-height: 100vh" -->
     <app-plot-container
       [biasChannels]="biasChannels"
       [stepChannels]="stepChannels"

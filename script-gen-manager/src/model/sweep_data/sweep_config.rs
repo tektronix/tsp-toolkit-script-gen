@@ -345,6 +345,18 @@ impl SweepConfig {
         if let Some(device) = bias_device {
             self.add_bias(BiasChannel::new(String::from("bias1"), device));
         }
+
+        // Check if only bias channels exist and display appropriate message
+        if !self.bias_channels.is_empty()
+            && self.step_channels.is_empty()
+            && self.sweep_channels.is_empty()
+        {
+            self.status_msg = Some(StatusMsg::new(
+                StatusType::Warning,
+                String::from("Only bias channels are configured. Please add a step or sweep channel to generate a functional script."),
+            ));
+            println!("printing status_msg for bias only case")
+        }
     }
 
     pub fn add_bias(&mut self, bias_chan: BiasChannel) {

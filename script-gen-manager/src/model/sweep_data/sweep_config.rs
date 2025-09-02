@@ -179,9 +179,11 @@ impl SweepConfig {
         if self.device_list.iter().any(|d| d.in_use && !d.is_valid) {
             self.status_msg = Some(StatusMsg::new(
             StatusType::Error,
-            String::from("Some channels in use are invalid. Re-assign the invalid channels for the generated script to be functional."),
+            String::from("Some channels in use are invalid. Re-assign the invalid channels for the generated script to be functional"),
         ));
         }
+
+        self.check_bias_only_configuration();
     }
 
     fn process_slots(&mut self, node_id: &str, mainframe: &str, slots: &[Slot]) {
@@ -345,18 +347,6 @@ impl SweepConfig {
         if let Some(device) = bias_device {
             self.add_bias(BiasChannel::new(String::from("bias1"), device));
         }
-
-        // Check if only bias channels exist and display appropriate message
-        if !self.bias_channels.is_empty()
-            && self.step_channels.is_empty()
-            && self.sweep_channels.is_empty()
-        {
-            self.status_msg = Some(StatusMsg::new(
-                StatusType::Warning,
-                String::from("Only bias channels are configured. Please add a step or sweep channel to generate a functional script."),
-            ));
-            println!("printing status_msg for bias only case")
-        }
     }
 
     pub fn add_bias(&mut self, bias_chan: BiasChannel) {
@@ -393,6 +383,18 @@ impl SweepConfig {
                 .start_stop_channel
                 .evaluate(self.sweep_global_parameters.sweep_points.value as usize);
         }
+
+        // Check if only bias channels exist and display appropriate message
+        // if !self.bias_channels.is_empty()
+        //     && self.step_channels.is_empty()
+        //     && self.sweep_channels.is_empty()
+        // {
+        //     self.status_msg = Some(StatusMsg::new(
+        //         StatusType::Warning,
+        //         String::from("Only bias channels are configured. Please add a step or sweep channel to generate a functional script."),
+        //     ));
+        //     println!("Warning: Only bias channels are configured. Please add a step or sweep channel to generate a functional script.");
+        // }
     }
 
     pub fn update_channel_devices(&mut self) {
@@ -446,6 +448,8 @@ impl SweepConfig {
                 device.in_use = false;
             }
         });
+
+        self.check_bias_only_configuration();
     }
 
     pub fn add_channel(&mut self, chan_type: String) {
@@ -574,6 +578,19 @@ impl SweepConfig {
     pub fn remove_unused_invalid_channels(&mut self) {
         self.device_list
             .retain(|device| device.is_valid || device.in_use);
+    }
+
+    /// Checks if only bias channels are configured and sets appropriate warning message
+    fn check_bias_only_configuration(&mut self) {
+        if !self.bias_channels.is_empty()
+            && self.step_channels.is_empty()
+            && self.sweep_channels.is_empty()
+        {
+            self.status_msg = Some(StatusMsg::new(
+                StatusType::Warning,
+                String::from("Only bias channels are configured. Please add a step or sweep channel to generate a functional script."),
+            ));
+        }
     }
 
     pub fn reset(&mut self) {

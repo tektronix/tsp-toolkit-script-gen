@@ -161,7 +161,7 @@
       ></app-input-toggle>
     </div>
     <div class="checkbox">
-      <div style="display: inline-flex">
+      <div style="display: inline-flex; margin-top: auto; margin-bottom: -0.3vh">
         <input
           type="checkbox"
           id="listStep"
@@ -169,12 +169,15 @@
           [(ngModel)]="listStep"
           name="listStep"
           (change)="submitStepGlobalParamsData()"
-          style="margin-top: 4.2vh"
           [disabled]="!selectedDeviceOption?.isValid"
         />
-        <label for="list" style="margin-top: 4vh; margin-left: 5px">List</label>
+        <label
+          for="list"
+          style="margin-left: 3px; margin-top: auto; margin-bottom: auto"
+          >List</label
+        >
       </div>
-      <div style="margin-top: 2.7vh; margin-left: 3vw">
+      <div style="margin-top: auto; margin-bottom: 0.5vh; margin-left: 3vh">
         <button
           class="timing"
           (click)="showStepListPopup()"

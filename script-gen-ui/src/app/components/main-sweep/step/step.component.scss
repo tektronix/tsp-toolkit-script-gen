@@ -205,16 +205,13 @@ h4 {
 }
 
 .timing {
-  border-radius: 10px;
-  background-color: var(--vscode-editor-background);
+  border-radius: 13px;
+  background-color: transparent;
   color: var(--vscode-activityBarBadge-foreground);
-  padding: 5px;
   border-color: var(--vscode-activityBar-activeBorder);
   border-style: solid;
   border-width: thin;
-  padding-left: 10px;
-  padding-right: 10px;
-  // margin-left: 8vh;
+  padding: 5px 15px;
 }
 
 button.timing:disabled {

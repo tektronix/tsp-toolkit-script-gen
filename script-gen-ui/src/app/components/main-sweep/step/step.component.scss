@@ -166,25 +166,26 @@ h4 {
 }
 
 .checkbox input[type="checkbox"]:checked::after {
-    content: "";
-    left: 5px;
-    top: 1px;
-    width: 5px;
-    height: 10px;
-    border: solid var(--vscode-activityBar-activeBorder);
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-    display: block;
-    margin: -6.5px -3px -3px -1.6px;
-    margin-left: -3px;
-    margin-top: -7px;
+  content: "";
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid var(--vscode-activityBar-activeBorder);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  display: block;
+  margin: -6.5px -3px -3px -1.6px;
+  margin-left: -3px;
+  margin-top: -7px;
 }
 
 .checkbox input {
-  margin-top: 3.5vh;
+  margin-top: auto;
   box-sizing: border-box;
-  padding: 1.3vh;
-  border-radius: 4px;
+  appearance: none;
+  padding: 10px;
+  border-radius: 3px;
 }
 
 .checkbox input[type="checkbox"] {
@@ -204,16 +205,13 @@ h4 {
 }
 
 .timing {
-  border-radius: 10px;
-  background-color: var(--vscode-editor-background);
+  border-radius: 13px;
+  background-color: transparent;
   color: var(--vscode-activityBarBadge-foreground);
-  padding: 5px;
   border-color: var(--vscode-activityBar-activeBorder);
   border-style: solid;
   border-width: thin;
-  padding-left: 10px;
-  padding-right: 10px;
-  // margin-left: 8vh;
+  padding: 5px 15px;
 }
 
 button.timing:disabled {

@@ -7,7 +7,12 @@
 <div class="parent-container">
   <div
     class="input-container"
-    style="overflow: auto; max-height: 100vh; min-width: min-content; min-height: 40vh;"
+    style="
+      overflow: auto;
+      max-height: 100vh;
+      min-width: min-content;
+      min-height: 40vh;
+    "
   >
     <div class="timing-autorangebox">
       <div [attr.aria-label]="'timingTab'">
@@ -228,12 +233,20 @@
               name="isListSweep"
               (change)="updateSweepGlobalParameters()"
             />
-            <label for="list" style="margin-top: 4.5vh; margin-left: 5px"
+            <label
+              for="list"
+              style="margin-top: auto; margin-left: 3px; margin-bottom: 1vh"
               >List</label
             >
           </div>
-          <div style="margin-top: 2.9vh">
-            <button class="timing" (click)="enableList()">Edit</button>
+          <div style="margin-top: auto; margin-bottom: 0.5vh">
+            <button
+              [attr.aria-label]="'EditSweepList'"
+              class="timing"
+              (click)="enableList()"
+            >
+              Edit
+            </button>
             <app-list
               *ngIf="showList"
               [listsWithNames]="sweepListsWithNames"

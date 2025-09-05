@@ -240,7 +240,13 @@
             >
           </div>
           <div style="margin-top: auto; margin-bottom: 0.5vh">
-            <button class="timing" (click)="enableList()">Edit</button>
+            <button
+              [attr.aria-label]="'EditSweepList'"
+              class="timing"
+              (click)="enableList()"
+            >
+              Edit
+            </button>
             <app-list
               *ngIf="showList"
               [listsWithNames]="sweepListsWithNames"

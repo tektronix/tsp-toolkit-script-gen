@@ -161,10 +161,11 @@
       ></app-input-toggle>
     </div>
     <div class="checkbox">
-      <div style="display: inline-flex; margin-top: auto; margin-bottom: -0.3vh">
+      <div
+        style="display: inline-flex; margin-top: auto; margin-bottom: -0.3vh"
+      >
         <input
           type="checkbox"
-          id="listStep"
           [attr.aria-label]="'listStep'"
           [(ngModel)]="listStep"
           name="listStep"
@@ -180,6 +181,7 @@
       <div style="margin-top: auto; margin-bottom: 0.5vh; margin-left: 3vh">
         <button
           class="timing"
+          [attr.aria-label]="'EditStepList'"
           (click)="showStepListPopup()"
           [disabled]="!selectedDeviceOption?.isValid"
         >

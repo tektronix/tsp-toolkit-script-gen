@@ -313,6 +313,8 @@ pub async fn start(mut script_model: ScriptModel) -> anyhow::Result<()> {
                 if let Some(session) = session.as_mut() {
                     session.text(response).await.unwrap();
                 }
+            } else if trimmed_line.contains("refresh") {
+                println!("instrument data requested"); // refreshing by initiating session again does not affect the JSON state
             } else if trimmed_line.contains("reset") {
                 let mut data_model = app_state.data_model.lock().await;
                 let response = data_model.reset_sweep_config();

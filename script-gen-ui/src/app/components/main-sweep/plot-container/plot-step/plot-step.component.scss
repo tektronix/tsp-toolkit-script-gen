@@ -23,7 +23,7 @@
 .plot-info {
   // margin-bottom: 10px;
   font-size: 14px;
-  color:black;
+  color: var(--vscode-activityBar-foreground);
   display: flex;
   background-color: transparent;
   // background-color: #F6F07D;
@@ -45,6 +45,7 @@
   margin: 0 10px; /* Adjust spacing as needed */
 }
 
-.wait-cursor, .wait-cursor * {
+.wait-cursor,
+.wait-cursor * {
   cursor: wait !important;
 }

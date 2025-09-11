@@ -54,6 +54,7 @@ export class PlotSweepComponent
   private mutationObserver: MutationObserver | undefined;
   private originalBackgroundColor = '';
   activeBackgroundColor = '';
+  private tickColor = '';
   windowHeight = window.innerHeight;
   windowWidth = window.innerWidth;
   plotWidth = this.windowWidth * 0.58;
@@ -86,7 +87,7 @@ export class PlotSweepComponent
       separatethousands: false,
       tickfont: {
         family: 'Roboto, "Helvetica Neue", sans-serif',
-        color: 'white',
+        color: this.tickColor,
         size: 9,
       },
       dtick: 1,
@@ -131,7 +132,7 @@ export class PlotSweepComponent
       range: [0, 1],
       tickfont: {
         family: 'Roboto, "Helvetica Neue", sans-serif',
-        color: 'white',
+        color: this.tickColor,
         size: 9,
       },
       dtick: 0.25,
@@ -151,7 +152,7 @@ export class PlotSweepComponent
     yaxis2: {
       tickfont: {
         family: 'Roboto, "Helvetica Neue", sans-serif',
-        color: 'white',
+        color: this.tickColor,
         size: 9,
       },
       anchor: 'x',
@@ -422,8 +423,22 @@ export class PlotSweepComponent
       ? this.rgbToHex(activeBg)
       : activeBg;
 
-    // console.log('Initial background color:', backgroundColorHex);
-    // console.log('Initial active background color:', this.activeBackgroundColor);
+    // Fetch and store tick color
+    const tickColorRaw = this.getCssVariableValue(
+      '--vscode-editor-foreground'
+    );
+    this.tickColor = tickColorRaw.startsWith('rgb')
+      ? this.rgbToHex(tickColorRaw)
+      : tickColorRaw;
+
+    // Update tick colors in plot layout
+    this.plotLayout.xaxis.tickfont.color = this.tickColor;
+    this.plotLayout.yaxis.tickfont.color = this.tickColor;
+    this.plotLayout.yaxis2.tickfont.color = this.tickColor;
+
+    console.log('Initial background color:', backgroundColorHex);
+    console.log('Initial active background color:', this.activeBackgroundColor);
+    console.log('Initial tick color:', this.tickColor);
   }
 
   getCssVariableValue(variableName: string): string {
@@ -464,6 +479,7 @@ export class PlotSweepComponent
     }
   }
 
+  // TODO:
   private observeThemeChanges(): void {
     const root = document.documentElement;
 
@@ -486,8 +502,22 @@ export class PlotSweepComponent
         ? this.rgbToHex(activeBg)
         : activeBg;
 
-      // console.log('Theme changed, new background color:', backgroundColorHex);
-      // console.log('Theme changed, new active background color:', this.activeBackgroundColor);
+      // Update tick color on theme change
+      const tickColorRaw = this.getCssVariableValue(
+        '--vscode-editor-foreground'
+      );
+      this.tickColor = tickColorRaw.startsWith('rgb')
+        ? this.rgbToHex(tickColorRaw)
+        : tickColorRaw;
+
+      // Update tick colors in plot layout
+      this.plotLayout.xaxis.tickfont.color = this.tickColor;
+      this.plotLayout.yaxis.tickfont.color = this.tickColor;
+      this.plotLayout.yaxis2.tickfont.color = this.tickColor;
+
+      console.log('Theme changed, new background color:', backgroundColorHex);
+      console.log('Theme changed, new active background color:', this.activeBackgroundColor);
+      console.log('Theme changed, new tick color:', this.tickColor);
 
       this.renderPlot();
     });

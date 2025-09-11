@@ -251,8 +251,8 @@
 .timing {
   border-radius: 13px;
   background-color: transparent;
-  color: var(--vscode-activityBarBadge-foreground);
-  border-color: var(--vscode-activityBar-activeBorder);
+  color: var(--vscode-editor-foreground);
+  border-color: #007acc;
   border-style: solid;
   border-width: thin;
   padding-top: 5px;
@@ -280,10 +280,11 @@
   appearance: none;
   padding: 10px;
   border-radius: 3px;
+  border: 1px solid var(--vscode-editorWidget-border);
 }
 
 .checkbox input[type="checkbox"]:checked {
-  border-color: var(--vscode-activityBar-activeBorder);
+  border-color: #007acc;
 }
 
 .checkbox input[type="checkbox"]:checked::after {
@@ -292,7 +293,7 @@
   top: 1px;
   width: 5px;
   height: 10px;
-  border: solid var(--vscode-activityBar-activeBorder);
+  border: solid #007acc;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
   display: block;
@@ -326,8 +327,8 @@ input:focus {
 .open-script {
   border-radius: 13px;
   background-color: transparent;
-  color: var(--vscode-activityBarBadge-foreground);
-  border-color: var(--vscode-activityBar-activeBorder);
+  color: var(--vscode-editor-foreground);
+  border-color: var(--vscode-activityBarBadge-background);
   border-style: solid;
   border-width: thin;
   padding-top: 5px;

@@ -43,7 +43,7 @@ td {
 }
 
 .toggle-option.selected {
-  background-color: #007acc;
+  background-color: var(--vscode-activityBarBadge-background);
   color: white;
   border-radius: 5px;
 }

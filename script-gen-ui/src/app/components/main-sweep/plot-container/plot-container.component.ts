@@ -221,7 +221,7 @@ export class PlotContainerComponent implements OnInit, AfterViewInit, OnDestroy 
       backgroundColor: isActive
         ? backgroundColor
         : 'var(--vscode-activityBar-border)',
-      color: isActive ? 'var(--vscode-activityBar-foreground)' : 'white',
+      color: isActive ? 'black' : 'var(--vscode-badge-foreground)',
     };
   }
 

@@ -162,7 +162,7 @@ h4 {
 }
 
 .checkbox input[type="checkbox"]:checked {
-  border-color: #007acc;
+  border-color: var(--vscode-activityBarBadge-background);
 }
 
 .checkbox input[type="checkbox"]:checked::after {
@@ -171,7 +171,7 @@ h4 {
   top: 1px;
   width: 5px;
   height: 10px;
-  border: solid #007acc;
+  border: solid var(--vscode-activityBarBadge-background);
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
   display: block;
@@ -208,8 +208,8 @@ h4 {
 .timing {
   border-radius: 13px;
   background-color: transparent;
-  color: var(--vscode-activityBarBadge-foreground);
-  border-color: #007acc;
+  color: var(--vscode-editor-foreground);
+  border-color: var(--vscode-activityBarBadge-background);
   border-style: solid;
   border-width: thin;
   padding: 5px 15px;

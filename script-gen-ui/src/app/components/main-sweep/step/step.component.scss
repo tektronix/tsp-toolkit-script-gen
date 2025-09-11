@@ -52,6 +52,12 @@
   padding: 5px;
 }
 
+input:focus {
+  border: 2px solid var(--vscode-activityBarBadge-background); /* Highlight border color */
+  outline: none; /* Remove default outline */
+  // background-color: #f0f8ff; /* Optional: Change background color */
+}
+
 h4 {
   margin-top: 0;
   margin-bottom: 20px;
@@ -189,21 +195,15 @@ h4 {
   border: 1px solid var(--vscode-editorWidget-border);
 }
 
-.checkbox input[type="checkbox"] {
-  appearance: none;
-  width: 18px;
-  height: 18px;
-}
-
-.input-group input[type="checkbox"]:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background-color: var(
-    --vscode-editorWidget-background,
-    var(--vscode-input-background)
-  );
-  border-color: var(--vscode-editorWidget-border, var(--vscode-input-border));
-}
+// .input-group input[type="checkbox"]:disabled {
+//   opacity: 0.6;
+//   cursor: not-allowed;
+//   background-color: var(
+//     --vscode-editorWidget-background,
+//     var(--vscode-input-background)
+//   );
+//   border-color: var(--vscode-editorWidget-border, var(--vscode-input-border));
+// }
 
 .timing {
   border-radius: 13px;

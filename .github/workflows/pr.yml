@@ -240,6 +240,8 @@ jobs:
           - runner: macos-latest
             triple: x86_64-apple-darwin
             vscode-platform: darwin-arm64
+            os: darwin
+            arch: arm64
     steps:
       - name: Update ClamAV
         run: freshclam

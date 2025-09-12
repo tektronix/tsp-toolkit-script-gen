@@ -49,6 +49,7 @@ export class PlotBiasComponent
   private mutationObserver: MutationObserver | undefined;
   private originalBackgroundColor = '';
   activeBackgroundColor = '';
+  private tickColor = '';
   windowHeight = window.innerHeight;
   windowWidth = window.innerWidth;
 
@@ -60,7 +61,7 @@ export class PlotBiasComponent
       separatethousands: false,
       tickfont: {
         family: 'Roboto, "Helvetica Neue", sans-serif',
-        color: 'white',
+        color: this.tickColor,
         size: 9,
       },
       dtick: 1,
@@ -104,7 +105,7 @@ export class PlotBiasComponent
       range: [0, 2],
       tickfont: {
         family: 'Roboto, "Helvetica Neue", sans-serif',
-        color: 'white',
+        color: this.tickColor,
         size: 9,
       },
       dtick: 0.5,
@@ -124,7 +125,7 @@ export class PlotBiasComponent
     yaxis2: {
       tickfont: {
         family: 'Roboto, "Helvetica Neue", sans-serif',
-        color: 'white',
+        color: this.tickColor,
         size: 9,
       },
       anchor: 'x',
@@ -324,8 +325,21 @@ export class PlotBiasComponent
       ? this.rgbToHex(activeBg)
       : activeBg;
 
+    const tickColorRaw = this.getCssVariableValue(
+      '--vscode-editor-foreground'
+    );
+    this.tickColor = tickColorRaw.startsWith('rgb')
+      ? this.rgbToHex(tickColorRaw)
+      : tickColorRaw;
+
+    // Update tick colors in plot layout
+    this.plotLayout.xaxis.tickfont.color = this.tickColor;
+    this.plotLayout.yaxis.tickfont.color = this.tickColor;
+    this.plotLayout.yaxis2.tickfont.color = this.tickColor;
+
     console.log('Initial background color:', backgroundColorHex);
     console.log('Initial active background color:', this.activeBackgroundColor);
+    console.log('Initial tick color:', this.tickColor);
   }
 
   private renderPlot(): void {
@@ -368,11 +382,25 @@ export class PlotBiasComponent
         ? this.rgbToHex(activeBg)
         : activeBg;
 
-      console.log('Theme changed, new background color:', backgroundColorHex);
-      console.log(
-        'Theme changed, new active background color:',
-        this.activeBackgroundColor
+      // Update tick color on theme change
+      const tickColorRaw = this.getCssVariableValue(
+        '--vscode-activityBarBadge-foreground'
       );
+      this.tickColor = tickColorRaw.startsWith('rgb')
+        ? this.rgbToHex(tickColorRaw)
+        : tickColorRaw;
+
+      // Update tick colors in plot layout
+      this.plotLayout.xaxis.tickfont.color = this.tickColor;
+      this.plotLayout.yaxis.tickfont.color = this.tickColor;
+      this.plotLayout.yaxis2.tickfont.color = this.tickColor;
+
+      // console.log('Theme changed, new background color:', backgroundColorHex);
+      // console.log(
+      //   'Theme changed, new active background color:',
+      //   this.activeBackgroundColor
+      // );
+      // console.log('Theme changed, new tick color:', this.tickColor);
 
       this.renderPlot();
     });

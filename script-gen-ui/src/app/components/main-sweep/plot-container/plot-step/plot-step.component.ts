@@ -6,7 +6,8 @@ import {
   Input,
   OnDestroy,
   OnInit,
-  SimpleChanges, OnChanges,
+  SimpleChanges,
+  OnChanges,
 } from '@angular/core';
 import { StepChannel } from '../../../../model/chan_data/stepChannel';
 import { ChannelRange } from '../../../../model/chan_data/channelRange';
@@ -31,7 +32,9 @@ import { PlotUtils } from '../plot-utils';
   templateUrl: './plot-step.component.html',
   styleUrl: './plot-step.component.scss',
 })
-export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy, OnChanges {
+export class PlotStepComponent
+  implements AfterViewInit, OnInit, OnDestroy, OnChanges
+{
   @Input() stepChannel: StepChannel | undefined;
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
 
@@ -58,6 +61,7 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy, OnCh
   private mutationObserver: MutationObserver | undefined;
   private originalBackgroundColor = '';
   activeBackgroundColor = '';
+  private tickColor = '';
   windowHeight = window.innerHeight;
   windowWidth = window.innerWidth;
   plotWidth = this.windowWidth * 0.58;
@@ -87,7 +91,7 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy, OnCh
       separatethousands: false,
       tickfont: {
         family: 'Roboto, "Helvetica Neue", sans-serif',
-        color: 'white',
+        color: this.tickColor,
         size: 9,
       },
       dtick: 1,
@@ -132,7 +136,7 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy, OnCh
       range: [0, 1],
       tickfont: {
         family: 'Roboto, "Helvetica Neue", sans-serif',
-        color: 'white',
+        color: this.tickColor,
         size: 9,
       },
       dtick: 0.25,
@@ -150,7 +154,7 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy, OnCh
       zeroline: false,
     },
     yaxis2: {
-      tickfont: { family: 'Times New Roman', color: 'white', size: 9 },
+      tickfont: { family: 'Times New Roman', color: this.tickColor, size: 9 },
       anchor: 'x',
       overlaying: 'y',
       side: 'left',
@@ -292,7 +296,10 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy, OnCh
       }
       this.plotData1.x = xData;
       this.plotData1.y = yData;
-      console.log('Plot data generated:', { x: this.plotData1.x, y: this.plotData1.y });
+      console.log('Plot data generated:', {
+        x: this.plotData1.x,
+        y: this.plotData1.y,
+      });
       this.plotLayout.xaxis.dtick = this.stepPoints.value / 10;
     }
   }
@@ -413,8 +420,20 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy, OnCh
       ? this.rgbToHex(activeBg)
       : activeBg;
 
+    // Fetch and store tick color
+    const tickColorRaw = this.getCssVariableValue('--vscode-editor-foreground');
+    this.tickColor = tickColorRaw.startsWith('rgb')
+      ? this.rgbToHex(tickColorRaw)
+      : tickColorRaw;
+
+    // Update tick colors in plot layout
+    this.plotLayout.xaxis.tickfont.color = this.tickColor;
+    this.plotLayout.yaxis.tickfont.color = this.tickColor;
+    this.plotLayout.yaxis2.tickfont.color = this.tickColor;
+
     console.log('Initial background color:', backgroundColorHex);
     console.log('Initial active background color:', this.activeBackgroundColor);
+    console.log('Initial tick color:', this.tickColor);
   }
 
   getCssVariableValue(variableName: string): string {
@@ -472,11 +491,25 @@ export class PlotStepComponent implements AfterViewInit, OnInit, OnDestroy, OnCh
         ? this.rgbToHex(activeBg)
         : activeBg;
 
+      // Update tick color on theme change
+      const tickColorRaw = this.getCssVariableValue(
+        '--vscode-editor-foreground'
+      );
+      this.tickColor = tickColorRaw.startsWith('rgb')
+        ? this.rgbToHex(tickColorRaw)
+        : tickColorRaw;
+
+      // Update tick colors in plot layout
+      this.plotLayout.xaxis.tickfont.color = this.tickColor;
+      this.plotLayout.yaxis.tickfont.color = this.tickColor;
+      this.plotLayout.yaxis2.tickfont.color = this.tickColor;
+
       console.log('Theme changed, new background color:', backgroundColorHex);
       console.log(
         'Theme changed, new active background color:',
         this.activeBackgroundColor
       );
+      console.log('Theme changed, new tick color:', this.tickColor);
 
       this.renderPlot();
     });

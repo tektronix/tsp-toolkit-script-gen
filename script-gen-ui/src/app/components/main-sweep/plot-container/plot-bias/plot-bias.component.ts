@@ -271,7 +271,7 @@ export class PlotBiasComponent
           max = Math.max(...range);
         }
       } else {
-        max = parseToDecimal(this.sourceRange.value);
+        max = parseToDecimal(this.sourceRange.value,(this.plotLayout.yaxis2.ticksuffix).trim());
       }
       if (typeof max === 'number' && !isNaN(max)) {
         const maxRange = PlotUtils.computeMaxRange(-max, max);

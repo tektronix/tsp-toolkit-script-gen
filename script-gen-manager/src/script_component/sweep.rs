@@ -114,6 +114,7 @@ impl SweepModel {
                     .to_lowercase()
                     .clone(),
             );
+
             self.val_replacement_map.insert(
                 instr_name.clone() + ":SRANGE",
                 self.format_range(bias_channel.common_chan_attributes.source_range.clone()),
@@ -125,7 +126,6 @@ impl SweepModel {
                     .common_chan_attributes
                     .meas_function
                     .value
-                    .to_lowercase()
                     .clone(),
             );
 
@@ -218,13 +218,13 @@ impl SweepModel {
             self.val_replacement_map.insert(
                 instr_name.clone() + ":SFUNCTION",
                 step_channel
-                    .start_stop_channel
-                    .common_chan_attributes
-                    .source_function
-                    .value
-                    .to_lowercase()
-                    .clone(),
+                .start_stop_channel
+                .common_chan_attributes
+                .source_function
+                .value
+                .clone(),
             );
+
             self.val_replacement_map.insert(
                 instr_name.clone() + ":SRANGE",
                 self.format_range(
@@ -243,7 +243,6 @@ impl SweepModel {
                     .common_chan_attributes
                     .meas_function
                     .value
-                    .to_lowercase()
                     .clone(),
             );
 
@@ -262,9 +261,8 @@ impl SweepModel {
                     self.val_replacement_map.insert(
                         instr_name.clone() + ":SENSE",
                         String::from(sense_mode_value),
+                        
                     );
-                } else {
-                    //TODO: error handling for sense mode value not found
                 }
             }
 
@@ -418,7 +416,6 @@ impl SweepModel {
                     .common_chan_attributes
                     .source_function
                     .value
-                    .to_lowercase()
                     .clone(),
             );
             self.val_replacement_map.insert(
@@ -439,9 +436,13 @@ impl SweepModel {
                     .common_chan_attributes
                     .meas_function
                     .value
-                    .to_lowercase()
                     .clone(),
             );
+
+            // self.val_replacement_map.insert(
+            //     instr_name.clone() + ":MODE",
+            //     "LIST".to_string(),
+            // );
 
             //sense mode exists only for SMU
             if let Some(sense_mode) = &sweep_channel

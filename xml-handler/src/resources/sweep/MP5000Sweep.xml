@@ -1420,7 +1420,7 @@
                     buffers = {
         </snippet>
         <composite name = "Current Measurement (for bias)">
-            <condition name="BIAS-DEVICE:MFUNCTION">current</condition>
+            <condition name="BIAS-DEVICE:MFUNCTION">FUNC_DC_CURRENT</condition>
             <snippet>
                         {
                             buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
@@ -1429,7 +1429,7 @@
             </snippet>
         </composite>
         <composite name = "Voltage Measurement (for bias)">
-            <condition name="BIAS-DEVICE:MFUNCTION">voltage</condition>
+            <condition name="BIAS-DEVICE:MFUNCTION">FUNC_DC_VOLTAGE</condition>
             <snippet>
                         {
                             buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
@@ -1438,7 +1438,7 @@
             </snippet>
         </composite>
         <composite name = "IV Measurement (for bias)">
-            <condition name="BIAS-DEVICE:MFUNCTION">current,voltage</condition>
+            <condition name="BIAS-DEVICE:MFUNCTION">FUNC_DC_IV_COMBINED</condition>
             <snippet>
                         {
                             buffer = %NODE%.slot[%BIAS-DEVICE:SLOT-IDX%].smu[%BIAS-DEVICE:CHANNEL-IDX%].defbuffer1,
@@ -1473,6 +1473,7 @@
         <substitute name="STEP-DEVICE:SENSE">%SENSE%</substitute>
         <substitute name="STEP-DEVICE:LIMITI">%LIMITI%</substitute>
         <substitute name="STEP-DEVICE:LIMITV">%LIMITV%</substitute>
+        <substitute name="STEP-DEVICE:MODE">%MODE%</substitute>
         <snippet>
             local %MUX% = UTILITY.insert(nodes.steps, UTILITY.makestep({
                 node_idx = %NODE-IDX%,
@@ -1522,7 +1523,7 @@
                     buffers = {
         </snippet>
         <composite name="Current Measurement (for step)">
-            <condition name="STEP-DEVICE:MFUNCTION">current</condition>
+            <condition name="STEP-DEVICE:MFUNCTION">FUNC_DC_CURRENT</condition>
             <snippet>
                         {
                             buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
@@ -1531,7 +1532,7 @@
             </snippet>
         </composite>
         <composite name="Voltage Measurement (for step)">
-            <condition name="STEP-DEVICE:MFUNCTION">voltage</condition>
+            <condition name="STEP-DEVICE:MFUNCTION">FUNC_DC_VOLTAGE</condition>
             <snippet>
                         {
                             buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
@@ -1540,7 +1541,7 @@
             </snippet>
         </composite>
         <composite name="IV Measurement (for step)">
-            <condition name="STEP-DEVICE:MFUNCTION">current,voltage</condition>
+            <condition name="STEP-DEVICE:MFUNCTION">FUNC_DC_IV_COMBINED</condition>
             <snippet>
                         {
                             buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
@@ -1575,13 +1576,14 @@
         <substitute name="SWEEP-DEVICE:SENSE">%SENSE%</substitute>
         <substitute name="SWEEP-DEVICE:LIMITI">%LIMITI%</substitute>
         <substitute name="SWEEP-DEVICE:LIMITV">%LIMITV%</substitute>
+        <substitute name="SWEEP-DEVICE:MODE">%MODE%</substitute>
         <snippet>
             local %MUX% = UTILITY.insert(nodes.sweeps, UTILITY.makesweep({
                 node_idx = %NODE-IDX%,
                 slot_idx = %SLOT-IDX%,
                 channel_idx = %CHANNEL-IDX%,
                 model = &quot;%MODEL%&quot;,
-                sense = CONSTANTS.%SENSE, -- must be SENSE_2WIRE or SENSE_4WIRE
+                sense = CONSTANTS.%SENSE%, -- must be SENSE_2WIRE or SENSE_4WIRE
                 source = {
         </snippet>
 
@@ -1620,11 +1622,11 @@
                     nplc = nplc,
                     count = measure_count,
                     delay = measure_delay,
-                    func = CONSTANTS[&quot;%MFUNCTION%&quot;], -- must be FUNC_DC_VOLTAGE, FUNC_DC_CURRENT, or FUNC_DC_IV_COMBINED
+                    func = CONSTANTS.%MFUNCTION%, -- must be FUNC_DC_VOLTAGE, FUNC_DC_CURRENT, or FUNC_DC_IV_COMBINED
                     buffers = {
         </snippet>
         <composite name="Current Measurement (for sweep)">
-            <condition name="SWEEP-DEVICE:MFUNCTION">current</condition>
+            <condition name="SWEEP-DEVICE:MFUNCTION">FUNC_DC_CURRENT</condition>
             <snippet>
                         {
                             buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
@@ -1633,7 +1635,7 @@
             </snippet>
         </composite>
         <composite name="Voltage Measurement (for sweep)">
-            <condition name="SWEEP-DEVICE:MFUNCTION">voltage</condition>
+            <condition name="SWEEP-DEVICE:MFUNCTION">FUNC_DC_VOLTAGE</condition>
             <snippet>
                         {
                             buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
@@ -1642,7 +1644,7 @@
             </snippet>
         </composite>
         <composite name="IV Measurement (for sweep)">
-            <condition name="SWEEP-DEVICE:MFUNCTION">current,voltage</condition>
+            <condition name="SWEEP-DEVICE:MFUNCTION">FUNC_DC_IV_COMBINED</condition>
             <snippet>
                         {
                             buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,

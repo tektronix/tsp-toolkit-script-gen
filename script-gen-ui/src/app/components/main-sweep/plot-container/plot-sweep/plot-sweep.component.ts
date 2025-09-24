@@ -239,7 +239,7 @@ export class PlotSweepComponent
       this.numPoints = this.sweepGlobalParameters?.sweep_points;
       this.list = this.sweepGlobalParameters?.list_sweep;
       this.numSteps = this.stepGlobalParameters?.step_points.value;
-      this.list = this.sweepGlobalParameters?.list_sweep;
+      // this.list = this.sweepGlobalParameters?.list_sweep;
       this.listSweep = this.sweepChannel.start_stop_channel.list;
 
       this.sweepDivID = `plotDiv${this.sweepChannel.start_stop_channel.common_chan_attributes.uuid}`;
@@ -375,11 +375,11 @@ export class PlotSweepComponent
       const minRange = PlotUtils.computeMinRange(min, max);
       this.plotLayout.yaxis.range = [minRange, maxRange];
       this.plotLayout.yaxis2.range = [minRange, maxRange];
-      this.plotLayout.yaxis2.dtick = maxRange;
+      this.plotLayout.yaxis2.dtick = Math.abs(maxRange - minRange);
       this.plotLayout.yaxis2.tick0 = minRange;
       this.plotLayout.yaxis.tick0 = minRange;
 
-      const dtick = (maxRange - minRange) / 4; // Divide maxRange into 4 intervals
+      const dtick = Math.abs(maxRange - minRange) / 4; // Divide maxRange into 4 intervals
       this.plotLayout.yaxis.dtick = dtick;
     }
   }

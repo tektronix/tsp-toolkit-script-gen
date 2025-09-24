@@ -364,7 +364,7 @@ export class PlotStepComponent
       const minRange = PlotUtils.computeMinRange(min, max);
       this.plotLayout.yaxis.range = [minRange, maxRange];
       this.plotLayout.yaxis2.range = [minRange, maxRange];
-      this.plotLayout.yaxis2.dtick = maxRange;
+      this.plotLayout.yaxis2.dtick = Math.abs(maxRange - minRange);
       this.plotLayout.yaxis2.tick0 = minRange;
       this.plotLayout.yaxis.tick0 = minRange;
 

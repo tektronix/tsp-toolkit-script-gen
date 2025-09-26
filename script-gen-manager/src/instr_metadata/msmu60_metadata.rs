@@ -35,8 +35,8 @@ impl Msmu60Metadata {
             ],
         );
 
-        base.add_default("source_meas.range.defaultv", "2 V");
-        base.add_default("source_meas.range.defaulti", "100 mA");
+        base.add_default("source_meas.range.defaultv", "AUTO");
+        base.add_default("source_meas.range.defaulti", "AUTO");
 
         // Add ranges
         base.add_range("source.levelv".to_string(), -60.0, 60.0);

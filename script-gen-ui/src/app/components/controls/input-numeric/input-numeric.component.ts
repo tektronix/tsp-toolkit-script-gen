@@ -57,7 +57,8 @@ export class InputNumericComponent implements ControlValueAccessor, OnInit {
   }
 
   writeValue(value: number): void {
-    if (value !== undefined) {
+    // Accept all valid numbers including 0
+    if (value !== undefined && value !== null && !isNaN(value)) {
       this._value = value;
     }
   }
@@ -77,11 +78,14 @@ export class InputNumericComponent implements ControlValueAccessor, OnInit {
   onInputChange(event: Event): void {
     const inputElement = event.target as HTMLInputElement;
 
-    if (this.displayValue !== inputElement.valueAsNumber) {
+    const currentValue = this.displayValue;
+    const newValue = inputElement.valueAsNumber;
+
+    if (currentValue !== newValue) {
       // Store previous value for fallback
       const previousValue = this.displayValue;
 
-      let value = inputElement.valueAsNumber;
+      let value = newValue;
 
       // Only update if the value is valid (not NaN)
       if (!isNaN(value)) {

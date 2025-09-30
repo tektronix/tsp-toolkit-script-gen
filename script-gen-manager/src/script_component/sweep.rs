@@ -156,10 +156,15 @@ impl SweepModel {
                     .insert(instr_name.clone() + ":LIMITV", String::from("nil"));
             }
 
-            self.val_replacement_map.insert(
-                instr_name.clone() + ":LIMITI",
-                self.format(bias_channel.common_chan_attributes.source_limiti.value),
-            );
+            if let Some(source_limiti) = &bias_channel.common_chan_attributes.source_limitv {
+                self.val_replacement_map.insert(
+                    instr_name.clone() + ":LIMITI",
+                    self.format(source_limiti.value),
+                );
+            } else {
+                self.val_replacement_map
+                    .insert(instr_name.clone() + ":LIMITI", String::from("nil"));
+            }
 
             self.val_replacement_map.insert(
                 instr_name.clone() + ":BIAS",
@@ -283,16 +288,15 @@ impl SweepModel {
                     .insert(instr_name.clone() + ":LIMITV", String::from("nil"));
             }
 
-            self.val_replacement_map.insert(
-                instr_name.clone() + ":LIMITI",
-                self.format(
-                    step_channel
-                        .start_stop_channel
-                        .common_chan_attributes
-                        .source_limiti
-                        .value,
-                ),
-            );
+            if let Some(source_limiti) = &step_channel.start_stop_channel.common_chan_attributes.source_limitv {
+                self.val_replacement_map.insert(
+                    instr_name.clone() + ":LIMITI",
+                    self.format(source_limiti.value),
+                );
+            } else {
+                self.val_replacement_map
+                    .insert(instr_name.clone() + ":LIMITI", String::from("nil"));
+            }
 
             self.val_replacement_map.insert(
                 instr_name.clone() + ":START",
@@ -479,16 +483,15 @@ impl SweepModel {
                     .insert(instr_name.clone() + ":LIMITV", String::from("nil"));
             }
 
-            self.val_replacement_map.insert(
-                instr_name.clone() + ":LIMITI",
-                self.format(
-                    sweep_channel
-                        .start_stop_channel
-                        .common_chan_attributes
-                        .source_limiti
-                        .value,
-                ),
-            );
+             if let Some(source_limiti) = &sweep_channel.start_stop_channel.common_chan_attributes.source_limitv {
+                self.val_replacement_map.insert(
+                    instr_name.clone() + ":LIMITI",
+                    self.format(source_limiti.value),
+                );
+            } else {
+                self.val_replacement_map
+                    .insert(instr_name.clone() + ":LIMITI", String::from("nil"));
+            }
 
             self.val_replacement_map.insert(
                 instr_name.clone() + ":START",

@@ -156,7 +156,7 @@ impl SweepModel {
                     .insert(instr_name.clone() + ":LIMITV", String::from("nil"));
             }
 
-            if let Some(source_limiti) = &bias_channel.common_chan_attributes.source_limitv {
+            if let Some(source_limiti) = &bias_channel.common_chan_attributes.source_limiti {
                 self.val_replacement_map.insert(
                     instr_name.clone() + ":LIMITI",
                     self.format(source_limiti.value),
@@ -291,7 +291,7 @@ impl SweepModel {
             if let Some(source_limiti) = &step_channel
                 .start_stop_channel
                 .common_chan_attributes
-                .source_limitv
+                .source_limiti
             {
                 self.val_replacement_map.insert(
                     instr_name.clone() + ":LIMITI",
@@ -490,7 +490,7 @@ impl SweepModel {
             if let Some(source_limiti) = &sweep_channel
                 .start_stop_channel
                 .common_chan_attributes
-                .source_limitv
+                .source_limiti
             {
                 self.val_replacement_map.insert(
                     instr_name.clone() + ":LIMITI",

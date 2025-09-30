@@ -250,7 +250,7 @@ impl CommonChanAttributes {
         Some(sense_mode)
     }
 
-    pub fn validate_source_limits(&mut self, metadata: &MetadataEnum){
+    pub fn validate_source_limits(&mut self, metadata: &MetadataEnum) {
         if let Some((min, max)) = self.get_range_limits(metadata, "source.limiti") {
             if let Some(ref mut limiti) = self.source_limiti {
                 limiti.value = Self::limit(limiti.value, min, max);
@@ -261,10 +261,9 @@ impl CommonChanAttributes {
                 limitv.value = Self::limit(limitv.value, min, max);
             }
         }
-
     }
 
-    fn limit(mut value:f64, min: f64, max: f64)->f64 {
+    fn limit(mut value: f64, min: f64, max: f64) -> f64 {
         if value >= min && value <= max {
             return value;
         } else if value < min {

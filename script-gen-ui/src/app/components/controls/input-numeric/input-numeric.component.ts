@@ -78,7 +78,7 @@ export class InputNumericComponent implements ControlValueAccessor, OnInit {
   onInputChange(event: Event): void {
     const inputElement = event.target as HTMLInputElement;
 
-    const currentValue = this.displayValue ?? 0;
+    const currentValue = this.displayValue;
     const newValue = inputElement.valueAsNumber;
 
     if (currentValue !== newValue) {
@@ -96,7 +96,7 @@ export class InputNumericComponent implements ControlValueAccessor, OnInit {
         this.displayValue = value;
       } else {
         // Revert to the previous valid value
-        inputElement.value = `${previousValue ?? 0}`;
+        inputElement.value = `${previousValue}`;
       }
 
     }

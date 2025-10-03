@@ -39,8 +39,8 @@ impl Msmu60Metadata {
         base.add_default("source_meas.range.defaulti", "AUTO");
 
         // Add ranges
-        base.add_range("source.levelv".to_string(), -60.0, 60.0);
-        base.add_range("source.leveli".to_string(), -1.5, 1.5);
+        base.add_range("source.levelv".to_string(), -60.6, 60.6);
+        base.add_range("source.leveli".to_string(), -1.515, 1.515);
 
         // Add region maps
         // when pulse mode is off

@@ -44,11 +44,12 @@ impl ChannelRange {
         } else {
             let scaled_value = self.get_scaled_value();
             if let Some(scaled_value) = scaled_value {
-                if result < -scaled_value {
-                    return -scaled_value;
-                } else if result > scaled_value {
-                    return scaled_value;
-                }
+                let overrange_scaled_value = scaled_value *1.01;
+                if result < -overrange_scaled_value {
+                    return -overrange_scaled_value;
+                } else if result > overrange_scaled_value {
+                    return overrange_scaled_value;
+                } 
             }
         }
         //TODO: error handling?

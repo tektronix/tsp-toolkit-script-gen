@@ -42,8 +42,6 @@ impl StartStopChannel {
             BaseMetadata::STYLE_LOG.to_string(),
         ];
         self.style.value = BaseMetadata::STYLE_LIN.to_string();
-        self.common_chan_attributes
-            .update_region_constraints(self.start.value, self.stop.value);
         self.set_list(steps_or_points);
     }
 
@@ -65,8 +63,6 @@ impl StartStopChannel {
         self.common_chan_attributes.evaluate();
         self.determine_start_value();
         self.determine_stop_value();
-        self.common_chan_attributes
-            .update_region_constraints(self.start.value, self.stop.value);
 
         //List evaluation
 

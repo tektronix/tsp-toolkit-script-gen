@@ -66,7 +66,7 @@ export class SweepComponent implements OnChanges {
   @Input() sweepChannel: SweepChannel | undefined;
   @Input() isSweepExpanded = false;
   @Input() deviceList: Device[] = [];
-  @Input() isListSweep: boolean = false;
+  @Input() isListSweep = false;
   @Output() emitSweepExpanderState = new EventEmitter<{
     uuid: string;
     isExpanded: boolean;

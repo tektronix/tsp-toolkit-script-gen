@@ -40,8 +40,8 @@ impl Msmu60Metadata {
         base.add_default("source_meas.range.defaulti", "AUTO");
 
         // Add ranges
-        base.add_range("source.levelv".to_string(), -60.0, 60.0);
-        base.add_range("source.leveli".to_string(), -1.5, 1.5);
+        base.add_range("source.levelv".to_string(), -60.6, 60.6);
+        base.add_range("source.leveli".to_string(), -1.515, 1.515);
 
         base.add_range("source.limiti".to_string(), -1e-8, 1.515);
         base.add_range("source.limitv".to_string(), -0.02, 60.6);

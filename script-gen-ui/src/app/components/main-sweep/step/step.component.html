@@ -84,7 +84,7 @@
         name="start"
         automationID="StepStart"
         (inputChange)="submitStepData()"
-        [disabled]="!selectedDeviceOption?.isValid"
+        [disabled]="!selectedDeviceOption?.isValid || listStep"
       ></app-input-plain>
       <app-input-plain
         [(ngModel)]="stop.value"
@@ -94,7 +94,7 @@
         name="stepStop"
         automationID="StepStop"
         (inputChange)="submitStepData()"
-        [disabled]="!selectedDeviceOption?.isValid"
+        [disabled]="!selectedDeviceOption?.isValid || listStep"
       ></app-input-plain>
     </div>
     <div>
@@ -157,7 +157,7 @@
         name="style"
         automationID="style"
         (toggleOptionChange)="submitStepData()"
-        [disabled]="!selectedDeviceOption?.isValid"
+        [disabled]="!selectedDeviceOption?.isValid || listStep"
       ></app-input-toggle>
     </div>
     <div class="checkbox">
@@ -183,7 +183,7 @@
           class="timing"
           [attr.aria-label]="'EditStepList'"
           (click)="showStepListPopup()"
-          [disabled]="!selectedDeviceOption?.isValid"
+          [disabled]="!selectedDeviceOption?.isValid || !listStep"
         >
           Edit
         </button>

@@ -244,6 +244,7 @@
               [attr.aria-label]="'EditSweepList'"
               class="timing"
               (click)="enableList()"
+              [disabled]="!isListSweep"
             >
               Edit
             </button>
@@ -264,6 +265,7 @@
             (emitSweepData)="updateSweepChannelsConfig($event)"
             [sweepChannel]="sweepChannel"
             [deviceList]="deviceList"
+            [isListSweep]="isListSweep"
             (emitSweepExpanderState)="
               handleChannelExpanderStateChange(
                 sweepChannel.start_stop_channel.common_chan_attributes.uuid,

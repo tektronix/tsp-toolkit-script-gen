@@ -255,10 +255,18 @@
   border-color: var(--vscode-activityBarBadge-background);
   border-style: solid;
   border-width: thin;
-  padding-top: 5px;
-  padding-bottom: 5px;
-  padding-left: 15px;
-  padding-right: 15px;
+  padding: 5px 15px;
+}
+
+button.timing:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(
+    --vscode-editorWidget-background,
+    var(--vscode-input-background)
+  );
+  color: var(--vscode-disabledForeground, var(--vscode-input-foreground));
+  border-color: var(--vscode-editorWidget-border, var(--vscode-input-border));
 }
 
 .autorange {

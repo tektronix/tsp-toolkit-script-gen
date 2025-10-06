@@ -22,17 +22,11 @@ impl BiasChannel {
         // Call set_defaults on the common_chan_attributes field
         bias_channel.common_chan_attributes.set_defaults();
         bias_channel
-            .common_chan_attributes
-            .update_region_constraints(bias_channel.bias.value, bias_channel.bias.value);
-
-        bias_channel
     }
 
     pub fn evaluate(&mut self) {
         self.common_chan_attributes.evaluate();
         self.determine_bias_value();
-        self.common_chan_attributes
-            .update_region_constraints(self.bias.value, self.bias.value);
     }
 
     fn determine_bias_value(&mut self) {

@@ -25,6 +25,8 @@ impl Mpsu50Metadata {
         base.add_range("source.levelv".to_string(), -50.0, 50.0);
         base.add_range("source.leveli".to_string(), -5.0, 5.0);
 
+        base.add_range("source.limiti".to_string(), 0.01, 5.1);
+
         // Add region maps
         // when pulse mode is off
         let exclude_i = NumberLimit::new(-10.0e-9, 10.0e-9, false, None);

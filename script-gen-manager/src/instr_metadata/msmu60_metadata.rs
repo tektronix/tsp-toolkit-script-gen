@@ -1,5 +1,6 @@
 use crate::model::{
-    chan_data::region_map::RegionMapMetadata, sweep_data::number_limit::NumberLimit,
+    chan_data::region_map::RegionMapMetadata,
+    sweep_data::{number_limit::NumberLimit, parameters::ParameterFloat},
 };
 
 use super::base_metadata::{BaseMetadata, Metadata};
@@ -41,6 +42,9 @@ impl Msmu60Metadata {
         // Add ranges
         base.add_range("source.levelv".to_string(), -60.0, 60.0);
         base.add_range("source.leveli".to_string(), -1.5, 1.5);
+
+        base.add_range("source.limiti".to_string(), -1e-8, 1.515);
+        base.add_range("source.limitv".to_string(), -0.02, 60.6);
 
         // Add region maps
         // when pulse mode is off

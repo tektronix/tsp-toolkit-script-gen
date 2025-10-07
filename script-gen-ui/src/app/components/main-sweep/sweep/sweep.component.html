@@ -65,7 +65,7 @@
         name="start"
         automationID="SweepStart"
         (inputChange)="submitSweepData()"
-        [disabled]="!selectedDeviceOption?.isValid"
+        [disabled]="!selectedDeviceOption?.isValid || isListSweep"
       ></app-input-plain>
       <app-input-plain
         [(ngModel)]="stop.value"
@@ -75,7 +75,7 @@
         name="stop"
         automationID="SweepStop"
         (inputChange)="submitSweepData()"
-        [disabled]="!selectedDeviceOption?.isValid"
+        [disabled]="!selectedDeviceOption?.isValid || isListSweep"
       ></app-input-plain>
     </div>
     <div>
@@ -138,7 +138,7 @@
         name="style"
         automationID="style"
         (toggleOptionChange)="submitSweepData()"
-        [disabled]="!selectedDeviceOption?.isValid"
+        [disabled]="!selectedDeviceOption?.isValid || isListSweep"
       ></app-input-toggle>
     </div>
     <div>

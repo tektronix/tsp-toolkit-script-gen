@@ -55,6 +55,8 @@ impl Msmu60Metadata {
         region_map_metadata.add_region(1, -20.0, -1.5, 20.0, 1.5);
         base.add_region_map("smu.region", region_map_metadata);
 
+        base.add_overrange_scale(1.01);
+
         Msmu60Metadata {
             base,
             // Initialize additional properties
@@ -81,5 +83,9 @@ impl Metadata for Msmu60Metadata {
 
     fn get_region_map(&self, key: &str) -> Option<RegionMapMetadata> {
         self.base.get_region_map(key)
+    }
+
+    fn get_overrange_scale(&self) -> f64 {
+        self.base.get_overrange_scale()
     }
 }

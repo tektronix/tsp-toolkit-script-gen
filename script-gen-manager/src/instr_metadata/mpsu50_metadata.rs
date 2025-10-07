@@ -22,7 +22,7 @@ impl Mpsu50Metadata {
 
         //TODO: verify for Trebuchet PSU (model: MPSU50-2ST)
         // Add ranges
-        base.add_range("source.levelv".to_string(), -50.0, 50.0);
+        base.add_range("source.levelv".to_string(), -50.1, 50.1);
         base.add_range("source.leveli".to_string(), -5.0, 5.0);
 
         base.add_range("source.limiti".to_string(), 0.01, 5.1);
@@ -36,6 +36,8 @@ impl Mpsu50Metadata {
         region_map_metadata.add_region(1, 0.0, 0.0, -10.0, -5.0);
         region_map_metadata.add_region(1, 0.0, 0.0, -50.0, -1.0);
         base.add_region_map("psu.region", region_map_metadata);
+
+        base.add_overrange_scale(1.002);
 
         Mpsu50Metadata {
             base,
@@ -63,5 +65,9 @@ impl Metadata for Mpsu50Metadata {
 
     fn get_region_map(&self, key: &str) -> Option<RegionMapMetadata> {
         self.base.get_region_map(key)
+    }
+
+    fn get_overrange_scale(&self) -> f64 {
+        self.base.get_overrange_scale()
     }
 }

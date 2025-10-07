@@ -107,6 +107,7 @@ impl CommonChanAttributes {
         self.set_source_range(&device_metadata);
         self.set_source_range_limits(&device_metadata);
         self.set_source_range_value();
+        self.set_overrange_scale(&device_metadata);
         self.validate_source_limits(&device_metadata);
     }
 
@@ -130,6 +131,11 @@ impl CommonChanAttributes {
             self.source_range.set_min(min);
             self.source_range.set_max(max);
         }
+    }
+
+    fn set_overrange_scale(&mut self, metadata: &MetadataEnum) {
+        let scale = self.get_overrange_scale(metadata);
+        self.source_range.set_overrange_scale(scale);
     }
 
     fn set_source_range_value(&mut self) {
@@ -211,6 +217,14 @@ impl CommonChanAttributes {
             MetadataEnum::Base(base_metadata) => base_metadata.get_range(key),
             MetadataEnum::Msmu60(msmu60_metadata) => msmu60_metadata.get_range(key),
             MetadataEnum::Mpsu50(mpsu50_metadata) => mpsu50_metadata.get_range(key),
+        }
+    }
+
+    fn get_overrange_scale(&self, metadata: &MetadataEnum) -> f64 {
+        match metadata {
+            MetadataEnum::Base(base_metadata) => base_metadata.get_overrange_scale(),
+            MetadataEnum::Msmu60(msmu60_metadata) => msmu60_metadata.get_overrange_scale(),
+            MetadataEnum::Mpsu50(mpsu50_metadata) => mpsu50_metadata.get_overrange_scale(),
         }
     }
 

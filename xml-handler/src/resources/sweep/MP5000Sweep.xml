@@ -33,20 +33,6 @@
 	<substitute name="MEASURE-DELAY">%MEASURE-DELAY%</substitute>
 	<substitute name="EFFECTIVE-FILTER-COUNT">%EFFECTIVE-FILTER-COUNT%</substitute>
 	<snippet>
-        ---@diagnostic disable: deprecated
-        reset(true)
-
-        LOGEVENTS = false
-
-        local lognumber = 0
-        local function logevent(device, message)
-            if LOGEVENTS then
-                device.slot.trigger.model.addblock.logevent(device.trigger_model, device.trigger_model .. lognumber,
-                    device.slot.trigger.model.LOG_INFO1, device.channel_idx .. &quot;: &quot; .. message)
-                lognumber = lognumber + 1
-            end
-        end
-
         ----------------------------------------------------------------------------
         -- START OF SWEEP SEGMENT ... do not modify this section
         ----------------------------------------------------------------------------
@@ -1662,17 +1648,68 @@
     </composite>
 
     <snippet>
+
+        print(&quot;Init...&quot;)
         Init(nodes)
+        print(&quot;Reset...&quot;)
         Reset(nodes)
+        print(&quot;Configuring Channels...&quot;)
         ConfigureChannels(nodes)
+        print(&quot;Configuring Trigger Model...&quot;)
         ConfigureTriggerModel(nodes)
+        print(&quot;STEPS: &quot; .. UTILITY.STEP_COUNT .. &quot; SWEEPS: &quot; .. UTILITY.SWEEP_COUNT .. &quot; TOTAL: &quot; .. UTILITY.TOTAL_COUNT)
+        print(&quot;Turning on Channels...&quot;)
         TurnOnChannels(nodes)
+        print(&quot;Initiate Trigger Model...&quot;)
         InitiateTriggerModels(nodes)
+        print(&quot;waitcomplete...&quot;)
         waitcomplete()
+        print(&quot;Turn Off Channels...&quot;)
         TurnOffChannels(nodes)
         waitcomplete()
     end
 
     _Sweep()
+
+    function iv_to_string(t)
+        if t == CONSTANTS.FUNC_DC_CURRENT then
+            return &quot;CURRENT&quot;
+        end
+        if t == CONSTANTS.FUNC_DC_VOLTAGE then
+            return &quot;VOLTAGE&quot;
+        end
+    end
+
+    for i, n in ipairs(nodes.biases) do
+        for _, buf in ipairs(n.measure.buffers) do
+            print()
+            print(&quot;----------------------&quot;)
+            print(&quot;- BIAS[&quot;.. i ..&quot;] &quot;.. iv_to_string(buf.type)..&quot;     -&quot;)
+            print(&quot;----------------------&quot;)
+            printbuffer(1, buf.buffer.n, buf.buffer)
+        end
+    end
+
+    for i, n in ipairs(nodes.steps) do
+        for _, buf in ipairs(n.measure.buffers) do
+            print()
+            print(&quot;----------------------&quot;)
+            print(&quot;- STEP[&quot;.. i ..&quot;] &quot;.. iv_to_string(buf.type)..&quot;     -&quot;)
+            print(&quot;----------------------&quot;)
+            printbuffer(1, buf.buffer.n, buf.buffer)
+        end
+    end
+
+    for i, n in ipairs(nodes.sweeps) do
+        for _, buf in ipairs(n.measure.buffers) do
+            print()
+            print()
+            print(&quot;----------------------&quot;)
+            print(&quot;- SWEEP[&quot;.. i ..&quot;] &quot;.. iv_to_string(buf.type)..&quot;    -&quot;)
+            print(&quot;----------------------&quot;)
+            printbuffer(1, buf.buffer.n, buf.buffer)
+        end
+    end
+
 	</snippet>
 </composite>

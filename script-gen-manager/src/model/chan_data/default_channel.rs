@@ -20,7 +20,7 @@ pub struct CommonChanAttributes {
     pub meas_function: ParameterString,
     pub source_range: ChannelRange,
     meas_range: ChannelRange,
-    pub source_limiti: ParameterFloat,
+    pub source_limiti: Option<ParameterFloat>,
     pub source_limitv: Option<ParameterFloat>,
     pub sense_mode: Option<ParameterString>,
 
@@ -40,11 +40,7 @@ impl CommonChanAttributes {
             meas_function: ParameterString::new("meas_function"),
             source_range: ChannelRange::new(),
             meas_range: ChannelRange::new(),
-            source_limiti: ParameterFloat::new(
-                "source_limiti",
-                1e-1,
-                Some(BaseMetadata::UNIT_AMPERES.to_string()),
-            ),
+            source_limiti: None,
             source_limitv: None,
             sense_mode: None,
 
@@ -66,9 +62,19 @@ impl CommonChanAttributes {
                     20.0,
                     Some(BaseMetadata::UNIT_VOLTS.to_string()),
                 ));
+                self.source_limiti = Some(ParameterFloat::new(
+                    "source_limiti",
+                    1e-1,
+                    Some(BaseMetadata::UNIT_AMPERES.to_string()),
+                ));
             }
             DeviceType::Psu => {
                 self.source_function.range = vec![BaseMetadata::FUNCTION_VOLTAGE.to_string()];
+                self.source_limiti = Some(ParameterFloat::new(
+                    "source_limiti",
+                    0.5,
+                    Some(BaseMetadata::UNIT_AMPERES.to_string()),
+                ));
             }
             DeviceType::Unknown => {
                 //todo: handle error
@@ -101,6 +107,8 @@ impl CommonChanAttributes {
         self.set_source_range(&device_metadata);
         self.set_source_range_limits(&device_metadata);
         self.set_source_range_value();
+        self.set_overrange_scale(&device_metadata);
+        self.validate_source_limits(&device_metadata);
     }
 
     fn set_source_range(&mut self, metadata: &MetadataEnum) {
@@ -123,6 +131,11 @@ impl CommonChanAttributes {
             self.source_range.set_min(min);
             self.source_range.set_max(max);
         }
+    }
+
+    fn set_overrange_scale(&mut self, metadata: &MetadataEnum) {
+        let scale = self.get_overrange_scale(metadata);
+        self.source_range.set_overrange_scale(scale);
     }
 
     fn set_source_range_value(&mut self) {
@@ -207,6 +220,14 @@ impl CommonChanAttributes {
         }
     }
 
+    fn get_overrange_scale(&self, metadata: &MetadataEnum) -> f64 {
+        match metadata {
+            MetadataEnum::Base(base_metadata) => base_metadata.get_overrange_scale(),
+            MetadataEnum::Msmu60(msmu60_metadata) => msmu60_metadata.get_overrange_scale(),
+            MetadataEnum::Mpsu50(mpsu50_metadata) => mpsu50_metadata.get_overrange_scale(),
+        }
+    }
+
     fn get_range_defaults(&self, metadata: &MetadataEnum, key: &str) -> Option<&'static str> {
         match metadata {
             MetadataEnum::Base(base_metadata) => base_metadata.get_default(key),
@@ -243,102 +264,27 @@ impl CommonChanAttributes {
         Some(sense_mode)
     }
 
-    pub fn update_region_constraints(&mut self, min_value: f64, max_value: f64) -> bool {
-        let mut changed = false;
-        let mut region_id = -1;
-
-        match self.device.device_type {
-            DeviceType::Smu => {
-                if let Some(region_map) =
-                    self.get_region_map(&self.device.get_metadata(), "smu.region")
-                {
-                    let mut value = 0.0;
-                    if self.source_range.is_range_auto()
-                        || self.source_range.is_range_follow_limiti()
-                    {
-                        value = if min_value.abs() > max_value.abs() {
-                            min_value
-                        } else {
-                            max_value
-                        };
-                    } else {
-                        if let Some(res) = self.source_range.get_scaled_value() {
-                            value = res
-                        }
-                    }
-
-                    let old_id = region_id;
-                    let old_limiti = self.source_limiti.value;
-                    let old_limitv = self
-                        .source_limitv
-                        .as_ref()
-                        .map(|v| v.value)
-                        .unwrap_or(f64::NAN);
-
-                    if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
-                        let source_limit_ilimits = region_map.get_current_limit(value);
-                        self.source_limiti.value =
-                            source_limit_ilimits.limit(self.source_limiti.value);
-                        region_id = region_map.find_region(value, self.source_limiti.value);
-                    } else {
-                        let source_limit_vlimits = region_map.get_voltage_limit(value);
-                        if let Some(ref mut limitv) = self.source_limitv {
-                            limitv.value = source_limit_vlimits.limit(limitv.value);
-                            region_id = region_map.find_region(limitv.value, value);
-                        }
-                    }
-
-                    if (region_id != old_id)
-                        || (old_limiti != self.source_limiti.value)
-                        || (old_limitv
-                            != self
-                                .source_limitv
-                                .as_ref()
-                                .map(|v| v.value)
-                                .unwrap_or(f64::NAN))
-                    {
-                        changed = true;
-                    }
-                }
-            }
-            DeviceType::Psu => {
-                if let Some(region_map) =
-                    self.get_region_map(&self.device.get_metadata(), "psu.region")
-                {
-                    let mut value = 0.0;
-                    if self.source_range.is_range_auto()
-                        || self.source_range.is_range_follow_limiti()
-                    {
-                        value = if min_value.abs() > max_value.abs() {
-                            min_value
-                        } else {
-                            max_value
-                        };
-                    } else {
-                        if let Some(res) = self.source_range.get_scaled_value() {
-                            value = res
-                        }
-                    }
-
-                    let old_id = region_id;
-                    let old_limiti = self.source_limiti.value;
-
-                    if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
-                        let source_limit_ilimits = region_map.get_current_limit(value);
-                        self.source_limiti.value =
-                            source_limit_ilimits.limit(self.source_limiti.value);
-                        region_id = region_map.find_region(value, self.source_limiti.value);
-                    }
-
-                    if (region_id != old_id) || (old_limiti != self.source_limiti.value) {
-                        changed = true;
-                    }
-                }
-            }
-            DeviceType::Unknown => {
-                //todo: handle error
+    pub fn validate_source_limits(&mut self, metadata: &MetadataEnum) {
+        if let Some((min, max)) = self.get_range_limits(metadata, "source.limiti") {
+            if let Some(ref mut limiti) = self.source_limiti {
+                limiti.value = Self::limit(limiti.value, min, max);
             }
         }
-        changed
+        if let Some((min, max)) = self.get_range_limits(metadata, "source.limitv") {
+            if let Some(ref mut limitv) = self.source_limitv {
+                limitv.value = Self::limit(limitv.value, min, max);
+            }
+        }
+    }
+
+    fn limit(mut value: f64, min: f64, max: f64) -> f64 {
+        if value >= min && value <= max {
+            return value;
+        } else if value < min {
+            value = min
+        } else {
+            value = max
+        }
+        return value;
     }
 }

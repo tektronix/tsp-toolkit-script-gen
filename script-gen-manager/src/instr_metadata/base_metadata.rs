@@ -17,6 +17,7 @@ pub trait Metadata: Debug + Clone {
     fn get_default(&self, key: &str) -> Option<&'static str>;
     fn get_name(&self, key: &str) -> Option<&'static str>;
     fn get_region_map(&self, key: &str) -> Option<RegionMapMetadata>;
+    fn get_overrange_scale(&self) -> f64;
 }
 
 /// A struct that holds base metadata information common to all Trebuchet instruments.
@@ -27,6 +28,7 @@ pub struct BaseMetadata {
     defaults: HashMap<&'static str, &'static str>,
     names: HashMap<&'static str, &'static str>,
     region_maps: HashMap<&'static str, RegionMapMetadata>,
+    overrange_scale: f64,
 }
 
 impl BaseMetadata {
@@ -65,6 +67,7 @@ impl BaseMetadata {
         let defaults = HashMap::new();
         let mut names = HashMap::new();
         let region_maps = HashMap::new();
+        let overrange_scale = 1.0;
 
         //timing: source or measure delay type
         options.insert(
@@ -85,6 +88,7 @@ impl BaseMetadata {
             defaults,
             names,
             region_maps,
+            overrange_scale,
         }
     }
 
@@ -102,6 +106,10 @@ impl BaseMetadata {
 
     pub fn add_region_map(&mut self, key: &'static str, region_map_metadata: RegionMapMetadata) {
         self.region_maps.insert(key, region_map_metadata);
+    }
+
+    pub fn add_overrange_scale(&mut self, scale: f64) {
+        self.overrange_scale = scale;
     }
 }
 
@@ -126,6 +134,10 @@ impl Metadata for BaseMetadata {
 
     fn get_region_map(&self, key: &str) -> Option<RegionMapMetadata> {
         self.region_maps.get(key).cloned()
+    }
+
+    fn get_overrange_scale(&self) -> f64 {
+        self.overrange_scale
     }
 }
 

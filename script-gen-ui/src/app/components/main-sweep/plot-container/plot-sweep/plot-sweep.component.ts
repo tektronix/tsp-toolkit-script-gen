@@ -36,8 +36,7 @@ import { PlotUtils } from '../plot-utils';
   styleUrl: './plot-sweep.component.scss',
 })
 export class PlotSweepComponent
-  implements AfterViewInit, OnInit, OnDestroy, OnChanges
-{
+  implements AfterViewInit, OnInit, OnDestroy, OnChanges {
   @Input() sweepChannel: SweepChannel | undefined;
   @Input() sweepGlobalParameters: SweepGlobalParameters | undefined;
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
@@ -91,6 +90,7 @@ export class PlotSweepComponent
         size: 9,
       },
       dtick: 1,
+      range: [0, 10],
       // tick0: 0,
       showtickprefix: 'none',
       showticksuffix: 'all',
@@ -207,7 +207,7 @@ export class PlotSweepComponent
   };
   private plotData = [this.plotData1, this.plotData2];
 
-  constructor(public elementRef: ElementRef) {}
+  constructor(public elementRef: ElementRef) { }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['isActive'] && !changes['isActive'].isFirstChange()) {
@@ -239,7 +239,7 @@ export class PlotSweepComponent
       this.numPoints = this.sweepGlobalParameters?.sweep_points;
       this.list = this.sweepGlobalParameters?.list_sweep;
       this.numSteps = this.stepGlobalParameters?.step_points.value;
-      this.list = this.sweepGlobalParameters?.list_sweep;
+      // this.list = this.sweepGlobalParameters?.list_sweep;
       this.listSweep = this.sweepChannel.start_stop_channel.list;
 
       this.sweepDivID = `plotDiv${this.sweepChannel.start_stop_channel.common_chan_attributes.uuid}`;
@@ -291,7 +291,7 @@ export class PlotSweepComponent
     }
   }
 
-  private generatePlotDataxy(sweepValues: number[]) {
+  private generatePlotDataxy(sweepValues: number[], xData?: number[]) {
     if (this.numPoints && this.numSteps) {
       const numSteps = this.numSteps;
       const numberOfPoints = this.numPoints?.value;
@@ -299,18 +299,23 @@ export class PlotSweepComponent
         .flat()
         .concat(sweepValues[sweepValues.length - 1]);
 
-      this.plotData1.x = Array.from({ length: numSteps }, (_, i) =>
-        Array.from({ length: numberOfPoints }, (_, j) => i + j / numberOfPoints)
-      )
-        .flat()
-        .concat(numSteps);
+      if (xData) {
+        this.plotData1.x = xData;
+      } else {
+        this.plotData1.x = Array.from({ length: numSteps }, (_, i) =>
+          Array.from({ length: numberOfPoints }, (_, j) => i + j / numberOfPoints)
+        )
+          .flat()
+          .concat(numSteps);
+      }
     }
   }
 
   private generatePlotData(sweepValues: number[], type: string) {
     if (this.numPoints && this.numSteps) {
-      const targetLength = this.plotWidth / this.numPoints.value;
+      const targetLength = this.plotWidth / this.numSteps;
       if (this.numPoints?.value > targetLength) {
+        let xData: number[] = [];
         if (type == 'LIN') {
           const interpolated = PlotUtils.linearInterpolation(
             sweepValues,
@@ -324,11 +329,14 @@ export class PlotSweepComponent
           );
           sweepValues = interpolated.y;
         }
-        this.generatePlotDataxy(sweepValues);
+        xData = Array.from({ length: this.numSteps }, (_, i) =>
+            Array.from({ length: sweepValues.length }, (_, j) => i + j / sweepValues.length)).flat().concat(this.numSteps)
+        this.generatePlotDataxy(sweepValues, xData);
       } else {
         this.generatePlotDataxy(sweepValues);
       }
       this.plotLayout.xaxis.dtick = this.numSteps / 10;
+      this.plotLayout.xaxis.range = [0, this.numSteps];
     }
   }
 
@@ -367,11 +375,11 @@ export class PlotSweepComponent
       const minRange = PlotUtils.computeMinRange(min, max);
       this.plotLayout.yaxis.range = [minRange, maxRange];
       this.plotLayout.yaxis2.range = [minRange, maxRange];
-      this.plotLayout.yaxis2.dtick = maxRange;
+      this.plotLayout.yaxis2.dtick = Math.abs(maxRange - minRange);
       this.plotLayout.yaxis2.tick0 = minRange;
       this.plotLayout.yaxis.tick0 = minRange;
 
-      const dtick = (maxRange - minRange) / 4; // Divide maxRange into 4 intervals
+      const dtick = Math.abs(maxRange - minRange) / 4; // Divide maxRange into 4 intervals
       this.plotLayout.yaxis.dtick = dtick;
     }
   }

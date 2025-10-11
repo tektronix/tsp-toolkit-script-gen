@@ -34,25 +34,85 @@ const vscode = typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : { p
 export class AppComponent implements OnInit, OnDestroy {
   title = 'script-gen-ui';
   private wsSubscription: Subscription | undefined;
+  private statusSubscription: Subscription | undefined;
+  private errorSubscription: Subscription | undefined;
   parsedData: ServerData | undefined;
   sweepModel: SweepModel | undefined;
   sweepConfig: SweepConfig | undefined;
   isMainSweepVisible = false;
+  
+  // UI Status indicators
+  isProcessing = false;
+  processingStatus = '';
+  processingDetails = '';
+  errorMessage = '';
+  queueLength = 0;
 
   constructor(private webSocketService: WebSocketService) {}
 
   ngOnInit() {
     this.webSocketService.connect();
 
+    // Subscribe to regular messages
     this.wsSubscription = this.webSocketService.getMessages().subscribe(
       (message) => {
         this.processServerData(message);
       },
       (error) => {
         console.error('WebSocket error:', error);
+        this.isProcessing = false;
+        this.errorMessage = 'WebSocket connection error';
       },
       () => {
         console.log('WebSocket connection closed');
+        this.isProcessing = false;
+      }
+    );
+
+    // Subscribe to processing status updates
+    this.statusSubscription = this.webSocketService.getProcessingStatus().subscribe(
+      (status) => {
+        if (status) {
+          this.isProcessing = status.status !== 'complete';
+          this.processingStatus = status.status;
+          this.processingDetails = status.details || '';
+          
+          if (status.status === 'complete') {
+            this.errorMessage = ''; // Clear any previous errors
+            setTimeout(() => {
+              this.processingStatus = '';
+              this.processingDetails = '';
+            }, 3000); // Clear status after 3 seconds
+          }
+        } else {
+          this.isProcessing = false;
+          this.processingStatus = '';
+          this.processingDetails = '';
+        }
+        
+        // Update queue length
+        this.queueLength = this.webSocketService.getQueueLength();
+      }
+    );
+
+    // Subscribe to error messages
+    this.errorSubscription = this.webSocketService.getErrors().subscribe(
+      (error) => {
+        this.isProcessing = false;
+        
+        if (error.status === 'busy') {
+          this.errorMessage = 'Server is busy processing another request. Your request has been queued.';
+          this.queueLength = this.webSocketService.getQueueLength();
+        } else {
+          this.errorMessage = `Error: ${error.error} - ${error.details || error.message || ''}`;
+        }
+        
+        // Clear error message after 10 seconds
+        setTimeout(() => {
+          if (this.errorMessage.includes('Server is busy') || this.errorMessage.startsWith('Error:')) {
+            this.errorMessage = '';
+          }
+        }, 10000);
       }
     );
   }
@@ -100,6 +160,25 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.wsSubscription?.unsubscribe();
+    this.statusSubscription?.unsubscribe();
+    this.errorSubscription?.unsubscribe();
     this.webSocketService.close();
+  }
+
+  // Helper methods for the UI
+  clearError(): void {
+    this.errorMessage = '';
+  }
+
+  clearQueue(): void {
+    this.webSocketService.clearQueue();
+    this.queueLength = 0;
+  }
+
+  forceReconnect(): void {
+    this.webSocketService.close();
+    setTimeout(() => {
+      this.webSocketService.connect();
+    }, 1000);
   }
 }

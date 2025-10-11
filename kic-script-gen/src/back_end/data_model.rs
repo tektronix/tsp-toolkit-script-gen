@@ -72,7 +72,7 @@ impl DataModel {
         // Deserialize the JSON string into a serde_json::Value
         match serde_json::from_str::<SweepModel>(&data) {
             Ok(mut sweep_model) => {
-                println!("Successfully deserialized JSON in server: {sweep_model:?}");
+                //println!("Successfully deserialized JSON in server: {sweep_model:?}");
                 sweep_model.sweep_config.evaluate();
 
                 //update sweep variable - required for actual script generation

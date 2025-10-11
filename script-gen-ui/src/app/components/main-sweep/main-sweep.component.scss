@@ -194,6 +194,13 @@
   display: grid;
 }
 
+.sweep-controls-sticky {
+  position: sticky;
+  top: 41.5px; 
+  z-index: 95;
+  background-color: var(--vscode-editor-background);
+}
+
 .input-group label {
   display: block;
   // margin-bottom: 5px;
@@ -241,11 +248,14 @@
   display: flex;
   justify-content: space-between;
   color: var(--vscode-editor-foreground);
-  // border: 1px solid var(--vscode-editorWidget-border);
   border-radius: 10px;
-  padding-left: 1px;
-  padding-right: 1px;
-  padding-top: 7px;
+  padding: 7px 10px;
+  background-color: var(--vscode-editor-background);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
 }
 
 .timing {

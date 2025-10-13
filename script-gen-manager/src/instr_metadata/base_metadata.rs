@@ -48,12 +48,12 @@ impl BaseMetadata {
     pub const USER_DEFINED_VALUE: &'static str = "USER DEFINED";
     pub const MOVING_AVG: &'static str = "MOVING AVG";
     pub const REPEAT_AVG: &'static str = "REPEAT AVG";
-    pub const FUNCTION_VOLTAGE: &'static str = "Voltage";
-    pub const FUNCTION_CURRENT: &'static str = "Current";
-    pub const FUNCTION_IV: &'static str = "Current,Voltage";
+    pub const FUNCTION_VOLTAGE: &'static str = "FUNC_DC_VOLTAGE";
+    pub const FUNCTION_CURRENT: &'static str = "FUNC_DC_CURRENT";
+    pub const FUNCTION_IV: &'static str = "FUNC_DC_IV_COMBINED";
     pub const RANGE_FOLLOW_LIMITI: &'static str = "follow limiti";
-    pub const SENSE_MODE_TWO_WIRE: &'static str = "Two-wire";
-    pub const SENSE_MODE_FOUR_WIRE: &'static str = "Four-wire";
+    pub const SENSE_MODE_TWO_WIRE: &'static str = "SENSE_2WIRE";
+    pub const SENSE_MODE_FOUR_WIRE: &'static str = " SENSE_4WIRE";
     pub const RATE_NORMAL: &'static str = "Normal";
     pub const RATE_FAST: &'static str = "Fast";
 
@@ -79,8 +79,8 @@ impl BaseMetadata {
             ],
         );
 
-        names.insert("sense=Two-wire", "SENSE_LOCAL");
-        names.insert("sense=Four-wire", "SENSE_REMOTE");
+        names.insert("sense=SENSE_2WIRE", "SENSE_2WIRE");
+        names.insert("sense=SENSE_4WIRE", "SENSE_4WIRE");
 
         BaseMetadata {
             options,

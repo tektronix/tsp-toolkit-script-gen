@@ -27,7 +27,7 @@ impl Mpsu50Metadata {
 
         base.add_range("source.limiti".to_string(), 0.01, 5.1);
 
-        base.add_range("source.step_to_sweep_delay".to_string(), 5e-7, 400.0);
+        base.add_range("source.step_to_sweep_delay".to_string(), 0.0, 100.0);
 
         // Add region maps
         // when pulse mode is off

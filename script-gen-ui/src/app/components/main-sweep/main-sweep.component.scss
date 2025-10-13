@@ -373,6 +373,25 @@ input:focus {
   }
 }
 
+.biasExpander-tooltip::ng-deep {
+  &.bottom {
+    transform: translateX(0%) translateY(1px)!important;
+  }
+}
+
+.stepExpander-tooltip::ng-deep {
+  &.bottom {
+    transform: translateX(0%) translateY(1px)!important;
+  }
+}
+
+.sweepExpander-tooltip::ng-deep {
+  &.bottom {
+    transform: translateX(0%) translateY(1px)!important;
+  }
+}
+
+
 // mat-icon {
 //   padding: 5px;
 // }

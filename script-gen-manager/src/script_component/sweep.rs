@@ -79,9 +79,9 @@ impl SweepModel {
         }
     }
 
-    fn define_bias_channels(&mut self, sweep_config: &SweepConfig) {
+    fn define_bias_channels(&mut self, bias_config: &SweepConfig) {
         let mut index = 1;
-        for bias_channel in sweep_config.bias_channels.iter() {
+        for bias_channel in bias_config.bias_channels.iter() {
             let instr_name = format!("bias{index}");
             self.attributes.bias_names.push(instr_name.clone());
 
@@ -182,9 +182,9 @@ impl SweepModel {
         }
     }
 
-    fn define_step_channels(&mut self, sweep_config: &SweepConfig) {
+    fn define_step_channels(&mut self, step_config: &SweepConfig) {
         let mut index = 1;
-        for step_channel in sweep_config.step_channels.iter() {
+        for step_channel in step_config.step_channels.iter() {
             let instr_name = format!("step{index}");
             self.attributes.step_names.push(instr_name.clone());
 
@@ -223,11 +223,11 @@ impl SweepModel {
             self.val_replacement_map.insert(
                 instr_name.clone() + ":SFUNCTION",
                 step_channel
-                .start_stop_channel
-                .common_chan_attributes
-                .source_function
-                .value
-                .clone(),
+                    .start_stop_channel
+                    .common_chan_attributes
+                    .source_function
+                    .value
+                    .clone(),
             );
 
             self.val_replacement_map.insert(
@@ -251,6 +251,15 @@ impl SweepModel {
                     .clone(),
             );
 
+            self.val_replacement_map.insert(
+                instr_name.clone() + ":MODE",
+                if step_config.step_global_parameters.list_step {
+                    "LIST".to_string()
+                } else {
+                    step_channel.start_stop_channel.style.value.clone()
+                },
+            );
+
             //sense mode exists only for SMU
             if let Some(sense_mode) = &step_channel
                 .start_stop_channel
@@ -266,7 +275,6 @@ impl SweepModel {
                     self.val_replacement_map.insert(
                         instr_name.clone() + ":SENSE",
                         String::from(sense_mode_value),
-                        
                     );
                 }
             }
@@ -310,17 +318,17 @@ impl SweepModel {
             );
 
             self.process_list(
-                sweep_config.step_global_parameters.list_step,
+                step_config.step_global_parameters.list_step,
                 &step_channel.start_stop_channel.list,
                 instr_name,
-                sweep_config.step_global_parameters.step_points.value as usize,
+                step_config.step_global_parameters.step_points.value as usize,
             );
 
             index += 1;
         }
 
         let step_count = if !self.attributes.step_names.is_empty() {
-            sweep_config
+            step_config
                 .step_global_parameters
                 .step_points
                 .value
@@ -330,12 +338,7 @@ impl SweepModel {
         };
 
         let step_to_sweep_delay = if !self.attributes.step_names.is_empty() {
-            self.format(
-                sweep_config
-                    .step_global_parameters
-                    .step_to_sweep_delay
-                    .value,
-            )
+            self.format(step_config.step_global_parameters.step_to_sweep_delay.value)
         } else {
             String::from("0")
         };
@@ -447,11 +450,14 @@ impl SweepModel {
                     .clone(),
             );
 
-            // self.val_replacement_map.insert(
-            //     instr_name.clone() + ":MODE",
-            //     "LIST".to_string(),
-            // );
-
+            self.val_replacement_map.insert(
+                instr_name.clone() + ":MODE",
+                if sweep_config.sweep_global_parameters.list_sweep {
+                    "LIST".to_string()
+                } else {
+                    sweep_channel.start_stop_channel.style.value.clone()
+                },
+            );
             //sense mode exists only for SMU
             if let Some(sense_mode) = &sweep_channel
                 .start_stop_channel

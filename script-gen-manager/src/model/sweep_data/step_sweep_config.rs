@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::str;
 
-use crate::instr_metadata::base_metadata::BaseMetadata;
+use crate::instr_metadata::{
+    base_metadata::{BaseMetadata, Metadata}, 
+    enum_metadata::MetadataEnum
+};
 
 use super::parameters::{ParameterFloat, ParameterInt};
 
@@ -24,6 +27,20 @@ impl StepGlobalParameters {
             list_step: false,
         }
     }
+
+    // pub fn validate_limits(&mut self, metadata: &MetadataEnum) {
+    //     if let Some((min, max)) = Self::get_range_limits(metadata, "source.step_to_sweep_delay") {
+    //         self.step_to_sweep_delay.limit(min, max);
+    //     }
+    // }
+
+    // fn get_range_limits(metadata: &MetadataEnum, key: &str) -> Option<(f64, f64)> {
+    //     match metadata {
+    //         MetadataEnum::Msmu60(m) => m.get_range(key),
+    //         MetadataEnum::Mpsu50(m) => m.get_range(key),
+    //         MetadataEnum::Base(m) => m.get_range(key),
+    //     }
+    // }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

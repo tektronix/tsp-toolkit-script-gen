@@ -370,9 +370,17 @@ impl SweepConfig {
             .sweep_timing_config
             .measure_count
             .limit(1, 60000);
+        
         for bias_channel in &mut self.bias_channels {
             bias_channel.evaluate();
         }
+        
+        // Validate step_to_sweep_delay using metadata from step channels before evaluating them
+        if !self.step_channels.is_empty() {
+            let device_metadata = self.step_channels[0].start_stop_channel.common_chan_attributes.device.get_metadata();
+            self.step_global_parameters.validate_limits(&device_metadata);
+        }
+        
         for step_channel in &mut self.step_channels {
             step_channel
                 .start_stop_channel

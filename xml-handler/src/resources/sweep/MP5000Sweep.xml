@@ -1317,7 +1317,7 @@
                 sense = CONSTANTS.%SENSE%, -- must be SENSE_2WIRE or SENSE_4WIRE
                 source = {
                     values = { scalar = %BIAS% },
-                    range = %SRANGE%,
+                    range = CONSTANTS.%SRANGE%,
                     limiti = %LIMITI%,
                     limitv = %LIMITV%,
                     delay = source_delay,
@@ -1420,7 +1420,7 @@
         </composite>
 
         <snippet>
-                    range = %SRANGE%,
+                    range = CONSTANTS.%SRANGE%,
                     limiti = %LIMITI%,
                     limitv = %LIMITV%,
                     delay = source_delay,
@@ -1523,7 +1523,7 @@
         </composite>
 
         <snippet>
-                    range = %SRANGE%,
+                    range = CONSTANTS.%SRANGE%,
                     limiti = %LIMITI%,
                     limitv = %LIMITV%,
                     delay = source_delay,

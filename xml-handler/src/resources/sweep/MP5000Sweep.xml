@@ -1274,16 +1274,16 @@
 
             local errorTag         = &quot;[{error}]&quot;
 
-            local numberOfSteps    = 10
-            local numberOfSweeps   = 10
+            local numberOfSteps    = %STEP-COUNT%
+            local numberOfSweeps   = %SWEEP-POINTS%
 
-            local stepToSweepDelay = 0
+            local stepToSweepDelay = %STEP-TO-SWEEP-DELAY%
 
-            local nplc             = 1
+            local nplc             = %NPLC%
 
-            local source_delay     = 0
-            local measure_delay    = nil
-            local measure_count    = 1
+            local source_delay     = %SOURCE-DELAY%
+            local measure_delay    = %MEASURE-DELAY%
+            local measure_count    = %MEASURE-COUNT%
 
 
 

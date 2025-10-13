@@ -76,6 +76,8 @@ export class PlotSweepComponent
   list = true;
   listSweep: ParameterFloat[] = [];
   numSteps: number | undefined;
+  stepToSweepDelay: ParameterFloat | undefined;
+
   plotUtils = new PlotUtils();
 
   plotLayout = {
@@ -239,6 +241,7 @@ export class PlotSweepComponent
       this.numPoints = this.sweepGlobalParameters?.sweep_points;
       this.list = this.sweepGlobalParameters?.list_sweep;
       this.numSteps = this.stepGlobalParameters?.step_points.value;
+      this.stepToSweepDelay = this.stepGlobalParameters?.step_to_sweep_delay;
       // this.list = this.sweepGlobalParameters?.list_sweep;
       this.listSweep = this.sweepChannel.start_stop_channel.list;
 
@@ -295,18 +298,68 @@ export class PlotSweepComponent
     if (this.numPoints && this.numSteps) {
       const numSteps = this.numSteps;
       const numberOfPoints = this.numPoints?.value;
-      this.plotData1.y = Array.from({ length: numSteps }, () => sweepValues)
-        .flat()
-        .concat(sweepValues[sweepValues.length - 1]);
-
-      if (xData) {
-        this.plotData1.x = xData;
+      
+      // Get the step-to-sweep delay value (default to 0 if not available)
+      const delayTime = this.stepToSweepDelay?.value ?? 0;
+      
+      if (delayTime > 0) {
+        // Create arrays to hold the final data with delays
+        const finalX: number[] = [];
+        const finalY: number[] = [];
+        
+        // Number of delay points per step
+        const delayPoints = Math.max(5, Math.floor(delayTime * 10));
+        
+        // Generate data for each step with delay
+        for (let step = 0; step < numSteps; step++) {
+          const stepStartTime = step * (1 + delayTime); // Each step starts at step * (sweep_time + delay_time)
+          
+          // Add delay period (zeros) at the beginning of each step
+          for (let d = 0; d < delayPoints; d++) {
+            finalX.push(stepStartTime + (d * delayTime) / delayPoints);
+            finalY.push(0);
+          }
+          
+          // Add the actual sweep data for this step
+          for (let j = 0; j < numberOfPoints; j++) {
+            if (xData) {
+              // Use provided xData but adjust for step and delay
+              const originalIndex = step * numberOfPoints + j;
+              if (originalIndex < xData.length) {
+                finalX.push(stepStartTime + delayTime + (j / numberOfPoints));
+              }
+            } else {
+              // Generate X data for this step after delay
+              finalX.push(stepStartTime + delayTime + (j / numberOfPoints));
+            }
+            finalY.push(sweepValues[j]);
+          }
+        }
+        
+        // Add final point
+        if (sweepValues.length > 0) {
+          const finalStepTime = numSteps * (1 + delayTime);
+          finalX.push(finalStepTime);
+          finalY.push(sweepValues[sweepValues.length - 1]);
+        }
+        
+        this.plotData1.x = finalX;
+        this.plotData1.y = finalY;
       } else {
-        this.plotData1.x = Array.from({ length: numSteps }, (_, i) =>
-          Array.from({ length: numberOfPoints }, (_, j) => i + j / numberOfPoints)
-        )
+        // No delay, use original logic
+        this.plotData1.y = Array.from({ length: numSteps }, () => sweepValues)
           .flat()
-          .concat(numSteps);
+          .concat(sweepValues[sweepValues.length - 1]);
+
+        if (xData) {
+          this.plotData1.x = xData;
+        } else {
+          this.plotData1.x = Array.from({ length: numSteps }, (_, i) =>
+            Array.from({ length: numberOfPoints }, (_, j) => i + j / numberOfPoints)
+          )
+            .flat()
+            .concat(numSteps);
+        }
       }
     }
   }
@@ -335,8 +388,13 @@ export class PlotSweepComponent
       } else {
         this.generatePlotDataxy(sweepValues);
       }
-      this.plotLayout.xaxis.dtick = this.numSteps / 10;
-      this.plotLayout.xaxis.range = [0, this.numSteps];
+      
+      // Update x-axis range to include delay time for each step
+      const delayTime = this.stepToSweepDelay?.value ?? 0;
+      const totalTime = this.numSteps * (1 + delayTime); // Each step now takes (1 + delayTime) units
+      
+      this.plotLayout.xaxis.dtick = totalTime / 10;
+      this.plotLayout.xaxis.range = [0, totalTime];
     }
   }
 

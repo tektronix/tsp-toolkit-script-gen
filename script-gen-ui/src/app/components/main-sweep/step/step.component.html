@@ -181,6 +181,7 @@
       <div style="margin-top: auto; margin-bottom: 0.5vh; margin-left: 3vh">
         <button
           class="timing"
+          [class.stepList-open]="showStepList"
           [attr.aria-label]="'EditStepList'"
           (click)="showStepListPopup()"
           [disabled]="!selectedDeviceOption?.isValid || !listStep"

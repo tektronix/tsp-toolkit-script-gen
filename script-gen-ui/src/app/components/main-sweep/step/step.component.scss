@@ -213,6 +213,12 @@ h4 {
   border-style: solid;
   border-width: thin;
   padding: 5px 15px;
+  cursor: pointer;
+}
+
+button.timing.stepList-open {
+  outline: 1px solid -webkit-focus-ring-color;
+  outline-offset: -1px;
 }
 
 button.timing:disabled {

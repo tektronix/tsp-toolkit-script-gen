@@ -12,6 +12,8 @@ pub struct ChannelRange {
     pub min: f64,
     #[serde(skip)]
     pub max: f64,
+    #[serde(skip)]
+    pub overrange_scale: f64,
 }
 
 impl ChannelRange {
@@ -22,6 +24,7 @@ impl ChannelRange {
             unit: String::new(),
             min: 0.0,
             max: 0.0,
+            overrange_scale: 1.0,
         }
     }
 
@@ -31,6 +34,10 @@ impl ChannelRange {
 
     pub fn set_max(&mut self, max: f64) {
         self.max = max;
+    }
+
+    pub fn set_overrange_scale(&mut self, scale: f64) {
+        self.overrange_scale = scale;
     }
 
     pub fn limit(&mut self, value: f64) -> f64 {
@@ -44,10 +51,11 @@ impl ChannelRange {
         } else {
             let scaled_value = self.get_scaled_value();
             if let Some(scaled_value) = scaled_value {
-                if result < -scaled_value {
-                    return -scaled_value;
-                } else if result > scaled_value {
-                    return scaled_value;
+                let overrange_scaled_value = scaled_value * self.overrange_scale;
+                if result < -overrange_scaled_value {
+                    return -overrange_scaled_value;
+                } else if result > overrange_scaled_value {
+                    return overrange_scaled_value;
                 }
             }
         }

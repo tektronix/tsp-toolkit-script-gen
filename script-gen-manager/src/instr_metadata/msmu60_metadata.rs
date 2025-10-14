@@ -1,5 +1,6 @@
 use crate::model::{
-    chan_data::region_map::RegionMapMetadata, sweep_data::number_limit::NumberLimit,
+    chan_data::region_map::RegionMapMetadata,
+    sweep_data::{number_limit::NumberLimit, parameters::ParameterFloat},
 };
 
 use super::base_metadata::{BaseMetadata, Metadata};
@@ -35,12 +36,15 @@ impl Msmu60Metadata {
             ],
         );
 
-        base.add_default("source_meas.range.defaultv", "2 V");
-        base.add_default("source_meas.range.defaulti", "100 mA");
+        base.add_default("source_meas.range.defaultv", "AUTO");
+        base.add_default("source_meas.range.defaulti", "AUTO");
 
         // Add ranges
-        base.add_range("source.levelv".to_string(), -60.0, 60.0);
-        base.add_range("source.leveli".to_string(), -1.5, 1.5);
+        base.add_range("source.levelv".to_string(), -60.6, 60.6);
+        base.add_range("source.leveli".to_string(), -1.515, 1.515);
+
+        base.add_range("source.limiti".to_string(), -1e-8, 1.515);
+        base.add_range("source.limitv".to_string(), -0.02, 60.6);
 
         // Add region maps
         // when pulse mode is off
@@ -50,6 +54,8 @@ impl Msmu60Metadata {
         region_map_metadata.add_region(1, -60.0, -0.1, 60.0, 0.1);
         region_map_metadata.add_region(1, -20.0, -1.5, 20.0, 1.5);
         base.add_region_map("smu.region", region_map_metadata);
+
+        base.add_overrange_scale(1.01);
 
         Msmu60Metadata {
             base,
@@ -77,5 +83,9 @@ impl Metadata for Msmu60Metadata {
 
     fn get_region_map(&self, key: &str) -> Option<RegionMapMetadata> {
         self.base.get_region_map(key)
+    }
+
+    fn get_overrange_scale(&self) -> f64 {
+        self.base.get_overrange_scale()
     }
 }

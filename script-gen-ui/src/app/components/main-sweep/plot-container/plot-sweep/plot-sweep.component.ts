@@ -298,69 +298,76 @@ export class PlotSweepComponent
     if (this.numPoints && this.numSteps) {
       const numSteps = this.numSteps;
       const numberOfPoints = this.numPoints?.value;
-      
-      // Get the step-to-sweep delay value (default to 0 if not available)
       const delayTime = this.stepToSweepDelay?.value ?? 0;
       
       if (delayTime > 0) {
-        // Create arrays to hold the final data with delays
-        const finalX: number[] = [];
-        const finalY: number[] = [];
-        
-        // Number of delay points per step
-        const delayPoints = Math.max(5, Math.floor(delayTime * 10));
-        
-        // Generate data for each step with delay
-        for (let step = 0; step < numSteps; step++) {
-          const stepStartTime = step * (1 + delayTime); // Each step starts at step * (sweep_time + delay_time)
-          
-          // Add delay period (zeros) at the beginning of each step
-          for (let d = 0; d < delayPoints; d++) {
-            finalX.push(stepStartTime + (d * delayTime) / delayPoints);
-            finalY.push(0);
-          }
-          
-          // Add the actual sweep data for this step
-          for (let j = 0; j < numberOfPoints; j++) {
-            if (xData) {
-              // Use provided xData but adjust for step and delay
-              const originalIndex = step * numberOfPoints + j;
-              if (originalIndex < xData.length) {
-                finalX.push(stepStartTime + delayTime + (j / numberOfPoints));
-              }
-            } else {
-              // Generate X data for this step after delay
-              finalX.push(stepStartTime + delayTime + (j / numberOfPoints));
-            }
-            finalY.push(sweepValues[j]);
-          }
-        }
-        
-        // Add final point
-        if (sweepValues.length > 0) {
-          const finalStepTime = numSteps * (1 + delayTime);
-          finalX.push(finalStepTime);
-          finalY.push(sweepValues[sweepValues.length - 1]);
-        }
-        
-        this.plotData1.x = finalX;
-        this.plotData1.y = finalY;
+        const { x, y } = this.generateDataWithDelay(sweepValues, numSteps, numberOfPoints, delayTime, xData);
+        this.plotData1.x = x;
+        this.plotData1.y = y;
       } else {
-        // No delay, use original logic
-        this.plotData1.y = Array.from({ length: numSteps }, () => sweepValues)
-          .flat()
-          .concat(sweepValues[sweepValues.length - 1]);
-
-        if (xData) {
-          this.plotData1.x = xData;
-        } else {
-          this.plotData1.x = Array.from({ length: numSteps }, (_, i) =>
-            Array.from({ length: numberOfPoints }, (_, j) => i + j / numberOfPoints)
-          )
-            .flat()
-            .concat(numSteps);
-        }
+        this.generateDataWithoutDelay(sweepValues, numSteps, numberOfPoints, xData);
       }
+    }
+  }
+
+  private generateDataWithDelay(
+    sweepValues: number[], 
+    numSteps: number, 
+    numberOfPoints: number, 
+    delayTime: number, 
+    xData?: number[]
+  ): { x: number[], y: number[] } {
+    const finalX: number[] = [];
+    const finalY: number[] = [];
+    const delayPoints = Math.max(5, Math.floor(delayTime * 10));
+    
+    // Generate data for each step with delay
+    for (let step = 0; step < numSteps; step++) {
+      const stepStartTime = step * (1 + delayTime);
+      
+      // Add delay period (zeros) at the beginning of each step
+      for (let d = 0; d < delayPoints; d++) {
+        finalX.push(stepStartTime + (d * delayTime) / delayPoints);
+        finalY.push(0);
+      }
+      
+      // Add the actual sweep data for this step
+      for (let j = 0; j < numberOfPoints; j++) {
+        if (xData) {
+          const originalIndex = step * numberOfPoints + j;
+          if (originalIndex < xData.length) {
+            finalX.push(stepStartTime + delayTime + (j / numberOfPoints));
+          }
+        } else {
+          finalX.push(stepStartTime + delayTime + (j / numberOfPoints));
+        }
+        finalY.push(sweepValues[j]);
+      }
+    }
+    
+    // Add final point
+    if (sweepValues.length > 0) {
+      const finalStepTime = numSteps * (1 + delayTime);
+      finalX.push(finalStepTime);
+      finalY.push(sweepValues[sweepValues.length - 1]);
+    }
+    
+    return { x: finalX, y: finalY };
+  }
+
+  private generateDataWithoutDelay(sweepValues: number[], numSteps: number, numberOfPoints: number, xData?: number[]) {
+    this.plotData1.y = Array.from({ length: numSteps }, () => sweepValues)
+      .flat()
+      .concat(sweepValues[sweepValues.length - 1]);
+
+    if (xData) {
+      this.plotData1.x = xData;
+    } else {
+      this.plotData1.x = Array.from({ length: numSteps }, (_, i) =>
+        Array.from({ length: numberOfPoints }, (_, j) => i + j / numberOfPoints)
+      )
+        .flat()
+        .concat(numSteps);
     }
   }
 

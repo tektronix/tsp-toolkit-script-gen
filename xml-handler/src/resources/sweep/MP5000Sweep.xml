@@ -1415,6 +1415,7 @@
             <condition name="STEP-DEVICE:MODE">LIST</condition>
             <snippet>
                     --IF LIST
+                    ---@diagnostic disable-next-line
                     values = { list = %LIST% },
             </snippet>
         </composite>
@@ -1518,6 +1519,7 @@
             <condition name="SWEEP-DEVICE:MODE">LIST</condition>
             <snippet>
                     --IF LIST
+                    ---@diagnostic disable-next-line
                     values = { list = %LIST%},
             </snippet>
         </composite>

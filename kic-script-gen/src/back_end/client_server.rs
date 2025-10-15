@@ -5,8 +5,8 @@ use futures::StreamExt;
 use script_gen_manager::script_component::script::ScriptModel;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use tokio::sync::{broadcast, Mutex};
 
 use tokio::io::{self, AsyncBufReadExt};
@@ -111,7 +111,7 @@ async fn send_processing_status(session: &mut Session, status: &str, details: Op
             .unwrap_or_default()
             .as_secs()
     });
-    
+
     if let Ok(msg) = serde_json::to_string(&status_msg) {
         let _ = session.text(msg).await;
     }
@@ -122,7 +122,10 @@ async fn ws_index(
     body: web::Payload,
     app_state: web::Data<Arc<AppState>>,
 ) -> Result<HttpResponse, Error> {
-    println!("New WebSocket connection attempt from: {:?}", req.connection_info().peer_addr());
+    println!(
+        "New WebSocket connection attempt from: {:?}",
+        req.connection_info().peer_addr()
+    );
     let (response, mut session, mut msg_stream) = actix_ws::handle(&req, body)?;
     println!("WebSocket connection established successfully");
     msg_stream = msg_stream.max_frame_size(50 * 1024 * 1024);
@@ -135,28 +138,16 @@ async fn ws_index(
 
     let gen_script_tx = app_state.gen_script_tx.clone();
     use std::collections::HashMap;
-            let mut chunk_buffers: HashMap<String, Vec<Option<String>>> = HashMap::new();
+    let mut chunk_buffers: HashMap<String, Vec<Option<String>>> = HashMap::new();
 
     actix_web::rt::spawn(async move {
         println!("WebSocket message loop started");
-        // --- Improvement: Add keep-alive ping and robust error handling ---
-        use tokio::time::interval;
-        let mut keepalive = interval(Duration::from_secs(20));
-        let mut last_msg_time = std::time::Instant::now();
         loop {
             tokio::select! {
-                // _ = keepalive.tick() => {
-                //     // Send ping to keep connection alive
-                //     if let Err(e) = session.ping(b"keepalive").await {
-                //         eprintln!("Failed to send keepalive ping: {e}");
-                //         break;
-                //     }
-                // }
                 msg_opt = msg_stream.next() => {
                     match msg_opt {
                         Some(Ok(msg)) => {
                             println!("Received WebSocket message: {:?}", msg);
-                            last_msg_time = std::time::Instant::now();
                             match msg {
                                 Message::Ping(bytes) => {
                                     if session.pong(&bytes).await.is_err() {
@@ -165,8 +156,6 @@ async fn ws_index(
                                     }
                                 }
                                 Message::Text(mut msg) => {
-                                    println!("Received Text Message");
-                                    // --- Chunked message reassembly logic ---
                                     let mut is_chunked = false;
                                     {
                                         use serde_json::Value;
@@ -180,7 +169,7 @@ async fn ws_index(
                                                 is_chunked = true;
                                                 let entry = chunk_buffers.entry(msg_id.to_string())
                                                     .or_insert_with(|| vec![None; total_chunks as usize]);
-                                                
+
                                                 entry[chunk_index as usize] = Some(data.to_string());
 
                                                 if entry.iter().all(|c| c.is_some()) {
@@ -456,11 +445,6 @@ async fn ws_index(
                         }
                     }
                 }
-            }
-            // Optionally, check for inactivity
-            if last_msg_time.elapsed() > Duration::from_secs(180) {
-                eprintln!("No messages received in 3 minutes, closing connection");
-                break;
             }
         }
         println!("WebSocket message loop ended - connection lost or closed");

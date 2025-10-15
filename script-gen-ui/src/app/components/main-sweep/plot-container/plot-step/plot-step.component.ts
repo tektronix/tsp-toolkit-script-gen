@@ -95,6 +95,7 @@ export class PlotStepComponent
         size: 9,
       },
       dtick: 1,
+      range: [0, 10],
       // tick0: 0,
       showtickprefix: 'none',
       showticksuffix: 'all',
@@ -270,24 +271,30 @@ export class PlotStepComponent
 
   private generatePlotData(yData: number[], type: string): void {
     if (this.stepPoints) {
-      const targetLength = Math.max(2, Math.floor(this.plotWidth));
+      const targetLength = this.plotWidth;
+      const numberofSteps = this.stepPoints.value;
       let xData: number[] = [];
-
       if (this.stepPoints.value > targetLength) {
         if (type == 'LIN') {
           const interpolated = PlotUtils.linearInterpolation(
             yData,
             targetLength
           );
-          xData = interpolated.x;
+          // xData = interpolated.x;
           yData = interpolated.y;
+          xData = Array.from({ length: yData.length }, (_, i) => (i/(yData.length-1) * numberofSteps) )
+          .concat(numberofSteps)
+          .flat();
         } else if (type == 'LOG' || type == 'LIST') {
           const interpolated = PlotUtils.minMaxInterpolation(
             yData,
             targetLength
           );
-          xData = interpolated.x;
+          // xData = interpolated.x;
           yData = interpolated.y;
+          xData = Array.from({ length: yData.length }, (_, i) => (i/(yData.length-1) * numberofSteps) )
+          .concat(numberofSteps)
+          .flat();
         }
       } else {
         xData = Array.from({ length: this.stepPoints.value }, (_, i) => i)
@@ -301,6 +308,7 @@ export class PlotStepComponent
         y: this.plotData1.y,
       });
       this.plotLayout.xaxis.dtick = this.stepPoints.value / 10;
+      this.plotLayout.xaxis.range = [0, this.stepPoints.value];
     }
   }
 
@@ -393,6 +401,7 @@ export class PlotStepComponent
         ).concat(this.stop.value);
 
         this.generatePlotData(yData, 'LOG');
+        console.log('Log step values:', yData);
       }
     } else {
       this.stepValues();

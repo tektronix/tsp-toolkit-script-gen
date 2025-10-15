@@ -308,6 +308,7 @@ export class PlotSweepComponent
           .flat()
           .concat(numSteps);
       }
+      // console.log(`plotdata1.x= ${this.plotData1.x} and plotdata1.y=${this.plotData1.y}`);
     }
   }
 
@@ -317,7 +318,7 @@ export class PlotSweepComponent
       if (this.numPoints?.value > targetLength) {
         let xData: number[] = [];
         if (type == 'LIN') {
-          const interpolated = PlotUtils.linearInterpolation(
+          const interpolated = PlotUtils.minMaxInterpolation(
             sweepValues,
             targetLength
           );

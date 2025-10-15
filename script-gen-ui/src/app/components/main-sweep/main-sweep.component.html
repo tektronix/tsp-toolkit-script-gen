@@ -18,6 +18,7 @@
       <div [attr.aria-label]="'timingTab'">
         <button
           class="timing"
+          [class.timing-open]="showTiming"
           (click)="enableTiming()"
           [attr.aria-label]="'timing'"
         >
@@ -309,6 +310,7 @@
           <div style="margin-top: auto; margin-bottom: 0.5vh">
             <button
               [attr.aria-label]="'EditSweepList'"
+              [class.sweepList-open]="showList"
               class="timing"
               (click)="enableList()"
               [disabled]="!isListSweep"

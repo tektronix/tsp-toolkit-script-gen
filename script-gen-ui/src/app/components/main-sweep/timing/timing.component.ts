@@ -23,7 +23,7 @@ import { DropdownComponent } from '../../controls/dropdown/dropdown.component';
 import { InputNumericComponent } from '../../controls/input-numeric/input-numeric.component';
 import { InputPlainComponent } from '../../controls/input-plain/input-plain.component';
 import { InputToggleComponent } from '../../controls/input-toggle/input-toggle.component';
-import {CdkDrag} from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragHandle } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-timing',
@@ -37,8 +37,9 @@ import {CdkDrag} from '@angular/cdk/drag-drop';
     InputNumericComponent,
     InputPlainComponent,
     InputToggleComponent,
-    CdkDrag
-  ],
+    CdkDrag,
+    CdkDragHandle
+],
   templateUrl: './timing.component.html',
   styleUrl: './timing.component.scss',
 })

@@ -18,6 +18,7 @@
       <div [attr.aria-label]="'timingTab'">
         <button
           class="timing"
+          [class.timing-open]="showTiming"
           (click)="enableTiming()"
           [attr.aria-label]="'timing'"
         >
@@ -66,7 +67,7 @@
                 hasAvailableChannels() &&
                 showBiasExpanderTooltip
               "
-              text="No bias channels. Click + to add one"
+              text="No bias channels. Click '+' to add a bias channel."
               position="bottom"
               [visible]="showBiasExpanderTooltip"
             >
@@ -148,7 +149,7 @@
                 hasAvailableChannels() &&
                 showStepExpanderTooltip
               "
-              text="No step channels. Click + to add one"
+              text="No step channels. Click '+' to add a step channel."
               position="bottom"
               [visible]="showStepExpanderTooltip"
             >
@@ -245,7 +246,7 @@
                 hasAvailableChannels() &&
                 showSweepExpanderTooltip
               "
-              text="No sweep channels. Click + to add one"
+              text="No sweep channels. Click '+' to add a sweep channel."
               position="bottom"
               [visible]="showSweepExpanderTooltip"
             >
@@ -309,6 +310,7 @@
           <div style="margin-top: auto; margin-bottom: 0.5vh">
             <button
               [attr.aria-label]="'EditSweepList'"
+              [class.sweepList-open]="showList"
               class="timing"
               (click)="enableList()"
               [disabled]="!isListSweep"

@@ -4,6 +4,7 @@ use actix_ws::{Message, Session};
 use futures::StreamExt;
 use script_gen_manager::script_component::script::ScriptModel;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{broadcast, Mutex};
 
@@ -101,6 +102,7 @@ async fn ws_index(
     app_state: web::Data<Arc<AppState>>,
 ) -> Result<HttpResponse, Error> {
     let (response, mut session, mut msg_stream) = actix_ws::handle(&req, body)?;
+    //msg_stream = msg_stream.max_frame_size(50 * 1024 * 1024); // 50MB
 
     // Use the app_state here
     {
@@ -110,6 +112,8 @@ async fn ws_index(
 
     let gen_script_tx = app_state.gen_script_tx.clone();
 
+    let mut chunk_buffers: HashMap<String, Vec<Option<String>>> = HashMap::new();
+
     actix_web::rt::spawn(async move {
         while let Some(Ok(msg)) = msg_stream.next().await {
             match msg {
@@ -118,8 +122,55 @@ async fn ws_index(
                         return;
                     }
                 }
-                Message::Text(msg) => {
-                    // println!("Received input from client in session: {msg}");
+                Message::Text(mut msg) => {
+                    let mut is_chunked = false;
+                    {
+                        use serde_json::Value;
+                        if let Ok(value) = serde_json::from_str::<Value>(&msg) {
+                            if let (
+                                Some(msg_id),
+                                Some(chunk_index),
+                                Some(total_chunks),
+                                Some(data),
+                            ) = (
+                                value.get("msg_id").and_then(|v| v.as_str()),
+                                value.get("chunk_index").and_then(|v| v.as_u64()),
+                                value.get("total_chunks").and_then(|v| v.as_u64()),
+                                value.get("data").and_then(|v| v.as_str()),
+                            ) {
+                                is_chunked = true;
+                                let entry = chunk_buffers
+                                    .entry(msg_id.to_string())
+                                    .or_insert_with(|| vec![None; total_chunks as usize]);
+                                entry[chunk_index as usize] = Some(data.to_string());
+                                if entry.iter().all(|c| c.is_some()) {
+                                    let full_msg = entry
+                                        .iter()
+                                        .map(|c| c.as_ref().unwrap().as_str())
+                                        .collect::<String>();
+                                    chunk_buffers.remove(msg_id);
+                                    println!(
+                                        "Received complete chunked message of size: {} bytes",
+                                        full_msg.len()
+                                    );
+                                    msg = full_msg.into();
+                                } else {
+                                    println!(
+                                        "Received chunk {}/{} for msg_id {}",
+                                        chunk_index + 1,
+                                        total_chunks,
+                                        msg_id
+                                    );
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                    // --- End chunked message reassembly logic ---
+                    // Only fall through to normal processing if not a chunked message or if chunk is complete
+                    if is_chunked && msg.is_empty() {
+                        continue;
+                    }
                     match serde_json::from_str::<IpcData>(&msg) {
                         Ok(ipc_data) => {
                             if ipc_data.request_type == "get_data" {
@@ -128,7 +179,6 @@ async fn ws_index(
                                 let mut data_model = app_state.data_model.lock().await;
                                 let response =
                                     data_model.process_data_from_client(ipc_data.json_value);
-                                println!("processed data from client {response}");
                                 // Send generate script signal
                                 if let Err(e) = gen_script_tx.send(()) {
                                     eprintln!("Failed to send signal: {e}");
@@ -173,6 +223,7 @@ async fn ws_index(
                 _ => (),
             }
         }
+        println!("WebSocket message loop ended - connection lost or closed");
     });
 
     Ok(response)

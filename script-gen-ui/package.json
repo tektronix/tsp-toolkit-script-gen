@@ -26,7 +26,8 @@
     "plotly.js-dist": "^3.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
-    "zone.js": "~0.15.0"
+    "zone.js": "~0.15.0",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^19.0.6",
@@ -34,6 +35,7 @@
     "@angular/compiler-cli": "^19.0.0",
     "@types/jasmine": "~5.1.0",
     "@types/numeric": "^1.2.6",
+    "@types/uuid": "^10.0.0",
     "angular-eslint": "19.3.0",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.23.0",

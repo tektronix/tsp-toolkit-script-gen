@@ -3,7 +3,7 @@ use script_gen_manager::{catalog, script_component::script::ScriptModel};
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
-    eprintln!("Welcome to KIC Script Generator!");
+    println!("Welcome to KIC Script Generator!");
 
     let mut catalog = catalog::Catalog::new();
     catalog.refresh_function_metadata();

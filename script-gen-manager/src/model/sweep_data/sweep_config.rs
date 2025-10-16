@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 use crate::{
     device::Device,
+    instr_metadata::{base_metadata::Metadata, enum_metadata::MetadataEnum},
     model::{
         chan_data::{
             bias_channel::BiasChannel, step_channel::StepChannel, sweep_channel::SweepChannel,
@@ -370,9 +371,27 @@ impl SweepConfig {
             .sweep_timing_config
             .measure_count
             .limit(1, 60000);
+
+        // Validating Step to Sweep Delay
+        if !self.step_channels.is_empty() {
+            let device_metadata = self.step_channels[0]
+                .start_stop_channel
+                .common_chan_attributes
+                .device
+                .get_metadata();
+            if let Some((min, max)) =
+                self.get_range_limits(&device_metadata, "source.step_to_sweep_delay")
+            {
+                self.step_global_parameters
+                    .step_to_sweep_delay
+                    .limit(min, max);
+            }
+        }
+
         for bias_channel in &mut self.bias_channels {
             bias_channel.evaluate();
         }
+
         for step_channel in &mut self.step_channels {
             step_channel
                 .start_stop_channel
@@ -383,18 +402,6 @@ impl SweepConfig {
                 .start_stop_channel
                 .evaluate(self.sweep_global_parameters.sweep_points.value as usize);
         }
-
-        // Check if only bias channels exist and display appropriate message
-        // if !self.bias_channels.is_empty()
-        //     && self.step_channels.is_empty()
-        //     && self.sweep_channels.is_empty()
-        // {
-        //     self.status_msg = Some(StatusMsg::new(
-        //         StatusType::Warning,
-        //         String::from("Only bias channels are configured. Please add a step or sweep channel to generate a functional script."),
-        //     ));
-        //     println!("Warning: Only bias channels are configured. Please add a step or sweep channel to generate a functional script.");
-        // }
     }
 
     pub fn update_channel_devices(&mut self) {
@@ -590,6 +597,14 @@ impl SweepConfig {
                 StatusType::Warning,
                 String::from("Only bias channels are configured. Please add a step or sweep channel to generate a functional script."),
             ));
+        }
+    }
+
+    fn get_range_limits(&self, metadata: &MetadataEnum, key: &str) -> Option<(f64, f64)> {
+        match metadata {
+            MetadataEnum::Base(base_metadata) => base_metadata.get_range(key),
+            MetadataEnum::Msmu60(msmu60_metadata) => msmu60_metadata.get_range(key),
+            MetadataEnum::Mpsu50(mpsu50_metadata) => mpsu50_metadata.get_range(key),
         }
     }
 

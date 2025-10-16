@@ -108,6 +108,9 @@ export class MainSweepComponent implements OnChanges {
   showBiasTooltip = false;
   showStepTooltip = false;
   showSweepTooltip = false;
+  showBiasExpanderTooltip = false;
+  showStepExpanderTooltip = false;
+  showSweepExpanderTooltip = false;
   stepGlobalParameters: StepGlobalParameters | undefined;
   sweepGlobalParameters: SweepGlobalParameters | undefined;
 
@@ -352,6 +355,23 @@ export class MainSweepComponent implements OnChanges {
 
   isChannelExpanded(uuid: string): boolean {
     return this.channelsExpanderState.get(uuid) || false;
+  }
+
+  hasBiasChannels(): boolean {
+    return this.biasChannels.length > 0;
+  }
+
+  hasStepChannels(): boolean {
+    return this.stepChannels.length > 0;
+  }
+
+  hasSweepChannels(): boolean {
+    if (this.sweepChannels.length > 0) {
+      return true;
+    } else {
+      this.isSweepExpanded = false; // if no sweep channels, close the expander
+      return false;
+    }
   }
 
   updateTimingConfig() {

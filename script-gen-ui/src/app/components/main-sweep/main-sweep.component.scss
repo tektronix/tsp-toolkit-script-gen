@@ -256,6 +256,17 @@
   border-style: solid;
   border-width: thin;
   padding: 5px 15px;
+  cursor: pointer;
+}
+
+button.timing.timing-open {
+  outline: 1px solid -webkit-focus-ring-color;
+  outline-offset: -1px;
+}
+
+button.timing.sweepList-open {
+  outline: 1px solid -webkit-focus-ring-color;
+  outline-offset: -1px;
 }
 
 button.timing:disabled {
@@ -362,6 +373,25 @@ input:focus {
     margin-bottom: 5px;
   }
 }
+
+.biasExpander-tooltip::ng-deep {
+  &.bottom {
+    transform: translateX(0%) translateY(1px)!important;
+  }
+}
+
+.stepExpander-tooltip::ng-deep {
+  &.bottom {
+    transform: translateX(0%) translateY(1px)!important;
+  }
+}
+
+.sweepExpander-tooltip::ng-deep {
+  &.bottom {
+    transform: translateX(0%) translateY(1px)!important;
+  }
+}
+
 
 // mat-icon {
 //   padding: 5px;

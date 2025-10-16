@@ -4,7 +4,8 @@ use crate::{
     instr_metadata::base_metadata::BaseMetadata,
     model::{
         chan_data::channel_range::ChannelRange,
-        sweep_data::{parameters::ParameterFloat, sweep_config::SweepConfig},
+        sweep_data::{parameters::ParameterFloat, sweep_config::SweepConfig,
+                     parameters::ParameterString},
     },
 };
 
@@ -105,14 +106,11 @@ impl SweepModel {
                 bias_channel.common_chan_attributes.device.get_model(),
             );
 
+            let val = self.get_function_value(&bias_channel.common_chan_attributes.source_function)
+                .clone();
             self.val_replacement_map.insert(
                 instr_name.clone() + ":SFUNCTION",
-                bias_channel
-                    .common_chan_attributes
-                    .source_function
-                    .value
-                    .to_lowercase()
-                    .clone(),
+                val,
             );
 
             self.val_replacement_map.insert(
@@ -120,13 +118,11 @@ impl SweepModel {
                 self.format_range(bias_channel.common_chan_attributes.source_range.clone()),
             );
 
+            let val = self.get_function_value(&bias_channel.common_chan_attributes.meas_function)
+                .clone();
             self.val_replacement_map.insert(
                 instr_name.clone() + ":MFUNCTION",
-                bias_channel
-                    .common_chan_attributes
-                    .meas_function
-                    .value
-                    .clone(),
+                val,
             );
 
             //sense mode exists only for SMU
@@ -136,9 +132,10 @@ impl SweepModel {
                     .common_chan_attributes
                     .get_name_for(&sense_mode_key)
                 {
+                    let val = self.get_sense_mode_value(&sense_mode_value);
                     self.val_replacement_map.insert(
                         instr_name.clone() + ":SENSE",
-                        String::from(sense_mode_value),
+                        val,
                     );
                 } else {
                     //TODO: error handling for sense mode value not found
@@ -182,6 +179,28 @@ impl SweepModel {
         }
     }
 
+    //Returns the value used in the script
+    fn get_function_value(&mut self, source_function: &ParameterString) -> String {
+        if source_function.value.to_lowercase() == BaseMetadata::FUNCTION_VOLTAGE.to_lowercase() {
+            "FUNC_DC_VOLTAGE".to_string()
+        } else if source_function.value.to_lowercase()
+            == BaseMetadata::FUNCTION_CURRENT.to_lowercase()
+        {
+            "FUNC_DC_CURRENT".to_string()
+        } else {
+            "FUNC_DC_IV_COMBINED".to_string()
+        }
+    }
+
+    //Returns the value used in the script
+    fn get_sense_mode_value(&mut self, sense_mode: &str) -> String {
+        if sense_mode.to_lowercase() == BaseMetadata::SENSE_MODE_TWO_WIRE.to_lowercase() {
+            "SENSE_2WIRE".to_string()
+        } else {
+            "SENSE_4WIRE".to_string()
+        }
+    }
+
     fn define_step_channels(&mut self, step_config: &SweepConfig) {
         let mut index = 1;
         for step_channel in step_config.step_channels.iter() {
@@ -220,14 +239,16 @@ impl SweepModel {
                     .get_model(),
             );
 
+            let val = self.get_function_value(
+                    &step_channel
+                        .start_stop_channel
+                        .common_chan_attributes
+                        .source_function,
+                )
+                .clone();
             self.val_replacement_map.insert(
                 instr_name.clone() + ":SFUNCTION",
-                step_channel
-                    .start_stop_channel
-                    .common_chan_attributes
-                    .source_function
-                    .value
-                    .clone(),
+                val,
             );
 
             self.val_replacement_map.insert(
@@ -241,14 +262,16 @@ impl SweepModel {
                 ),
             );
 
+            let val = self.get_function_value(
+                    &step_channel
+                        .start_stop_channel
+                        .common_chan_attributes
+                        .meas_function
+                )
+                .clone();
             self.val_replacement_map.insert(
                 instr_name.clone() + ":MFUNCTION",
-                step_channel
-                    .start_stop_channel
-                    .common_chan_attributes
-                    .meas_function
-                    .value
-                    .clone(),
+                val,
             );
 
             self.val_replacement_map.insert(
@@ -272,9 +295,10 @@ impl SweepModel {
                     .common_chan_attributes
                     .get_name_for(&sense_mode_key)
                 {
+                    let val = self.get_sense_mode_value(&sense_mode_value);
                     self.val_replacement_map.insert(
                         instr_name.clone() + ":SENSE",
-                        String::from(sense_mode_value),
+                        val,
                     );
                 }
             }
@@ -420,14 +444,16 @@ impl SweepModel {
                     .get_model(),
             );
 
+            let val = self.get_function_value(
+                    &sweep_channel
+                        .start_stop_channel
+                        .common_chan_attributes
+                        .source_function
+                )
+                .clone();
             self.val_replacement_map.insert(
                 instr_name.clone() + ":SFUNCTION",
-                sweep_channel
-                    .start_stop_channel
-                    .common_chan_attributes
-                    .source_function
-                    .value
-                    .clone(),
+                val,
             );
             self.val_replacement_map.insert(
                 instr_name.clone() + ":SRANGE",
@@ -440,14 +466,16 @@ impl SweepModel {
                 ),
             );
 
+            let val = self.get_function_value(
+                    &sweep_channel
+                        .start_stop_channel
+                        .common_chan_attributes
+                        .meas_function
+                )
+                .clone();
             self.val_replacement_map.insert(
                 instr_name.clone() + ":MFUNCTION",
-                sweep_channel
-                    .start_stop_channel
-                    .common_chan_attributes
-                    .meas_function
-                    .value
-                    .clone(),
+                val,
             );
 
             self.val_replacement_map.insert(
@@ -470,9 +498,10 @@ impl SweepModel {
                     .common_chan_attributes
                     .get_name_for(&sense_mode_key)
                 {
+                    let val = self.get_sense_mode_value(&sense_mode_value);
                     self.val_replacement_map.insert(
                         instr_name.clone() + ":SENSE",
-                        String::from(sense_mode_value),
+                        val,
                     );
                 } else {
                     //TODO: error handling for sense mode value not found

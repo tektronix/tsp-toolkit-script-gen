@@ -77,6 +77,7 @@ export class AppComponent implements OnInit, OnDestroy {
           // Update visibility based on the device list
           if (this.sweepConfig.device_list.length > 0) {
             this.isMainSweepVisible = true;
+            vscode.postMessage({ command: 'update_session' , payload: message});
           }
         } else {
           console.error('sweep_model property is missing in the data');

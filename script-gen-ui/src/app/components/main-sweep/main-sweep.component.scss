@@ -266,6 +266,17 @@
   border-style: solid;
   border-width: thin;
   padding: 5px 15px;
+  cursor: pointer;
+}
+
+button.timing.timing-open {
+  outline: 1px solid -webkit-focus-ring-color;
+  outline-offset: -1px;
+}
+
+button.timing.sweepList-open {
+  outline: 1px solid -webkit-focus-ring-color;
+  outline-offset: -1px;
 }
 
 button.timing:disabled {

@@ -50,6 +50,16 @@ impl ParameterFloat {
             unit,
         }
     }
+
+    pub fn limit(&mut self, min: f64, max: f64) {
+        if self.value >= min && self.value <= max {
+            return;
+        } else if self.value < min {
+            self.value = min
+        } else {
+            self.value = max
+        }
+    }
 }
 
 impl ParameterString {

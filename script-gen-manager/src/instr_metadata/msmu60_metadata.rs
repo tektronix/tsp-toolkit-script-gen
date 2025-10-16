@@ -46,6 +46,8 @@ impl Msmu60Metadata {
         base.add_range("source.limiti".to_string(), -1e-8, 1.515);
         base.add_range("source.limitv".to_string(), -0.02, 60.6);
 
+        base.add_range("source.step_to_sweep_delay".to_string(), 0.0, 100.0);
+
         // Add region maps
         // when pulse mode is off
         let exclude_v = Some(NumberLimit::new(-0.01, 0.01, false, None));

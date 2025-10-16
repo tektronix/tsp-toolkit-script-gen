@@ -1,8 +1,8 @@
 <div class="popup">
-  <div class="popup-content" cdkDrag [cdkDragBoundary]="boundaryElement">
+  <div class="popup-content" cdkDrag cdkDragBoundary="body">
     <!-- <span class="close" (click)="close_Timing()">&times;</span> -->
     <div>
-      <div class="popup-header">
+      <div class="popup-header" cdkDragHandle>
         <h3 id="timingLabel">Timing</h3>
         <button (click)="okTiming()" class="button" [attr.aria-label]="'closeTiming'">
           <mat-icon>close</mat-icon>

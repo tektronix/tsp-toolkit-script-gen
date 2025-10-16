@@ -316,13 +316,7 @@ export class PlotSweepComponent
       const targetLength = this.plotWidth / this.numSteps;
       if (this.numPoints?.value > targetLength) {
         let xData: number[] = [];
-        if (type == 'LIN') {
-          const interpolated = PlotUtils.linearInterpolation(
-            sweepValues,
-            targetLength
-          );
-          sweepValues = interpolated.y;
-        } else if (type == 'LOG' || type == 'LIST') {
+        if (type == 'LIN' || type == 'LOG' || type == 'LIST') {
           const interpolated = PlotUtils.minMaxInterpolation(
             sweepValues,
             targetLength

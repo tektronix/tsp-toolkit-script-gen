@@ -19,14 +19,10 @@
     "scripts": {},
     "devDependencies": {
         "@cyclonedx/cyclonedx-npm": "^1.10.0",
-        "@types/uuid": "^10.0.0",
         "@types/vscode": "^1.87.0",
         "license-checker": "^25.0.1",
         "source-map-support": "^0.5.21",
         "ts-node": "^10.9.2",
         "typescript": "^5.3.3"
-    },
-    "dependencies": {
-        "uuid": "^13.0.0"
     }
 }

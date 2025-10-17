@@ -7,6 +7,12 @@ pub struct GlobalParameters {
     pub sweep_timing_config: SweepTimingConfig,
 }
 
+impl Default for GlobalParameters {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GlobalParameters {
     pub fn new() -> Self {
         GlobalParameters {

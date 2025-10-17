@@ -9,6 +9,12 @@ pub struct Catalog {
     pub function_metadata_map: HashMap<String, Group>,
 }
 
+impl Default for Catalog {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Catalog {
     pub fn new() -> Self {
         Catalog {

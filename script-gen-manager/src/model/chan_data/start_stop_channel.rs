@@ -1,4 +1,3 @@
-use core::num;
 
 use serde::{Deserialize, Serialize};
 
@@ -95,7 +94,7 @@ impl StartStopChannel {
             }
         }
 
-        for (_, pf) in self.list.iter_mut().enumerate() {
+        for pf in self.list.iter_mut() {
             if let Some(start_unit) = &pf.unit {
                 if start_unit == &self.common_chan_attributes.source_range.unit {
                     pf.value = self.common_chan_attributes.source_range.limit(pf.value);
@@ -125,7 +124,7 @@ impl StartStopChannel {
             println!("start.unit is None");
         }
 
-        if self.style.value == BaseMetadata::STYLE_LOG.to_string() {
+        if self.style.value == BaseMetadata::STYLE_LOG {
             // start and stop must be on the same side of asymptote (0)
             if self.start.value >= BaseMetadata::MIN_LOG_VALUE {
                 if self.stop.value < 0.0 {
@@ -166,7 +165,7 @@ impl StartStopChannel {
             println!("bias.unit is None");
         }
 
-        if self.style.value == BaseMetadata::STYLE_LOG.to_string() {
+        if self.style.value == BaseMetadata::STYLE_LOG {
             // Start and stop must be on the same side of asymptote (0)
             if self.stop.value >= BaseMetadata::MIN_LOG_VALUE {
                 if self.start.value < 0.0 {

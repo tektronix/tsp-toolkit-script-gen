@@ -725,7 +725,7 @@ impl SweepModel {
         // Iterate through the string and extract numbers inside brackets
         let mut current_number = String::new();
         for c in input.chars() {
-            if c.is_digit(10) {
+            if c.is_ascii_digit() {
                 current_number.push(c);
             } else if c == ']' {
                 if let Ok(num) = current_number.parse::<usize>() {

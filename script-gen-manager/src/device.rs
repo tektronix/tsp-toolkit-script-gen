@@ -183,7 +183,7 @@ impl Device {
         id: i32,
         device_type: &DeviceType,
     ) -> (String, String) {
-        let node_id = format!("{}", mainframe_name);
+        let node_id = mainframe_name.to_string();
         let chan_id = format!("{}[{}]", device_type, id);
         let _id = format!("{}.{}.{}", mainframe_name, slot.slot_id, chan_id);
 

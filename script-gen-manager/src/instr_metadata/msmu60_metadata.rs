@@ -1,6 +1,6 @@
 use crate::model::{
     chan_data::region_map::RegionMapMetadata,
-    sweep_data::{number_limit::NumberLimit, parameters::ParameterFloat},
+    sweep_data::number_limit::NumberLimit,
 };
 
 use super::base_metadata::{BaseMetadata, Metadata};
@@ -9,6 +9,12 @@ use super::base_metadata::{BaseMetadata, Metadata};
 pub struct Msmu60Metadata {
     base: BaseMetadata,
     // Additional properties for SmuMetadata
+}
+
+impl Default for Msmu60Metadata {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Msmu60Metadata {

@@ -281,9 +281,9 @@ async fn ws_index(
                                                             let rt = tokio::runtime::Handle::current();
                                                             rt.block_on(async {
                                                                 let mut data_model = app_state_clone.data_model.lock().await;
-                                                                let response = data_model.process_data_from_client(ipc_data.json_value);
+                                                                
                                                                 //println!("processed data from client {response}");
-                                                                response
+                                                                data_model.process_data_from_client(ipc_data.json_value)
                                                             })
                                                         })
                                                     ).await {

@@ -12,6 +12,12 @@ pub struct StepGlobalParameters {
     pub list_step: bool,
 }
 
+impl Default for StepGlobalParameters {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl StepGlobalParameters {
     pub fn new() -> Self {
         StepGlobalParameters {
@@ -30,6 +36,12 @@ impl StepGlobalParameters {
 pub struct SweepGlobalParameters {
     pub sweep_points: ParameterInt,
     pub list_sweep: bool,
+}
+
+impl Default for SweepGlobalParameters {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SweepGlobalParameters {

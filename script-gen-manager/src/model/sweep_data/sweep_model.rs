@@ -10,6 +10,12 @@ pub struct SweepModel {
     pub sweep_config: SweepConfig,
 }
 
+impl Default for SweepModel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SweepModel {
     pub fn new() -> Self {
         SweepModel {

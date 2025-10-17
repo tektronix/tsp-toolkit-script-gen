@@ -113,7 +113,7 @@ impl CommonChanAttributes {
 
     fn set_source_range(&mut self, metadata: &MetadataEnum) {
         self.source_range.unit = self.determine_units(&self.source_function.value);
-        if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
+        if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE {
             self.source_range.range = self.get_range(metadata, "source_meas.rangev");
         } else {
             self.source_range.range = self.get_range(metadata, "source_meas.rangei");
@@ -121,7 +121,7 @@ impl CommonChanAttributes {
     }
 
     fn set_source_range_limits(&mut self, metadata: &MetadataEnum) {
-        let key = if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
+        let key = if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE {
             "source.levelv"
         } else {
             "source.leveli"
@@ -140,7 +140,7 @@ impl CommonChanAttributes {
 
     fn set_source_range_value(&mut self) {
         if !self.source_range.range.contains(&self.source_range.value) {
-            let key = if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
+            let key = if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE {
                 "source_meas.range.defaultv"
             } else {
                 "source_meas.range.defaulti"
@@ -163,7 +163,7 @@ impl CommonChanAttributes {
     }
 
     fn set_meas_range(&mut self, metadata: &MetadataEnum) {
-        if self.meas_function.value == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
+        if self.meas_function.value == BaseMetadata::FUNCTION_VOLTAGE {
             self.meas_range.range = self.get_range(metadata, "source_meas.rangev");
         } else {
             self.meas_range.range = self.get_range(metadata, "source_meas.rangei");
@@ -172,7 +172,7 @@ impl CommonChanAttributes {
 
     fn set_meas_range_value(&mut self) {
         if !self.meas_range.range.contains(&self.meas_range.value) {
-            let key = if self.meas_function.value == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
+            let key = if self.meas_function.value == BaseMetadata::FUNCTION_VOLTAGE {
                 "source_meas.range.defaultv"
             } else {
                 "source_meas.range.defaulti"
@@ -285,6 +285,6 @@ impl CommonChanAttributes {
         } else {
             value = max
         }
-        return value;
+        value
     }
 }

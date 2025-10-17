@@ -1,8 +1,7 @@
 use std::{
     any::Any,
     collections::HashMap,
-    fs::File,
-    io::{self, BufRead, Cursor, Write},
+    io::{self, BufRead, Cursor},
 };
 
 use quick_xml::{events::Event, name::QName, Reader};

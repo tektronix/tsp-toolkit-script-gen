@@ -271,41 +271,44 @@ export class PlotStepComponent
   private generatePlotData(yData: number[], type: string): void {
     if (this.stepPoints && this.stepToSweepDelay) {
       const delayTime = this.stepToSweepDelay?.value ?? 0;
-      const targetLength = Math.max(2, Math.floor(this.plotWidth));
+      const targetLength = this.plotWidth;
       let processedYData = [...yData];
       let processedXData: number[] = [];
-      const numberofSteps : number = this.stepPoints.value;
-      // Handle interpolation first if needed
-      if (this.stepPoints.value > targetLength) {
-        if (type == 'LIN') {
-          const interpolated = PlotUtils.linearInterpolation(processedYData, targetLength);
-          processedYData = interpolated.y;
-        } else if (type == 'LOG' || type == 'LIST') {
-          const interpolated = PlotUtils.minMaxInterpolation(processedYData, targetLength);
-          processedYData = interpolated.y;
-        }
-        processedXData = Array.from({ length: processedYData.length }, (_, i) => (i / (processedYData.length - 1) * numberofSteps)).concat(numberofSteps).flat();
-      } else {
-        processedXData = Array.from({ length: this.stepPoints.value }, (_, i) => i)
-          .concat(this.stepPoints.value)
-          .flat();
-      }
+      const numberofSteps: number = this.stepPoints.value;
+      processedXData = Array.from({ length: processedYData.length }, (_, i) => (i / (processedYData.length - 1) * numberofSteps)).concat(numberofSteps).flat();
 
+      // Adding delay first if its exists
       if (delayTime > 0) {
         const { x, y } = this.generateDataWithDelay(processedYData, processedXData, delayTime);
-        this.plotData1.x = x;
-        this.plotData1.y = y;
-      } else {
-        this.generateDataWithoutDelay(processedYData, processedXData);
+        processedXData = x;
+        processedYData = y;
       }
 
-      // console.log('Plot data generated:', {
-      //   x: this.plotData1.x,
-      //   y: this.plotData1.y,
-      // });
-      // this.plotLayout.xaxis.dtick = (this.stepPoints.value + this.stepToSweepDelay?.value) / 10;
-    // Update x-axis range to include delay time for each step
-      // const delayTime = this.stepToSweepDelay?.value ?? 0;
+      if (processedYData.length > targetLength) {
+        if (type == 'LIN' || type == 'LOG' || type == 'LIST') {
+          // If we have delay, we need to interpolate X,Y pairs together to maintain timing
+          // This was suggested to be better than interpolation in this case so the graph is continous in all places and works well in our use case
+          if (delayTime > 0) {
+            // Create indices for interpolation based on target length
+            const indices = Array.from({ length: targetLength }, (_, i) =>
+              Math.floor((i / (targetLength - 1)) * (processedYData.length - 1))
+            );
+
+            // Interpolate by sampling the delay-generated data at calculated indices
+            processedYData = indices.map(i => processedYData[i]);
+            processedXData = indices.map(i => processedXData[i]);
+          } else {
+            // Without delay, use original interpolation method
+            const interpolated = PlotUtils.minMaxInterpolation(processedYData, targetLength);
+            processedYData = interpolated.y;
+            processedXData = Array.from({ length: processedYData.length }, (_, i) => (i / (processedYData.length - 1) * numberofSteps)).concat(numberofSteps).flat();
+          }
+        }
+      }
+
+      this.plotData1.x = processedXData;
+      this.plotData1.y = processedYData;
+
       const totalTime = this.stepPoints.value * (1 + delayTime); // Each step now takes (1 + delayTime) units
 
       this.plotLayout.xaxis.dtick = totalTime / 10;
@@ -345,9 +348,12 @@ export class PlotStepComponent
     return { x: finalX, y: finalY };
   }
 
-  private generateDataWithoutDelay(yData: number[], xData: number[]): void {
-    this.plotData1.x = xData;
-    this.plotData1.y = yData;
+  private generateDataWithoutDelay(yData: number[]): { x: number[], y: number[] } {
+    const xData = Array.from({ length: this.stepPoints?.value ?? 0 }, (_, i) => i)
+      .concat(this.stepPoints?.value ?? 0);
+    const finalYData = [...yData];
+
+    return { x: xData, y: finalYData };
   }
 
   private stepListPlot() {

@@ -1,6 +1,5 @@
 use crate::model::{
-    chan_data::region_map::RegionMapMetadata,
-    sweep_data::number_limit::NumberLimit,
+    chan_data::region_map::RegionMapMetadata, sweep_data::number_limit::NumberLimit,
 };
 
 use super::base_metadata::{BaseMetadata, Metadata};

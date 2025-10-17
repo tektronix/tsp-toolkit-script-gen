@@ -1,13 +1,15 @@
 use std::{any::Any, collections::HashMap};
 
 use crate::{
-    device::DeviceType, instr_metadata::base_metadata::BaseMetadata, model::{
+    device::DeviceType,
+    instr_metadata::base_metadata::BaseMetadata,
+    model::{
         chan_data::channel_range::ChannelRange,
         sweep_data::{
             parameters::{ParameterFloat, ParameterString},
             sweep_config::SweepConfig,
         },
-    }
+    },
 };
 
 use super::function::FunctionModel;
@@ -111,7 +113,9 @@ impl SweepModel {
                 instr_name.clone() + ":MODEL-TYPE",
                 bias_channel
                     .common_chan_attributes
-                    .device.device_type.to_string(),
+                    .device
+                    .device_type
+                    .to_string(),
             );
 
             let val = self
@@ -253,7 +257,9 @@ impl SweepModel {
                 step_channel
                     .start_stop_channel
                     .common_chan_attributes
-                    .device.device_type.to_string(),
+                    .device
+                    .device_type
+                    .to_string(),
             );
 
             let val = self
@@ -271,7 +277,8 @@ impl SweepModel {
                 step_channel
                     .start_stop_channel
                     .common_chan_attributes
-                    .source_range.clone(),
+                    .source_range
+                    .clone(),
                 &instr_name,
             );
 
@@ -458,12 +465,14 @@ impl SweepModel {
                     .get_model(),
             );
 
-             self.val_replacement_map.insert(
+            self.val_replacement_map.insert(
                 instr_name.clone() + ":MODEL-TYPE",
                 sweep_channel
                     .start_stop_channel
                     .common_chan_attributes
-                    .device.device_type.to_string(),
+                    .device
+                    .device_type
+                    .to_string(),
             );
 
             let val = self
@@ -481,7 +490,8 @@ impl SweepModel {
                 sweep_channel
                     .start_stop_channel
                     .common_chan_attributes
-                    .source_range.clone(),
+                    .source_range
+                    .clone(),
                 &instr_name,
             );
 

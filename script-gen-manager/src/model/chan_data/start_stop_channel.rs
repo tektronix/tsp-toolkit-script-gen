@@ -1,4 +1,3 @@
-
 use serde::{Deserialize, Serialize};
 
 use super::default_channel::CommonChanAttributes;

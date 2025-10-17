@@ -57,7 +57,7 @@ impl BaseMetadata {
     pub const RATE_NORMAL: &'static str = "Normal";
     pub const RATE_FAST: &'static str = "Fast";
 
-    pub const  UNDEFINED: &'static str = "UNDEFINED";
+    pub const UNDEFINED: &'static str = "UNDEFINED";
 
     pub const UNIT_VOLTS: &'static str = "V";
     pub const UNIT_AMPERES: &'static str = "A";

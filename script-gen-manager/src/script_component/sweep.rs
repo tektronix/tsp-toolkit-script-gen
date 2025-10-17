@@ -1,13 +1,13 @@
 use std::{any::Any, collections::HashMap};
 
 use crate::{
-    instr_metadata::base_metadata::BaseMetadata,
-    model::{
+    device::DeviceType, instr_metadata::base_metadata::BaseMetadata, model::{
         chan_data::channel_range::ChannelRange,
         sweep_data::{
-            parameters::ParameterFloat, parameters::ParameterString, sweep_config::SweepConfig,
+            parameters::{ParameterFloat, ParameterString},
+            sweep_config::SweepConfig,
         },
-    },
+    }
 };
 
 use super::function::FunctionModel;
@@ -107,20 +107,28 @@ impl SweepModel {
                 bias_channel.common_chan_attributes.device.get_model(),
             );
 
+            self.val_replacement_map.insert(
+                instr_name.clone() + ":MODEL-TYPE",
+                bias_channel
+                    .common_chan_attributes
+                    .device.device_type.to_string(),
+            );
+
             let val = self
                 .get_function_value(&bias_channel.common_chan_attributes.source_function)
                 .clone();
             self.val_replacement_map
                 .insert(instr_name.clone() + ":SFUNCTION", val);
 
-            self.val_replacement_map.insert(
-                instr_name.clone() + ":SRANGE",
-                self.format_range(bias_channel.common_chan_attributes.source_range.clone()),
+            self.set_source_range(
+                bias_channel.common_chan_attributes.source_range.clone(),
+                &instr_name,
             );
 
             let val = self
                 .get_function_value(&bias_channel.common_chan_attributes.meas_function)
                 .clone();
+
             self.val_replacement_map
                 .insert(instr_name.clone() + ":MFUNCTION", val);
 
@@ -131,12 +139,14 @@ impl SweepModel {
                     .common_chan_attributes
                     .get_name_for(&sense_mode_key)
                 {
-                    let val = self.get_sense_mode_value(&sense_mode_value);
                     self.val_replacement_map
-                        .insert(instr_name.clone() + ":SENSE", val);
-                } else {
-                    //TODO: error handling for sense mode value not found
+                        .insert(instr_name.clone() + ":SENSE", sense_mode_value.to_owned());
                 }
+            } else {
+                self.val_replacement_map.insert(
+                    instr_name.clone() + ":SENSE",
+                    BaseMetadata::UNDEFINED.to_string(),
+                );
             }
 
             //source_limitv exists only for SMU
@@ -176,6 +186,17 @@ impl SweepModel {
         }
     }
 
+    fn set_source_range(&mut self, channel_range: ChannelRange, instr_name: &String) {
+        let mut val = self.format_range(channel_range.clone());
+
+        if channel_range.is_range_auto() {
+            val = "CONSTANTS.AUTO".to_string();
+        }
+
+        self.val_replacement_map
+            .insert(instr_name.clone() + ":SRANGE", val);
+    }
+
     //Returns the value used in the script
     fn get_function_value(&mut self, source_function: &ParameterString) -> String {
         if source_function.value.to_lowercase() == BaseMetadata::FUNCTION_VOLTAGE.to_lowercase() {
@@ -186,15 +207,6 @@ impl SweepModel {
             "FUNC_DC_CURRENT".to_string()
         } else {
             "FUNC_DC_IV_COMBINED".to_string()
-        }
-    }
-
-    //Returns the value used in the script
-    fn get_sense_mode_value(&mut self, sense_mode: &str) -> String {
-        if sense_mode.to_lowercase() == BaseMetadata::SENSE_MODE_TWO_WIRE.to_lowercase() {
-            "SENSE_2WIRE".to_string()
-        } else {
-            "SENSE_4WIRE".to_string()
         }
     }
 
@@ -236,6 +248,14 @@ impl SweepModel {
                     .get_model(),
             );
 
+            self.val_replacement_map.insert(
+                instr_name.clone() + ":MODEL-TYPE",
+                step_channel
+                    .start_stop_channel
+                    .common_chan_attributes
+                    .device.device_type.to_string(),
+            );
+
             let val = self
                 .get_function_value(
                     &step_channel
@@ -247,15 +267,12 @@ impl SweepModel {
             self.val_replacement_map
                 .insert(instr_name.clone() + ":SFUNCTION", val);
 
-            self.val_replacement_map.insert(
-                instr_name.clone() + ":SRANGE",
-                self.format_range(
-                    step_channel
-                        .start_stop_channel
-                        .common_chan_attributes
-                        .source_range
-                        .clone(),
-                ),
+            self.set_source_range(
+                step_channel
+                    .start_stop_channel
+                    .common_chan_attributes
+                    .source_range.clone(),
+                &instr_name,
             );
 
             let val = self
@@ -290,10 +307,14 @@ impl SweepModel {
                     .common_chan_attributes
                     .get_name_for(&sense_mode_key)
                 {
-                    let val = self.get_sense_mode_value(&sense_mode_value);
                     self.val_replacement_map
-                        .insert(instr_name.clone() + ":SENSE", val);
+                        .insert(instr_name.clone() + ":SENSE", sense_mode_value.to_owned());
                 }
+            } else {
+                self.val_replacement_map.insert(
+                    instr_name.clone() + ":SENSE",
+                    BaseMetadata::UNDEFINED.to_string(),
+                );
             }
 
             //source_limitv exists only for SMU
@@ -437,6 +458,14 @@ impl SweepModel {
                     .get_model(),
             );
 
+             self.val_replacement_map.insert(
+                instr_name.clone() + ":MODEL-TYPE",
+                sweep_channel
+                    .start_stop_channel
+                    .common_chan_attributes
+                    .device.device_type.to_string(),
+            );
+
             let val = self
                 .get_function_value(
                     &sweep_channel
@@ -447,15 +476,13 @@ impl SweepModel {
                 .clone();
             self.val_replacement_map
                 .insert(instr_name.clone() + ":SFUNCTION", val);
-            self.val_replacement_map.insert(
-                instr_name.clone() + ":SRANGE",
-                self.format_range(
-                    sweep_channel
-                        .start_stop_channel
-                        .common_chan_attributes
-                        .source_range
-                        .clone(),
-                ),
+
+            self.set_source_range(
+                sweep_channel
+                    .start_stop_channel
+                    .common_chan_attributes
+                    .source_range.clone(),
+                &instr_name,
             );
 
             let val = self
@@ -489,12 +516,14 @@ impl SweepModel {
                     .common_chan_attributes
                     .get_name_for(&sense_mode_key)
                 {
-                    let val = self.get_sense_mode_value(&sense_mode_value);
                     self.val_replacement_map
-                        .insert(instr_name.clone() + ":SENSE", val);
-                } else {
-                    //TODO: error handling for sense mode value not found
+                        .insert(instr_name.clone() + ":SENSE", sense_mode_value.to_owned());
                 }
+            } else {
+                self.val_replacement_map.insert(
+                    instr_name.clone() + ":SENSE",
+                    BaseMetadata::UNDEFINED.to_string(),
+                );
             }
 
             //source_limitv exists only for SMU

@@ -33,8 +33,7 @@ import { PlotUtils } from '../plot-utils';
   styleUrl: './plot-step.component.scss',
 })
 export class PlotStepComponent
-  implements AfterViewInit, OnInit, OnDestroy, OnChanges
-{
+  implements AfterViewInit, OnInit, OnDestroy, OnChanges {
   @Input() stepChannel: StepChannel | undefined;
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
 
@@ -57,7 +56,7 @@ export class PlotStepComponent
     backgroundColor: '',
     color: '',
   };
-  @Input() color = '';  
+  @Input() color = '';
   private mutationObserver: MutationObserver | undefined;
   private originalBackgroundColor = '';
   activeBackgroundColor = '';
@@ -208,7 +207,7 @@ export class PlotStepComponent
   };
   private plotData = [this.plotData1, this.plotData2];
 
-  constructor(public elementRef: ElementRef) {}
+  constructor(public elementRef: ElementRef) { }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['isActive'] && !changes['isActive'].isFirstChange()) {
@@ -272,44 +271,46 @@ export class PlotStepComponent
   private generatePlotData(yData: number[], type: string): void {
     if (this.stepPoints && this.stepToSweepDelay) {
       const delayTime = this.stepToSweepDelay?.value ?? 0;
-      const targetLength = Math.max(2, Math.floor(this.plotWidth));
+      const targetLength = this.plotWidth;
       let processedYData = [...yData];
       let processedXData: number[] = [];
+      const numberofSteps: number = this.stepPoints.value;
+      processedXData = Array.from({ length: processedYData.length }, (_, i) => (i / (processedYData.length - 1) * numberofSteps)).concat(numberofSteps).flat();
 
-      // Handle interpolation first if needed
-      if (this.stepPoints.value > targetLength) {
-        if (type == 'LIN') {
-          const interpolated = PlotUtils.linearInterpolation(processedYData, targetLength);
-          processedXData = interpolated.x;
-          processedYData = interpolated.y;
-        } else if (type == 'LOG' || type == 'LIST') {
-          const interpolated = PlotUtils.minMaxInterpolation(processedYData, targetLength);
-          processedXData = interpolated.x;
-          processedYData = interpolated.y;
-        }
-      } else {
-        processedXData = Array.from({ length: this.stepPoints.value }, (_, i) => i)
-          .concat(this.stepPoints.value)
-          .flat();
-      }
-      
+      // Adding delay first if its exists
       if (delayTime > 0) {
         const { x, y } = this.generateDataWithDelay(processedYData, processedXData, delayTime);
-        this.plotData1.x = x;
-        this.plotData1.y = y;
-      } else {
-        this.generateDataWithoutDelay(processedYData, processedXData);
+        processedXData = x;
+        processedYData = y;
       }
-      
-      // console.log('Plot data generated:', {
-      //   x: this.plotData1.x,
-      //   y: this.plotData1.y,
-      // });
-      // this.plotLayout.xaxis.dtick = (this.stepPoints.value + this.stepToSweepDelay?.value) / 10;
-    // Update x-axis range to include delay time for each step
-      // const delayTime = this.stepToSweepDelay?.value ?? 0;
+
+      if (processedYData.length > targetLength) {
+        if (type == 'LIN' || type == 'LOG' || type == 'LIST') {
+          // If we have delay, we need to interpolate X,Y pairs together to maintain timing
+          // This was suggested to be better than interpolation in this case so the graph is continous in all places and works well in our use case
+          if (delayTime > 0) {
+            // Create indices for interpolation based on target length
+            const indices = Array.from({ length: targetLength }, (_, i) =>
+              Math.floor((i / (targetLength - 1)) * (processedYData.length - 1))
+            );
+
+            // Interpolate by sampling the delay-generated data at calculated indices
+            processedYData = indices.map(i => processedYData[i]);
+            processedXData = indices.map(i => processedXData[i]);
+          } else {
+            // Without delay, use original interpolation method
+            const interpolated = PlotUtils.minMaxInterpolation(processedYData, targetLength);
+            processedYData = interpolated.y;
+            processedXData = Array.from({ length: processedYData.length }, (_, i) => (i / (processedYData.length - 1) * numberofSteps)).concat(numberofSteps).flat();
+          }
+        }
+      }
+
+      this.plotData1.x = processedXData;
+      this.plotData1.y = processedYData;
+
       const totalTime = this.stepPoints.value * (1 + delayTime); // Each step now takes (1 + delayTime) units
-      
+
       this.plotLayout.xaxis.dtick = totalTime / 10;
       this.plotLayout.xaxis.range = [0, totalTime];
     }
@@ -325,31 +326,26 @@ export class PlotStepComponent
     for (let step = 0; step < numSteps; step++) {
       const stepStartTime = step * (1 + delayTime);
       const currentYValue = yData[step];
-      
+
       // Add delay period (repeat current y value) at the beginning of each step
       for (let d = 0; d < delayPoints; d++) {
         finalX.push(stepStartTime + (d * delayTime) / delayPoints);
         finalY.push(currentYValue);
       }
-      
+
       // Add the actual step point after delay
       finalX.push(stepStartTime + delayTime);
       finalY.push(currentYValue);
     }
-    
+
     // Add final point
     if (yData.length > 0) {
       const finalStepTime = numSteps * (1 + delayTime);
       finalX.push(finalStepTime);
       finalY.push(yData[yData.length - 1]);
     }
-    
-    return { x: finalX, y: finalY };
-  }
 
-  private generateDataWithoutDelay(yData: number[], xData: number[]): void {
-    this.plotData1.x = xData;
-    this.plotData1.y = yData;
+    return { x: finalX, y: finalY };
   }
 
   private stepListPlot() {

@@ -274,19 +274,17 @@ export class PlotStepComponent
       const targetLength = Math.max(2, Math.floor(this.plotWidth));
       let processedYData = [...yData];
       let processedXData: number[] = [];
-
+      const numberofSteps : number = this.stepPoints.value;
       // Handle interpolation first if needed
       if (this.stepPoints.value > targetLength) {
         if (type == 'LIN') {
           const interpolated = PlotUtils.linearInterpolation(processedYData, targetLength);
-          processedXData = interpolated.x;
           processedYData = interpolated.y;
         } else if (type == 'LOG' || type == 'LIST') {
           const interpolated = PlotUtils.minMaxInterpolation(processedYData, targetLength);
-          processedXData = interpolated.x;
           processedYData = interpolated.y;
         }
-        xData = Array.from({ length: yData.length }, (_, i) => (i / (yData.length - 1) * numberofSteps)).concat(numberofSteps).flat();
+        processedXData = Array.from({ length: processedYData.length }, (_, i) => (i / (processedYData.length - 1) * numberofSteps)).concat(numberofSteps).flat();
       } else {
         processedXData = Array.from({ length: this.stepPoints.value }, (_, i) => i)
           .concat(this.stepPoints.value)

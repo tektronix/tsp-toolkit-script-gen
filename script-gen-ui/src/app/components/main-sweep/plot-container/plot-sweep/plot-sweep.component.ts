@@ -372,17 +372,13 @@ export class PlotSweepComponent
   }
 
   private generatePlotData(sweepValues: number[], type: string) {
-    if (this.numPoints && this.numSteps) {
+    if (this.numPoints && this.numSteps && this.stepToSweepDelay) {
       const targetLength = this.plotWidth / this.numSteps;
+
+      
       if (this.numPoints?.value > targetLength) {
         let xData: number[] = [];
-        if (type == 'LIN') {
-          const interpolated = PlotUtils.linearInterpolation(
-            sweepValues,
-            targetLength
-          );
-          sweepValues = interpolated.y;
-        } else if (type == 'LOG' || type == 'LIST') {
+        if (type == 'LIN' || type == 'LOG' || type == 'LIST') {
           const interpolated = PlotUtils.minMaxInterpolation(
             sweepValues,
             targetLength
@@ -397,7 +393,7 @@ export class PlotSweepComponent
       }
       
       // Update x-axis range to include delay time for each step
-      const delayTime = this.stepToSweepDelay?.value ?? 0;
+      const delayTime = this.stepToSweepDelay.value;
       const totalTime = this.numSteps * (1 + delayTime); // Each step now takes (1 + delayTime) units
       
       this.plotLayout.xaxis.dtick = totalTime / 10;

@@ -348,14 +348,6 @@ export class PlotStepComponent
     return { x: finalX, y: finalY };
   }
 
-  private generateDataWithoutDelay(yData: number[]): { x: number[], y: number[] } {
-    const xData = Array.from({ length: this.stepPoints?.value ?? 0 }, (_, i) => i)
-      .concat(this.stepPoints?.value ?? 0);
-    const finalYData = [...yData];
-
-    return { x: xData, y: finalYData };
-  }
-
   private stepListPlot() {
     if (this.listStep && this.stepPoints && this.stop) {
       const stepValues = this.listStep

@@ -57,6 +57,8 @@ impl BaseMetadata {
     pub const RATE_NORMAL: &'static str = "Normal";
     pub const RATE_FAST: &'static str = "Fast";
 
+    pub const UNDEFINED: &'static str = "UNDEFINED";
+
     pub const UNIT_VOLTS: &'static str = "V";
     pub const UNIT_AMPERES: &'static str = "A";
     pub const UNIT_SECONDS: &'static str = "s";
@@ -79,8 +81,8 @@ impl BaseMetadata {
             ],
         );
 
-        names.insert("sense=Two-wire", "SENSE_LOCAL");
-        names.insert("sense=Four-wire", "SENSE_REMOTE");
+        names.insert("sense=Two-wire", "SENSE_2WIRE");
+        names.insert("sense=Four-wire", "SENSE_4WIRE");
 
         BaseMetadata {
             options,

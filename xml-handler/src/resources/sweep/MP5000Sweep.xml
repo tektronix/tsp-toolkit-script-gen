@@ -326,7 +326,7 @@
                                     self.channel.source.levelv = self.source.values.scalar
                                 elseif self.source.func == CONSTANTS.FUNC_DC_CURRENT then
                                     self.channel.source.func = self.slot.smu.FUNC_DC_CURRENT
-                                    self.channel.trigger.source.leveli = self.source.values.scalar
+                                    self.channel.source.leveli = self.source.values.scalar
                                 end
                             elseif self.source.values.list ~= nil then
                                 if self.source.func == CONSTANTS.FUNC_DC_VOLTAGE then

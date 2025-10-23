@@ -54,14 +54,14 @@ impl Mpsu50Metadata {
         region_map_metadata.add_region(1, 0.0, 0.0, -10.0, -max_supported_current);
         region_map_metadata.add_region(1, 0.0, 0.0, -max_supported_voltage, -1.0);
 
-        add_curved_region(
+        add_1st_quadrant_curved_region(
             10.0,
             max_supported_voltage,
             0.001,
             1.0,
             &mut region_map_metadata,
         ); //First quadrant curve
-        add_curved_region(
+        add_3rd_quadrant_curved_region(
             -10.0,
             -max_supported_voltage,
             -0.001,
@@ -80,7 +80,7 @@ impl Mpsu50Metadata {
     }
 }
 
-fn add_curved_region(
+fn add_1st_quadrant_curved_region(
     voltage_start: f64,
     voltage_max: f64,
     step: f64,    // Use the step parameter to finely control the approximation
@@ -95,6 +95,25 @@ fn add_curved_region(
         let v2 = v1 + step;
         let i2 = voltage_max / v2.abs();
         region_map_metadata.add_region(1, v1, current, v2, i2);
+        v1 += step;
+    }
+}
+
+fn add_3rd_quadrant_curved_region(
+    voltage_start: f64,
+    voltage_max: f64,
+    step: f64,    // Use the step parameter to finely control the approximation
+    current: f64, // Fixed current for the curve
+    region_map_metadata: &mut RegionMapMetadata,
+) {
+    // Add region maps iteratively as small rectangles to approximate the curve
+
+    let mut v1 = voltage_start;
+
+    while v1.abs() <= voltage_max.abs() {
+        let v2 = v1 + step;
+        let i2 = voltage_max / v2.abs();
+        region_map_metadata.add_region(1, v2, i2, v1, current);
         v1 += step;
     }
 }

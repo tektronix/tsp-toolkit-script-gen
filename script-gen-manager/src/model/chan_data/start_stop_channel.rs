@@ -66,6 +66,7 @@ impl StartStopChannel {
         //List evaluation
 
         self.update_list(list_size);
+        self.common_chan_attributes.evaluate_source_limits(&self.start, &self.stop);
     }
 
     fn update_list(&mut self, list_size: usize) {

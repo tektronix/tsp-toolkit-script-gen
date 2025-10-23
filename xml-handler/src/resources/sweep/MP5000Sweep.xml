@@ -95,7 +95,7 @@
 
         ---@class Measure
         ---@field nplc number | nil
-        ---@field aperature number | nil
+        ---@field aperture number | nil
         ---@field rate `CONSTANTS.RATE_FAST` | `CONSTANTS.RATE_NORMAL` | nil
         -- ---@field autozero boolean Whether autozero should be turned on or not
         ---@field count integer The number of measurments to take
@@ -382,8 +382,8 @@
                             -- nplc
                             if self.measure.nplc ~= nil then
                                 self.channel.measure.nplc = self.measure.nplc
-                            elseif self.measure.aperature ~= nil then
-                                self.channel.measure.aperature = self.measure.aperature
+                            elseif self.measure.aperture ~= nil then
+                                self.channel.measure.aperture = self.measure.aperture
                             end
                             -- count
                             self.channel.measure.count = self.measure.count
@@ -1353,7 +1353,7 @@
             <condition name="BIAS-DEVICE:MFUNCTION">FUNC_DC_IV_COMBINED</condition>
             <snippet>
                         {
-                            buffer = %NODE%.slot[%BIAS-DEVICE:SLOT-IDX%].%MODEL-TYPE%[%BIAS-DEVICE:CHANNEL-IDX%].defbuffer1,
+                            buffer = %NODE%.slot[%SLOT-IDX%].%MODEL-TYPE%[%CHANNEL-IDX%].defbuffer1,
                             type = CONSTANTS.FUNC_DC_CURRENT
                         },
                         {

@@ -37,7 +37,7 @@ impl BaseMetadata {
     //TODO: verify this value for Trebuchet
     pub const EPSILON: f64 = 1e-9;
     //TODO: verify this value for Trebuchet
-    pub const MIN_LOG_VALUE: f64 = 1e-12;
+    pub const MIN_LOG_VALUE: f64 = 5e-6;
     //TODO: verify this value for Trebuchet
     pub const MIN_BUFFER_TIME: f64 = 60e-6;
 

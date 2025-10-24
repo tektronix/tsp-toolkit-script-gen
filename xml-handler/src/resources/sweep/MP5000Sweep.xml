@@ -29,6 +29,7 @@
 	<substitute name="BIAS-NODES">%BIAS-NODES%</substitute>
 	<substitute name="BIAS-SMUS">%BIAS-SMUS%</substitute>
 	<substitute name="NPLC">%NPLC%</substitute>
+    <substitute name="APERTURE">%APERTURE%</substitute>
 	<substitute name="SOURCE-DELAY">%SOURCE-DELAY%</substitute>
 	<substitute name="MEASURE-DELAY">%MEASURE-DELAY%</substitute>
 	<substitute name="EFFECTIVE-FILTER-COUNT">%EFFECTIVE-FILTER-COUNT%</substitute>
@@ -1281,6 +1282,8 @@
 
             local nplc             = %NPLC%
 
+            local aperture         = %APERTURE%
+
             local source_delay     = %SOURCE-DELAY%
             local measure_delay    = %MEASURE-DELAY%
             local measure_count    = %MEASURE-COUNT%
@@ -1326,6 +1329,7 @@
                 },
                 measure = {
                     nplc = nplc,
+                    aperture = aperture,
                     count = measure_count,
                     delay = measure_delay,
                     func = CONSTANTS.%MFUNCTION%, -- must be FUNC_DC_CURRENT, FUNC_DC_VOLTAGE, or FUNC_DC_IV_COMBINED
@@ -1431,6 +1435,7 @@
                 },
                 measure = {
                     nplc = nplc,
+                    aperture = aperture,
                     count = measure_count,
                     delay = measure_delay,
                     func = CONSTANTS.%MFUNCTION%, -- must be FUNC_DC_VOLTAGE, FUNC_DC_CURRENT, or FUNC_DC_IV_COMBINED
@@ -1536,6 +1541,7 @@
                 },
                 measure = {
                     nplc = nplc,
+                    aperture = aperture,
                     count = measure_count,
                     delay = measure_delay,
                     func = CONSTANTS.%MFUNCTION%, -- must be FUNC_DC_VOLTAGE, FUNC_DC_CURRENT, or FUNC_DC_IV_COMBINED

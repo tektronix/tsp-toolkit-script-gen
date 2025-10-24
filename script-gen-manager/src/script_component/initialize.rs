@@ -38,7 +38,7 @@ impl FunctionModel for InitializeModel {
         &self.metadata
     }
 
-    fn to_script(&mut self, sweep_config: &SweepConfig, script_buffer: &mut ScriptBuffer) {
+    fn to_script(&mut self, _sweep_config: &SweepConfig, script_buffer: &mut ScriptBuffer) {
         self.val_replacement_map
             .insert(String::from("MAX-NODES"), String::from("64"));
         self.val_replacement_map

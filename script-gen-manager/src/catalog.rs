@@ -32,7 +32,7 @@ impl Catalog {
                     self.function_metadata_map.insert(item.type_.clone(), item);
                 }
             }
-            Err(e) => {
+            Err(_e) => {
                 //eprintln!("Error: {:?}", e);
                 //return Err(e.into());
             }

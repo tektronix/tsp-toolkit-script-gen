@@ -7,10 +7,7 @@ use crate::{
         base_metadata::{BaseMetadata, Metadata},
         enum_metadata::MetadataEnum,
     },
-    model::{
-        chan_data::start_stop_channel,
-        sweep_data::parameters::{ParameterFloat, ParameterString},
-    },
+    model::sweep_data::parameters::{ParameterFloat, ParameterString},
 };
 
 use super::{channel_range::ChannelRange, region_map::RegionMapMetadata};
@@ -196,7 +193,7 @@ impl CommonChanAttributes {
 
     fn get_range(&self, metadata: &MetadataEnum, key: &str) -> Vec<String> {
         match metadata {
-            MetadataEnum::Base(base_metadata) => {
+            MetadataEnum::Base(_base_metadata) => {
                 // Handle base_metadata if needed
                 vec![]
             }

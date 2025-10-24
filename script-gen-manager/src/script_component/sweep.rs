@@ -1,7 +1,6 @@
 use std::{any::Any, collections::HashMap};
 
 use crate::{
-    device::DeviceType,
     instr_metadata::base_metadata::BaseMetadata,
     model::{
         chan_data::channel_range::ChannelRange,

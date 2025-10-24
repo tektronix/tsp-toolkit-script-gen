@@ -36,7 +36,7 @@ impl FunctionModel for FinalizeModel {
         &self.metadata
     }
 
-    fn to_script(&mut self, sweep_config: &SweepConfig, script_buffer: &mut ScriptBuffer) {
+    fn to_script(&mut self, _sweep_config: &SweepConfig, script_buffer: &mut ScriptBuffer) {
         self.build(script_buffer);
     }
 }

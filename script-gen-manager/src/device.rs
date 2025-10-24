@@ -132,7 +132,7 @@ impl Device {
     /// A new `Device` instance.
     pub fn new(
         mainframe_name: String,
-        mainframe_model: String,
+        _mainframe_model: String,
         slot: &Slot,
         chan_num: i32,
     ) -> Self {

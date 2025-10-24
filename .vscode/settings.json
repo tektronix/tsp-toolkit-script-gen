@@ -1,0 +1,6 @@
+{
+    "Lua.workspace.library": [
+        "c:\\Users\\pnarayan\\.vscode\\extensions\\tektronix.tsp-toolkit-1.3.0-win32-x64\\node_modules\\@tektronix\\keithley_instrument_libraries\\keithley_instrument_libraries\\tsp-lua-5.0",
+        "c:\\Users\\pnarayan\\.vscode\\extensions\\tektronix.tsp-toolkit-1.3.0-win32-x64\\node_modules\\@tektronix\\keithley_instrument_libraries\\keithley_instrument_libraries\\nodes_definitions"
+    ]
+}

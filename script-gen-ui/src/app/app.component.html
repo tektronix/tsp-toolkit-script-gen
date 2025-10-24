@@ -1,5 +1,42 @@
 <div>
-  <div>
+  <!-- Status Bar -->
+  <div class="status-bar" *ngIf="isProcessing || errorMessage || queueLength > 0">
+    <!-- Processing Status -->
+    <div class="processing-status" *ngIf="isProcessing">
+      <mat-icon class="processing-icon">hourglass_empty</mat-icon>
+      <span class="status-text">{{ processingStatus | titlecase }}</span>
+      <span class="status-details" *ngIf="processingDetails">- {{ processingDetails }}</span>
+    </div>
+    
+    <!-- Error Message -->
+    <div class="error-status" *ngIf="errorMessage">
+      <mat-icon class="error-icon">error_outline</mat-icon>
+      <span class="error-text">{{ errorMessage }}</span>
+      <button class="clear-error-btn" (click)="clearError()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    
+    <!-- Queue Status -->
+    <div class="queue-status" *ngIf="queueLength > 0">
+      <mat-icon class="queue-icon">queue</mat-icon>
+      <span class="queue-text">{{ queueLength }} request(s) queued</span>
+      <button class="clear-queue-btn" (click)="clearQueue()" title="Clear queue">
+        <mat-icon>clear_all</mat-icon>
+      </button>
+    </div>
+    
+    <!-- Reconnect Button -->
+    <div class="reconnect-section" *ngIf="errorMessage && !isProcessing">
+      <button class="reconnect-btn" (click)="forceReconnect()" title="Reconnect to server">
+        <mat-icon>refresh</mat-icon>
+        Reconnect
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
     <app-main-sweep
       *ngIf="isMainSweepVisible"
       [sweepConfig]="sweepConfig"

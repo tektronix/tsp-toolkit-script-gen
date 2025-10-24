@@ -38,7 +38,7 @@ impl FunctionModel for DataReportModel {
         &self.metadata
     }
 
-    fn to_script(&mut self, sweep_config: &SweepConfig, script_buffer: &mut ScriptBuffer) {
+    fn to_script(&mut self, _sweep_config: &SweepConfig, script_buffer: &mut ScriptBuffer) {
         let buffers = String::from("{}");
         let buffer_names = String::from("{}");
         let buffer_smu_names = String::from("{}");

@@ -1,3 +1,160 @@
 // .host{
 //   background-color: var(--vscode-activityErrorBadge-foreground);
 // }
+
+.status-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: var(--vscode-editor-background);
+  border-bottom: 1px solid var(--vscode-editorWidget-border);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.processing-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--vscode-notificationsInfoIcon-foreground, #007acc);
+}
+
+.processing-icon {
+  animation: spin 2s linear infinite;
+  font-size: 18px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.status-text {
+  font-weight: 500;
+}
+
+.status-details {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+.error-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--vscode-errorForeground, #f44747);
+  background-color: var(--vscode-inputValidation-errorBackground, rgba(244, 71, 71, 0.1));
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--vscode-inputValidation-errorBorder, #f44747);
+}
+
+.error-icon {
+  font-size: 18px;
+}
+
+.error-text {
+  flex: 1;
+  font-size: 13px;
+}
+
+.clear-error-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-error-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.clear-error-btn mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.queue-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--vscode-notificationsWarningIcon-foreground, #ffcc02);
+  background-color: var(--vscode-inputValidation-warningBackground, rgba(255, 204, 2, 0.1));
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--vscode-inputValidation-warningBorder, #ffcc02);
+}
+
+.queue-icon {
+  font-size: 18px;
+}
+
+.queue-text {
+  font-size: 13px;
+}
+
+.clear-queue-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-queue-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.clear-queue-btn mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.reconnect-section {
+  margin-left: auto;
+}
+
+.reconnect-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+}
+
+.reconnect-btn:hover {
+  background-color: var(--vscode-button-hoverBackground);
+}
+
+.reconnect-btn mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.main-content {
+  margin-top: 60px; /* Space for fixed status bar */
+}

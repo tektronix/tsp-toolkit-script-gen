@@ -220,7 +220,7 @@
         </div>
       </div>
     </div>
-
+    <div class="sweep-controls-sticky">
     <div class="expander">
       <div style="display: flex">
         <span style="position: relative; display: flex">
@@ -277,8 +277,7 @@
         </button>
       </span>
     </div>
-    <div *ngIf="isSweepExpanded">
-      <div class="input-group">
+    <div *ngIf="isSweepExpanded" class="input-group">
         <div class="numeric-control">
           <app-input-numeric
             [(ngModel)]="sweepPoints.value"
@@ -327,7 +326,9 @@
             ></app-list>
           </div>
         </div>
-      </div>
+    </div>
+    </div>
+    <div *ngIf="isSweepExpanded">
       <div *ngFor="let sweepChannel of sweepChannels; let i = index">
         <div *ngIf="isSweepExpanded">
           <app-sweep

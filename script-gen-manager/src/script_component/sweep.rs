@@ -619,9 +619,11 @@ impl SweepModel {
                         .value,
                 ),
             );
+            self.val_replacement_map
+                .insert(String::from("APERTURE"), "nil".to_owned());
         } else {
             self.val_replacement_map.insert(
-                String::from("Aperture"),
+                String::from("APERTURE"),
                 self.format(
                     sweep_config
                         .global_parameters
@@ -631,6 +633,8 @@ impl SweepModel {
                         .value,
                 ),
             );
+            self.val_replacement_map
+                .insert(String::from("NPLC"), "nil".to_owned());
         }
 
         self.val_replacement_map.insert(

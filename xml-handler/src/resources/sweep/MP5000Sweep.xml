@@ -42,6 +42,7 @@
         --#region Util
 
         CONSTANTS = {
+            UNDEFINED = nil,
             AUTO = &quot;AUTO&quot;,
             localnode = 0,
             SENSE_2WIRE = 0,
@@ -82,9 +83,9 @@
 
         ---@class Source
         ---@field values ScalarValue | LogValues | LinearValues | ListValues The value or values to source
-        ---@field range number | `CONSTANTS.AUTO` The range to use, or Auto
+        ---@field range number | "AUTO" The range to use, or Auto
         ---@field limiti number The current limit
-        ---@field limitv number The voltage limit
+        ---@field limitv number | nil The voltage limit
         ---@field delay number The time to delay before sourcing
         ---@field func `self.slot.smu.FUNC_DC_VOLTAGE` | `self.slot.smu.FUNC_DC_CURRENT`
 
@@ -94,7 +95,7 @@
 
         ---@class Measure
         ---@field nplc number | nil
-        ---@field aperature number | nil
+        ---@field aperture number | nil
         ---@field rate `CONSTANTS.RATE_FAST` | `CONSTANTS.RATE_NORMAL` | nil
         -- ---@field autozero boolean Whether autozero should be turned on or not
         ---@field count integer The number of measurments to take
@@ -325,7 +326,7 @@
                                     self.channel.source.levelv = self.source.values.scalar
                                 elseif self.source.func == CONSTANTS.FUNC_DC_CURRENT then
                                     self.channel.source.func = self.slot.smu.FUNC_DC_CURRENT
-                                    self.channel.trigger.source.leveli = self.source.values.scalar
+                                    self.channel.source.leveli = self.source.values.scalar
                                 end
                             elseif self.source.values.list ~= nil then
                                 if self.source.func == CONSTANTS.FUNC_DC_VOLTAGE then
@@ -381,8 +382,8 @@
                             -- nplc
                             if self.measure.nplc ~= nil then
                                 self.channel.measure.nplc = self.measure.nplc
-                            elseif self.measure.aperature ~= nil then
-                                self.channel.measure.aperature = self.measure.aperature
+                            elseif self.measure.aperture ~= nil then
+                                self.channel.measure.aperture = self.measure.aperture
                             end
                             -- count
                             self.channel.measure.count = self.measure.count
@@ -741,8 +742,7 @@
                         ---@param self Device
                         config = function(self)
                             UTILITY.init_slot_event_ids(self.slot, { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 })
-                            -- Sense setting --
-                            self.channel.sense = self.sense
+                           
 
                             local event_id = UTILITY.get_slot_event_id(self.slot)
                             if event_id then
@@ -1301,6 +1301,7 @@
         <substitute name="BIAS-DEVICE:SLOT-IDX">%SLOT-IDX%</substitute>
         <substitute name="BIAS-DEVICE:CHANNEL-IDX">%CHANNEL-IDX%</substitute>
         <substitute name="BIAS-DEVICE:MODEL">%MODEL%</substitute>
+        <substitute name="BIAS-DEVICE:MODEL-TYPE">%MODEL-TYPE%</substitute>
         <substitute name="BIAS-DEVICE:SFUNCTION">%SFUNCTION%</substitute>
         <substitute name="BIAS-DEVICE:SRANGE">%SRANGE%</substitute>
         <substitute name="BIAS-DEVICE:BIAS">%BIAS%</substitute>
@@ -1334,7 +1335,7 @@
             <condition name="BIAS-DEVICE:MFUNCTION">FUNC_DC_CURRENT</condition>
             <snippet>
                         {
-                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                            buffer = %NODE%.slot[%SLOT-IDX%].%MODEL-TYPE%[%CHANNEL-IDX%].defbuffer1,
                             type = CONSTANTS.FUNC_DC_CURRENT
                         },
             </snippet>
@@ -1343,7 +1344,7 @@
             <condition name="BIAS-DEVICE:MFUNCTION">FUNC_DC_VOLTAGE</condition>
             <snippet>
                         {
-                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                            buffer = %NODE%.slot[%SLOT-IDX%].%MODEL-TYPE%[%CHANNEL-IDX%].defbuffer1,
                             type = CONSTANTS.FUNC_DC_VOLTAGE
                         },
             </snippet>
@@ -1352,11 +1353,11 @@
             <condition name="BIAS-DEVICE:MFUNCTION">FUNC_DC_IV_COMBINED</condition>
             <snippet>
                         {
-                            buffer = %NODE%.slot[%BIAS-DEVICE:SLOT-IDX%].smu[%BIAS-DEVICE:CHANNEL-IDX%].defbuffer1,
+                            buffer = %NODE%.slot[%SLOT-IDX%].%MODEL-TYPE%[%CHANNEL-IDX%].defbuffer1,
                             type = CONSTANTS.FUNC_DC_CURRENT
                         },
                         {
-                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer2,
+                            buffer = %NODE%.slot[%SLOT-IDX%].%MODEL-TYPE%[%CHANNEL-IDX%].defbuffer2,
                             type = CONSTANTS.FUNC_DC_VOLTAGE
                         },
             </snippet>
@@ -1375,6 +1376,7 @@
         <substitute name="STEP-DEVICE:SLOT-IDX">%SLOT-IDX%</substitute>
         <substitute name="STEP-DEVICE:CHANNEL-IDX">%CHANNEL-IDX%</substitute>
         <substitute name="STEP-DEVICE:MODEL">%MODEL%</substitute>
+        <substitute name="STEP-DEVICE:MODEL-TYPE">%MODEL-TYPE%</substitute>
         <substitute name="STEP-DEVICE:SFUNCTION">%SFUNCTION%</substitute>
         <substitute name="STEP-DEVICE:SRANGE">%SRANGE%</substitute>
         <substitute name="STEP-DEVICE:START">%START%</substitute>
@@ -1438,7 +1440,7 @@
             <condition name="STEP-DEVICE:MFUNCTION">FUNC_DC_CURRENT</condition>
             <snippet>
                         {
-                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                            buffer = %NODE%.slot[%SLOT-IDX%].%MODEL-TYPE%[%CHANNEL-IDX%].defbuffer1,
                             type = CONSTANTS.FUNC_DC_CURRENT
                         },
             </snippet>
@@ -1447,7 +1449,7 @@
             <condition name="STEP-DEVICE:MFUNCTION">FUNC_DC_VOLTAGE</condition>
             <snippet>
                         {
-                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                            buffer = %NODE%.slot[%SLOT-IDX%].%MODEL-TYPE%[%CHANNEL-IDX%].defbuffer1,
                             type = CONSTANTS.FUNC_DC_VOLTAGE
                         },
             </snippet>
@@ -1456,11 +1458,11 @@
             <condition name="STEP-DEVICE:MFUNCTION">FUNC_DC_IV_COMBINED</condition>
             <snippet>
                         {
-                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                            buffer = %NODE%.slot[%SLOT-IDX%].%MODEL-TYPE%[%CHANNEL-IDX%].defbuffer1,
                             type = CONSTANTS.FUNC_DC_CURRENT
                         },
                         {
-                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer2,
+                            buffer = %NODE%.slot[%SLOT-IDX%].%MODEL-TYPE%[%CHANNEL-IDX%].defbuffer2,
                             type = CONSTANTS.FUNC_DC_VOLTAGE
                         },
             </snippet>
@@ -1479,6 +1481,7 @@
         <substitute name="SWEEP-DEVICE:SLOT-IDX">%SLOT-IDX%</substitute>
         <substitute name="SWEEP-DEVICE:CHANNEL-IDX">%CHANNEL-IDX%</substitute>
         <substitute name="SWEEP-DEVICE:MODEL">%MODEL%</substitute>
+        <substitute name="SWEEP-DEVICE:MODEL-TYPE">%MODEL-TYPE%</substitute>
         <substitute name="SWEEP-DEVICE:SFUNCTION">%SFUNCTION%</substitute>
         <substitute name="SWEEP-DEVICE:SRANGE">%SRANGE%</substitute>
         <substitute name="SWEEP-DEVICE:START">%START%</substitute>
@@ -1542,7 +1545,7 @@
             <condition name="SWEEP-DEVICE:MFUNCTION">FUNC_DC_CURRENT</condition>
             <snippet>
                         {
-                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                            buffer = %NODE%.slot[%SLOT-IDX%].%MODEL-TYPE%[%CHANNEL-IDX%].defbuffer1,
                             type = CONSTANTS.FUNC_DC_CURRENT
                         },
             </snippet>
@@ -1551,7 +1554,7 @@
             <condition name="SWEEP-DEVICE:MFUNCTION">FUNC_DC_VOLTAGE</condition>
             <snippet>
                         {
-                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                            buffer = %NODE%.slot[%SLOT-IDX%].%MODEL-TYPE%[%CHANNEL-IDX%].defbuffer1,
                             type = CONSTANTS.FUNC_DC_VOLTAGE
                         },
             </snippet>
@@ -1560,11 +1563,11 @@
             <condition name="SWEEP-DEVICE:MFUNCTION">FUNC_DC_IV_COMBINED</condition>
             <snippet>
                         {
-                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer1,
+                            buffer = %NODE%.slot[%SLOT-IDX%].%MODEL-TYPE%[%CHANNEL-IDX%].defbuffer1,
                             type = CONSTANTS.FUNC_DC_CURRENT
                         },
                         {
-                            buffer = %NODE%.slot[%SLOT-IDX%].smu[%CHANNEL-IDX%].defbuffer2,
+                            buffer = %NODE%.slot[%SLOT-IDX%].%MODEL-TYPE%[%CHANNEL-IDX%].defbuffer2,
                             type = CONSTANTS.FUNC_DC_VOLTAGE
                         },
             </snippet>

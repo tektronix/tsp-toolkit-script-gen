@@ -1,4 +1,3 @@
-
 use serde::{Deserialize, Serialize};
 
 use super::default_channel::CommonChanAttributes;
@@ -66,7 +65,6 @@ impl StartStopChannel {
         //List evaluation
 
         self.update_list(list_size);
-        self.common_chan_attributes.evaluate_source_limits(&self.start, &self.stop);
     }
 
     fn update_list(&mut self, list_size: usize) {
@@ -95,7 +93,7 @@ impl StartStopChannel {
             }
         }
 
-        for pf in self.list.iter_mut() {
+        for (_, pf) in self.list.iter_mut().enumerate() {
             if let Some(start_unit) = &pf.unit {
                 if start_unit == &self.common_chan_attributes.source_range.unit {
                     pf.value = self.common_chan_attributes.source_range.limit(pf.value);
@@ -125,7 +123,7 @@ impl StartStopChannel {
             println!("start.unit is None");
         }
 
-        if self.style.value == BaseMetadata::STYLE_LOG {
+        if self.style.value == BaseMetadata::STYLE_LOG.to_string() {
             // start and stop must be on the same side of asymptote (0)
             if self.start.value >= BaseMetadata::MIN_LOG_VALUE {
                 if self.stop.value < 0.0 {
@@ -166,7 +164,7 @@ impl StartStopChannel {
             println!("bias.unit is None");
         }
 
-        if self.style.value == BaseMetadata::STYLE_LOG {
+        if self.style.value == BaseMetadata::STYLE_LOG.to_string() {
             // Start and stop must be on the same side of asymptote (0)
             if self.stop.value >= BaseMetadata::MIN_LOG_VALUE {
                 if self.start.value < 0.0 {

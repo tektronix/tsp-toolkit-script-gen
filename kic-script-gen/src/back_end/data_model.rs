@@ -153,6 +153,8 @@ impl DataModel {
                 // remove unused and invalid channels
                 sweep_model.sweep_config.remove_unused_invalid_channels();
 
+                sweep_model.sweep_config.evaluate();
+
                 self.sweep_model = sweep_model.clone();
                 self.serialize_sweep_model(
                     &sweep_model,

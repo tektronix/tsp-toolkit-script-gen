@@ -7,7 +7,10 @@ use crate::{
         base_metadata::{BaseMetadata, Metadata},
         enum_metadata::MetadataEnum,
     },
-    model::{chan_data::start_stop_channel, sweep_data::parameters::{ParameterFloat, ParameterString}},
+    model::{
+        chan_data::start_stop_channel,
+        sweep_data::parameters::{ParameterFloat, ParameterString},
+    },
 };
 
 use super::{channel_range::ChannelRange, region_map::RegionMapMetadata};
@@ -270,7 +273,7 @@ impl CommonChanAttributes {
                 limiti.value = Self::limit(limiti.value, min, max);
             }
         }
-        
+
         if let Some((min, max)) = self.get_range_limits(metadata, "source.limitv") {
             if let Some(ref mut limitv) = self.source_limitv {
                 limitv.value = Self::limit(limitv.value, min, max);
@@ -280,7 +283,11 @@ impl CommonChanAttributes {
         println!("Source range value is {:?}", self.source_range.value);
     }
 
-    pub fn evaluate_source_limits(&mut self, start_value: &ParameterFloat, stop_value: &ParameterFloat) {
+    pub fn evaluate_source_limits(
+        &mut self,
+        start_value: &ParameterFloat,
+        stop_value: &ParameterFloat,
+    ) {
         if let Some((min, max)) = self.get_range_limits(&self.device.metadata, ":MODE") {
             if let Some(ref mut limiti) = self.source_limiti {
                 limiti.value = Self::limit(limiti.value, min, max);
@@ -290,15 +297,17 @@ impl CommonChanAttributes {
         if let Some(region_map) = self.get_region_map(&self.device.metadata, "psu.region") {
             //Do this only to the PSU for now
             let mut limit_value = start_value.value;
-            if stop_value.value.abs() > limit_value.abs() { //Use the largest absolute value
+            if stop_value.value.abs() > limit_value.abs() {
+                //Use the largest absolute value
                 limit_value = stop_value.value;
             }
             if let Some(ref mut limiti) = self.source_limiti {
                 let curr_limit = region_map.get_current_limit(limit_value);
-                limiti.value = Self::limit(limiti.value, curr_limit.get_min(), curr_limit.get_max());
+                limiti.value =
+                    Self::limit(limiti.value, curr_limit.get_min(), curr_limit.get_max());
             }
         }
-        
+
         if let Some((min, max)) = self.get_range_limits(&self.device.metadata, "source.limitv") {
             if let Some(ref mut limitv) = self.source_limitv {
                 limitv.value = Self::limit(limitv.value, min, max);

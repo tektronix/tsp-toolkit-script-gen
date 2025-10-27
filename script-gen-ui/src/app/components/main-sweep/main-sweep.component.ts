@@ -144,6 +144,13 @@ export class MainSweepComponent implements OnChanges {
       // Handle the change in sweepConfig here if needed
       this.updateAll();
       console.log('sweepConfig updated:', this.sweepConfig);
+      
+      // Re-scroll to active plot after data updates if there's an active component
+      if (this.activeComponent !== null && this.activeIndex !== null) {
+        setTimeout(() => {
+          this.scrollToPlotInPlotContainer(this.activeComponent!, this.activeIndex!);
+        }, 100); // Small delay to ensure view updates are complete
+      }
     }
   }
 
@@ -195,7 +202,10 @@ export class MainSweepComponent implements OnChanges {
     index: number
   ): void {
     if (this.plotContainer) {
-      this.plotContainer.scrollToPlot(componentType, index);
+      // Use setTimeout to ensure scroll happens after any pending view updates
+      setTimeout(() => {
+        this.plotContainer.scrollToPlot(componentType, index);
+      }, 0);
     }
   }
 

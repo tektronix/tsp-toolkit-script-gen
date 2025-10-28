@@ -101,11 +101,11 @@ export class MainSweepComponent implements OnChanges {
   }
 
   // Called when an input box loses focus
-  clearActiveComponent(): void {
-    this.activeComponent = null;
-    this.activeIndex = null;
-    this.isScrolled = false; // Reset scroll flag when clearing active component
-  }
+  // clearActiveComponent(): void {
+  //   this.activeComponent = null;
+  //   this.activeIndex = null;
+  //   this.isScrolled = false; // Reset scroll flag when clearing active component
+  // }
 
   showPopupBox = false;
   showTiming = false;
@@ -156,7 +156,7 @@ export class MainSweepComponent implements OnChanges {
       if (this.activeComponent !== null && this.activeIndex !== null) {
         setTimeout(() => {
           this.scrollToPlotInPlotContainer(this.activeComponent!, this.activeIndex!);
-        }, 100); // Small delay to ensure view updates are complete
+        }, 10); 
       }
     }
   }
@@ -187,7 +187,7 @@ export class MainSweepComponent implements OnChanges {
   ): void {
     // Skip scrolling if this is already the active component (clicked again)
     if (this.isScrolled === true) {
-      return; // Skip scrolling if clicking on already active component
+      return;
     }
 
     let component: BiasComponent | StepComponent | SweepComponent | undefined;

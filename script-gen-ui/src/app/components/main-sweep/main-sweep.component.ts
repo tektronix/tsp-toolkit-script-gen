@@ -72,6 +72,7 @@ export class MainSweepComponent implements OnChanges {
 
   activeComponent: 'bias' | 'step' | 'sweep' | null = null; // Tracks the active component
   activeIndex: number | null = null;
+  isScrolled = false;
 
   colorIndex = 0;
   colors: string[] = [
@@ -89,6 +90,11 @@ export class MainSweepComponent implements OnChanges {
     component: 'bias' | 'step' | 'sweep',
     index: number
   ): void {
+    // Reset scroll flag when switching to a different component
+    if (this.activeComponent !== component || this.activeIndex !== index) {
+      this.isScrolled = false;
+    }
+    
     this.activeComponent = component;
     this.activeIndex = index;
     console.log(`Active Component: ${component}, Index: ${index}`);
@@ -98,6 +104,7 @@ export class MainSweepComponent implements OnChanges {
   clearActiveComponent(): void {
     this.activeComponent = null;
     this.activeIndex = null;
+    this.isScrolled = false; // Reset scroll flag when clearing active component
   }
 
   showPopupBox = false;
@@ -178,6 +185,11 @@ export class MainSweepComponent implements OnChanges {
     componentType: 'bias' | 'step' | 'sweep',
     index: number
   ): void {
+    // Skip scrolling if this is already the active component (clicked again)
+    if (this.isScrolled === true) {
+      return; // Skip scrolling if clicking on already active component
+    }
+
     let component: BiasComponent | StepComponent | SweepComponent | undefined;
 
     if (componentType === 'bias') {
@@ -195,6 +207,7 @@ export class MainSweepComponent implements OnChanges {
         block: 'center', // Align to the center of the viewport
       });
     }
+    this.isScrolled = true;
   }
 
   scrollToPlotInPlotContainer(

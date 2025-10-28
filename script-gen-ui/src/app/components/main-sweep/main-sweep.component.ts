@@ -205,7 +205,7 @@ export class MainSweepComponent implements OnChanges {
       // Use setTimeout to ensure scroll happens after any pending view updates
       setTimeout(() => {
         this.plotContainer.scrollToPlot(componentType, index);
-      }, 0);
+      }, 100);
     }
   }
 

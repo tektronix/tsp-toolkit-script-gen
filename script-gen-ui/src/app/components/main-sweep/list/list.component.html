@@ -8,6 +8,7 @@
       <div style="width: 14vw">
         <app-input-numeric
           [label]="'Points/Steps'"
+          automationID="'numberOfPointsOrSteps'"
           [(ngModel)]="noOfPointsOrSteps"
           name="noOfPointsOrSteps"
           *ngIf="noOfPointsOrSteps !== undefined && noOfPointsOrSteps !== null"
@@ -36,6 +37,7 @@
               <td *ngFor="let sweep of listsWithNames">
                 <app-input-plain
                   [unit]="sweep.list[i].unit"
+                  automationID= "point-{{(i + 1)}}-{{sweep.chanName}}"
                   [(ngModel)]="sweep.list[i].value"
                   (keydown.enter)="onEnter()"
                   style="width: 95%"

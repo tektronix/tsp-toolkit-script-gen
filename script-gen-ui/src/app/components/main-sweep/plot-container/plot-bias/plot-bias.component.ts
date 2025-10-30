@@ -22,6 +22,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { BrowserModule } from '@angular/platform-browser';
 import { parseToDecimal } from '../../../controls/input-parser.util';
 import { PlotUtils } from '../plot-utils';
+import { StepGlobalParameters } from '../../../../model/sweep_data/stepSweepConfig';
 
 @Component({
   selector: 'app-plot-bias',
@@ -38,6 +39,7 @@ export class PlotBiasComponent
   // @Input() plotLayout: any;
   @Input() plotDataX: number[] = [];
   @Input() plotConfig: { staticPlot: boolean } | undefined;
+  @Input() stepGlobalParameters: StepGlobalParameters | undefined;
   plotDivID = '';
 
   @Input() isActive = false;
@@ -203,12 +205,20 @@ export class PlotBiasComponent
       this.bias = this.biasChannel.bias;
 
       this.plotDivID = `plotDiv${this.biasChannel.common_chan_attributes.chan_name}`;
-      for (let i = 0; i < 11; i++) {
-        this.plotData1.y[i] = this.bias?.value ?? 0;
-      }
     }
-    // console.log(this.plotDataX, this.plotData);
-    this.plotData1.x = this.plotDataX;
+
+    // Generate x-axis data if stepGlobalParameters are available
+    if (this.stepGlobalParameters) {
+      this.generateXAxisData();
+    } else {
+      // Fallback to plotDataX if provided
+      this.plotData1.x = this.plotDataX.length > 0 ? this.plotDataX : [0];
+    }
+
+    // Set constant y-values for bias
+    const biasValue = this.bias?.value ?? 0;
+    this.plotData1.y = new Array(this.plotData1.x.length).fill(biasValue);
+
     this.updatePlotLayout();
     this.plotData1.line.color = this.color;
 
@@ -221,6 +231,13 @@ export class PlotBiasComponent
       console.log('isActive changed:', changes['isActive'].currentValue);
       this.renderPlot(); // Re-render the plot when isActive changes
     }
+
+    // Re-generate x-axis data when stepGlobalParameters change
+    if (changes['stepGlobalParameters'] && this.stepGlobalParameters) {
+      this.generateXAxisData();
+      this.updatePlotLayout();
+    }
+
     this.observeThemeChanges();
   }
 
@@ -253,6 +270,26 @@ export class PlotBiasComponent
     this.plotLayout.width = (this.windowWidth * 58) / 100;
     this.renderPlot();
     console.log('Plot resized to:', this.plotLayout.width);
+  }
+
+  private generateXAxisData(): void {
+    if (!this.stepGlobalParameters) return;
+
+    const numSteps = this.stepGlobalParameters.step_points?.value ?? 1;
+    const delayTime = this.stepGlobalParameters.step_to_sweep_delay?.value ?? 0;
+
+    // Generate x-axis data using the same formula as step and sweep components
+    const xData: number[] = [];
+    for (let i = 0; i <= numSteps; i++) {
+      xData.push(i * (1 + delayTime));
+    }
+
+    this.plotData1.x = xData;
+
+    // Calculate total time and dtick (same as step/sweep components)
+    const totalTime = numSteps * (1 + delayTime);
+    this.plotLayout.xaxis.dtick = totalTime / 10;
+    this.plotLayout.xaxis2.dtick = totalTime / 10;
   }
 
   private updatePlotLayout(): void {

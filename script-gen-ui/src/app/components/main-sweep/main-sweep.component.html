@@ -100,8 +100,6 @@
     <div *ngIf="isBiasExpanded">
       <div *ngFor="let biasChannel of biasChannels; let i = index">
         <app-bias
-          (focus)="setActiveComponent('bias', i)"
-          (blur)="clearActiveComponent()"
           (emitBiasChannelData)="updateBiasChannelsConfig($event)"
           (emitBiasExpanderState)="
             handleChannelExpanderStateChange($event.uuid, $event.isExpanded)

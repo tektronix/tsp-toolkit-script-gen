@@ -72,6 +72,7 @@ export class MainSweepComponent implements OnChanges {
 
   activeComponent: 'bias' | 'step' | 'sweep' | null = null; // Tracks the active component
   activeIndex: number | null = null;
+  isScrolled = false;
 
   colorIndex = 0;
   colors: string[] = [
@@ -89,16 +90,22 @@ export class MainSweepComponent implements OnChanges {
     component: 'bias' | 'step' | 'sweep',
     index: number
   ): void {
+    // Reset scroll flag when switching to a different component
+    if (this.activeComponent !== component || this.activeIndex !== index) {
+      this.isScrolled = false;
+    }
+    
     this.activeComponent = component;
     this.activeIndex = index;
     console.log(`Active Component: ${component}, Index: ${index}`);
   }
 
   // Called when an input box loses focus
-  clearActiveComponent(): void {
-    this.activeComponent = null;
-    this.activeIndex = null;
-  }
+  // clearActiveComponent(): void {
+  //   this.activeComponent = null;
+  //   this.activeIndex = null;
+  //   this.isScrolled = false; // Reset scroll flag when clearing active component
+  // }
 
   showPopupBox = false;
   showTiming = false;
@@ -144,6 +151,13 @@ export class MainSweepComponent implements OnChanges {
       // Handle the change in sweepConfig here if needed
       this.updateAll();
       console.log('sweepConfig updated:', this.sweepConfig);
+      
+      // Re-scroll to active plot after data updates if there's an active component
+      if (this.activeComponent !== null && this.activeIndex !== null) {
+        setTimeout(() => {
+          this.scrollToPlotInPlotContainer(this.activeComponent!, this.activeIndex!);
+        }, 10); 
+      }
     }
   }
 
@@ -171,6 +185,11 @@ export class MainSweepComponent implements OnChanges {
     componentType: 'bias' | 'step' | 'sweep',
     index: number
   ): void {
+    // Skip scrolling if this is already the active component (clicked again)
+    if (this.isScrolled === true) {
+      return;
+    }
+
     let component: BiasComponent | StepComponent | SweepComponent | undefined;
 
     if (componentType === 'bias') {
@@ -188,6 +207,7 @@ export class MainSweepComponent implements OnChanges {
         block: 'center', // Align to the center of the viewport
       });
     }
+    this.isScrolled = true;
   }
 
   scrollToPlotInPlotContainer(
@@ -195,7 +215,10 @@ export class MainSweepComponent implements OnChanges {
     index: number
   ): void {
     if (this.plotContainer) {
-      this.plotContainer.scrollToPlot(componentType, index);
+      // Use setTimeout to ensure scroll happens after any pending view updates
+      setTimeout(() => {
+        this.plotContainer.scrollToPlot(componentType, index);
+      }, 100);
     }
   }
 

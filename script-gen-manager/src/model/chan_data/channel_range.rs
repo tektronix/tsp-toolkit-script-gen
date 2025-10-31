@@ -60,7 +60,7 @@ impl ChannelRange {
             }
         }
         //TODO: error handling?
-        return result;
+        result
     }
 
     pub fn get_scaled_value(&self) -> Option<f64> {
@@ -69,7 +69,7 @@ impl ChannelRange {
         let mut suffix_part = String::new();
 
         for c in self.value.chars() {
-            if c.is_digit(10) || c == '.' {
+            if c.is_ascii_digit() || c == '.' {
                 numeric_part.push(c);
             } else {
                 suffix_part.push(c);
@@ -83,7 +83,7 @@ impl ChannelRange {
         let numeric_value: f64 = numeric_part.parse().ok()?;
 
         // Extract the prefix (e.g., "m", "k")
-        let prefix = self.extract_prefix(&suffix_part);
+        let prefix = self.extract_prefix(suffix_part);
 
         // Determine the scaling factor based on the prefix
         let scaling_factor = match prefix.as_str() {

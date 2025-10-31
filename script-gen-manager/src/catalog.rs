@@ -9,6 +9,12 @@ pub struct Catalog {
     pub function_metadata_map: HashMap<String, Group>,
 }
 
+impl Default for Catalog {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Catalog {
     pub fn new() -> Self {
         Catalog {
@@ -26,7 +32,7 @@ impl Catalog {
                     self.function_metadata_map.insert(item.type_.clone(), item);
                 }
             }
-            Err(e) => {
+            Err(_e) => {
                 //eprintln!("Error: {:?}", e);
                 //return Err(e.into());
             }

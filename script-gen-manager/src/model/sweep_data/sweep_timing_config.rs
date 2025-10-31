@@ -16,6 +16,12 @@ pub struct SweepTimingConfig {
     pub psu_timing: PsuTiming,
 }
 
+impl Default for SweepTimingConfig {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SweepTimingConfig {
     pub fn new() -> Self {
         SweepTimingConfig {
@@ -40,6 +46,12 @@ pub struct SmuTiming {
     pub measure_auto_delay: ParameterString,
     pub measure_delay: ParameterFloat,
     pub nplc_type: ParameterString,
+}
+
+impl Default for SmuTiming {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SmuTiming {
@@ -139,6 +151,12 @@ impl SmuTiming {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PsuTiming {
     rate: ParameterString,
+}
+
+impl Default for PsuTiming {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl PsuTiming {

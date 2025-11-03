@@ -182,6 +182,7 @@ impl DataModel {
                     request_type: request_type.to_string(),
                     additional_info: additional_info.to_string(),
                     json_value: json_str,
+                    request_id: None,
                 };
                 serde_json::to_string(&ipc_data).unwrap_or_else(|e| {
                     println!("Failed to serialize IpcData: {e}");
@@ -200,6 +201,7 @@ impl DataModel {
             request_type: request_type.to_string(),
             additional_info: additional_info.to_string(),
             json_value: "{}".to_string(),
+            request_id: None,
         };
         serde_json::to_string(&ipc_data).unwrap_or_else(|e| {
             println!("Failed to serialize empty IpcData: {e}");

@@ -18,6 +18,35 @@ use std::path::Path;
 use super::data_model::DataModel;
 use crate::back_end::ipc_data::IpcData;
 
+// Helper function to send response with request_id
+async fn send_response_with_id(
+    session: &mut Session, 
+    response: String, 
+    request_id: Option<String>
+) -> Result<(), actix_ws::Closed> {
+    let final_response = if let Some(id) = request_id {
+        // Parse the response and add request_id
+        match serde_json::from_str::<serde_json::Value>(&response) {
+            Ok(mut json_response) => {
+                json_response["request_id"] = serde_json::Value::String(id);
+                serde_json::to_string(&json_response).unwrap_or(response)
+            }
+            Err(_) => {
+                // If response is not JSON, create a wrapper
+                let wrapper = serde_json::json!({
+                    "request_id": id,
+                    "data": response
+                });
+                serde_json::to_string(&wrapper).unwrap_or(response)
+            }
+        }
+    } else {
+        response
+    };
+    
+    session.text(final_response).await
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct ScriptPath {
     pub session: String,
@@ -173,8 +202,15 @@ async fn ws_index(
                     }
                     match serde_json::from_str::<IpcData>(&msg) {
                         Ok(ipc_data) => {
+                            let request_id = ipc_data.request_id.clone();
+                            
                             if ipc_data.request_type == "get_data" {
                                 println!("instrument data requested");
+                                let response = serde_json::json!({
+                                    "status": "success",
+                                    "message": "Data request received"
+                                }).to_string();
+                                let _ = send_response_with_id(&mut session, response, request_id).await;
                             } else if ipc_data.request_type == "evaluate_data" {
                                 let mut data_model = app_state.data_model.lock().await;
                                 let response =
@@ -183,7 +219,7 @@ async fn ws_index(
                                 if let Err(e) = gen_script_tx.send(()) {
                                     eprintln!("Failed to send signal: {e}");
                                 }
-                                session.text(response).await.unwrap();
+                                let _ = send_response_with_id(&mut session, response, request_id).await;
                             } else if ipc_data.request_type == "reallocation" {
                                 let mut data_model = app_state.data_model.lock().await;
                                 let response = data_model.add_remove_channel(ipc_data);
@@ -192,7 +228,7 @@ async fn ws_index(
                                 if let Err(e) = gen_script_tx.send(()) {
                                     eprintln!("Failed to send signal: {e}");
                                 }
-                                session.text(response).await.unwrap();
+                                let _ = send_response_with_id(&mut session, response, request_id).await;
                             } else if ipc_data.request_type == "open_script" {
                                 // Generate script if needed
                                 if let Err(e) = gen_script_tx.send(()) {
@@ -202,17 +238,37 @@ async fn ws_index(
                                     request_type: "open_script".to_string(),
                                     additional_info: "".to_string(),
                                     json_value: "{}".to_string(),
+                                    request_id: request_id.clone(),
                                 };
                                 let response = serde_json::to_string(&res)
                                     .expect("Failed to serialize response");
 
-                                session.text(response).await.unwrap();
+                                let _ = send_response_with_id(&mut session, response, request_id).await;
                             } else {
                                 println!("Unknown request type: {}", ipc_data.request_type);
+                                let error_response = serde_json::json!({
+                                    "error": "Unknown request type",
+                                    "request_type": ipc_data.request_type
+                                }).to_string();
+                                let _ = send_response_with_id(&mut session, error_response, request_id).await;
                             }
                         }
                         Err(e) => {
                             eprintln!("Failed to deserialize IpcData: {e}");
+                            
+                            // Try to extract request_id from raw JSON for error response
+                            let request_id = if let Ok(value) = serde_json::from_str::<serde_json::Value>(&msg) {
+                                value.get("request_id").and_then(|v| v.as_str()).map(|s| s.to_string())
+                            } else {
+                                None
+                            };
+                            
+                            let error_response = serde_json::json!({
+                                "error": "Invalid message format",
+                                "details": e.to_string()
+                            }).to_string();
+                            
+                            let _ = send_response_with_id(&mut session, error_response, request_id).await;
                         }
                     }
                 }
@@ -360,18 +416,18 @@ pub async fn start(mut script_model: ScriptModel) -> anyhow::Result<()> {
                         eprintln!("Failed to send signal: {e}");
                     }
                 }
-                let mut session = app_state.session.lock().await;
-                if let Some(session) = session.as_mut() {
-                    session.text(response).await.unwrap();
+                let mut session_guard = app_state.session.lock().await;
+                if let Some(session) = session_guard.as_mut() {
+                    let _ = send_response_with_id(session, response, None).await;
                 }
             } else if trimmed_line.contains("refresh") {
                 println!("instrument data requested"); // refreshing by initiating session again does not affect the JSON state
             } else if trimmed_line.contains("reset") {
                 let mut data_model = app_state.data_model.lock().await;
                 let response = data_model.reset_sweep_config();
-                let mut session = app_state.session.lock().await;
-                if let Some(session) = session.as_mut() {
-                    session.text(response).await.unwrap();
+                let mut session_guard = app_state.session.lock().await;
+                if let Some(session) = session_guard.as_mut() {
+                    let _ = send_response_with_id(session, response, None).await;
                 }
                 println!("instrument data requested"); // getting the system configuration for new session
             } else if trimmed_line.contains("request_type") {
@@ -388,9 +444,9 @@ pub async fn start(mut script_model: ScriptModel) -> anyhow::Result<()> {
                                         let response = data_model
                                             .process_data_from_saved_config(sweep_model_str);
                                         println!("processed data from saved config {response}");
-                                        let mut session = app_state.session.lock().await;
-                                        if let Some(session) = session.as_mut() {
-                                            session.text(response).await.unwrap();
+                                        let mut session_guard = app_state.session.lock().await;
+                                        if let Some(session) = session_guard.as_mut() {
+                                            let _ = send_response_with_id(session, response, None).await;
                                         }
                                     } else {
                                         eprintln!("Failed to serialize sweep_model to string");

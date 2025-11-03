@@ -94,7 +94,7 @@ export class MainSweepComponent implements OnChanges {
     if (this.activeComponent !== component || this.activeIndex !== index) {
       this.isScrolled = false;
     }
-    
+
     this.activeComponent = component;
     this.activeIndex = index;
     console.log(`Active Component: ${component}, Index: ${index}`);
@@ -140,7 +140,7 @@ export class MainSweepComponent implements OnChanges {
   statusMsg: StatusMsg | undefined;
   private statusMsgTimeout: number | undefined;
 
-  constructor(private webSocketService: WebSocketService) {}
+  constructor(private webSocketService: WebSocketService) { }
 
   // ngOnInit() {
   //   this.updateSweepListsWithNames();
@@ -151,12 +151,12 @@ export class MainSweepComponent implements OnChanges {
       // Handle the change in sweepConfig here if needed
       this.updateAll();
       console.log('sweepConfig updated:', this.sweepConfig);
-      
+
       // Re-scroll to active plot after data updates if there's an active component
       if (this.activeComponent !== null && this.activeIndex !== null) {
         setTimeout(() => {
           this.scrollToPlotInPlotContainer(this.activeComponent!, this.activeIndex!);
-        }, 10); 
+        }, 10);
       }
     }
   }
@@ -533,7 +533,7 @@ export class MainSweepComponent implements OnChanges {
     );
   }
 
-  submitSweepConfigAsJson(requestType: string, additionalInfo: string) {
+  async submitSweepConfigAsJson(requestType: string, additionalInfo: string) {
     if (this.sweepConfig) {
       const sweepModel = new SweepModel({ sweep_config: this.sweepConfig });
       const sweepModelJson = JSON.stringify(sweepModel);
@@ -545,7 +545,21 @@ export class MainSweepComponent implements OnChanges {
       });
 
       const ipcDataJson = JSON.stringify(ipcData);
-      this.webSocketService.send(ipcDataJson);
+
+      try {
+        const response = await this.webSocketService.sendWithResponse(
+          ipcDataJson, 
+          0 // 10 milisecond timeout
+
+        );
+        console.log('Server response:', response);
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('timeout')) {
+          console.log('Request timed out');
+        } else {
+          console.log('Request failed:', error instanceof Error ? error.message : String(error));
+        }
+      }
       //console.log('Submitted combined data:', sweepModelJson);
     }
   }

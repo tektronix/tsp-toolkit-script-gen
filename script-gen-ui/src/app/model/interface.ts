@@ -4,6 +4,7 @@ export interface IIpcDataInterface {
   request_type: string;
   additional_info: string;
   json_value: string;
+  request_id?: string;
 }
 
 export interface IParameterInt {

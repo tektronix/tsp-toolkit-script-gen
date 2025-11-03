@@ -1,9 +1,8 @@
 <div>
+  <app-banner-display class="global-banner"></app-banner-display>
+
   <div>
-    <app-main-sweep
-      *ngIf="isMainSweepVisible"
-      [sweepConfig]="sweepConfig"
-    ></app-main-sweep>
+    <app-main-sweep *ngIf="isMainSweepVisible" [sweepConfig]="sweepConfig"></app-main-sweep>
     <app-empty-config *ngIf="!isMainSweepVisible"></app-empty-config>
   </div>
 </div>

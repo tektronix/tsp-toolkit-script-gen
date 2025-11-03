@@ -35,9 +35,8 @@ import { BrowserModule } from '@angular/platform-browser';
 import { PlotContainerComponent } from './plot-container/plot-container.component';
 import { InputNumericComponent } from '../controls/input-numeric/input-numeric.component';
 import { ListComponent } from './list/list.component';
-import { BannerDisplayComponent } from './banner-display/banner-display.component';
-import { StatusMsg } from '../../model/sweep_data/statusMsg';
 import { TooltipComponent } from './tooltip/tooltip.component';
+import { StatusService } from '../../services/status.service';
 
 @Component({
   selector: 'app-main-sweep',
@@ -54,9 +53,8 @@ import { TooltipComponent } from './tooltip/tooltip.component';
     TimingComponent,
     PlotContainerComponent,
     ListComponent,
-    BannerDisplayComponent,
     TooltipComponent
-  ],
+],
   templateUrl: './main-sweep.component.html',
   styleUrls: ['./main-sweep.component.scss'],
 })
@@ -137,10 +135,8 @@ export class MainSweepComponent implements OnChanges {
   isStepExpanded = false;
   isSweepExpanded = false;
   channelsExpanderState: Map<string, boolean> = new Map<string, boolean>();
-  statusMsg: StatusMsg | undefined;
-  private statusMsgTimeout: number | undefined;
 
-  constructor(private webSocketService: WebSocketService) {}
+  constructor(private webSocketService: WebSocketService, private statusService: StatusService) {}
 
   // ngOnInit() {
   //   this.updateSweepListsWithNames();
@@ -322,16 +318,7 @@ export class MainSweepComponent implements OnChanges {
 
   updateStatusMsg() {
     if (this.sweepConfig && this.sweepConfig.status_msg) {
-      this.statusMsg = this.sweepConfig.status_msg;
-
-      // Clear any previous timeout
-      if (this.statusMsgTimeout !== undefined) {
-        window.clearTimeout(this.statusMsgTimeout);
-      }
-      // Set a new timeout to clear the statusMsg after 5 seconds
-      this.statusMsgTimeout = window.setTimeout(() => {
-        this.statusMsg = undefined;
-      }, 5000);
+      this.statusService.showTemporary(this.sweepConfig.status_msg, 5000);
     }
   }
 

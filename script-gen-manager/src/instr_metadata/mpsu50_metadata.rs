@@ -43,10 +43,10 @@ impl Mpsu50Metadata {
         // when pulse mode is off
         let exclude_i = NumberLimit::new(-10.0e-9, 10.0e-9, false, None);
         let mut region_map_metadata = RegionMapMetadata::new(None, exclude_i);
-        
+
         region_map_metadata.add_region(1, 0.0, 0.0, 10.0, max_supported_current);
         region_map_metadata.add_region(1, 0.0, 0.0, -10.0, -max_supported_current);
-        
+
         Self::add_1st_quadrant_curved_region(10.0, 50.0, 0.001, 0.0, &mut region_map_metadata); //First quadrant curve
         Self::add_3rd_quadrant_curved_region(-10.0, -50.0, -0.001, 0.0, &mut region_map_metadata); //Third quadrant curve
 

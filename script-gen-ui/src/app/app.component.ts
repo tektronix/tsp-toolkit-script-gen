@@ -7,10 +7,14 @@ import { SweepModel } from './model/sweep_data/sweepModel';
 import { IpcData } from './model/ipcData';
 import { MainSweepComponent } from './components/main-sweep/main-sweep.component';
 import { EmptyConfigComponent } from './components/empty-config/empty-config.component';
+import { BannerDisplayComponent } from './components/main-sweep/banner-display/banner-display.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { BrowserModule } from '@angular/platform-browser';
+import { StatusService } from './services/status.service';
+import { StatusMsg } from './model/sweep_data/statusMsg';
+import { StatusType } from './model/interface';
 
 
 declare const acquireVsCodeApi: unknown;
@@ -27,7 +31,8 @@ const vscode = typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : { p
     MatIconModule,
     MainSweepComponent,
     EmptyConfigComponent,
-  ],
+    BannerDisplayComponent
+],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })
@@ -39,7 +44,7 @@ export class AppComponent implements OnInit, OnDestroy {
   sweepConfig: SweepConfig | undefined;
   isMainSweepVisible = false;
 
-  constructor(private webSocketService: WebSocketService) {}
+  constructor(private webSocketService: WebSocketService, private statusService: StatusService) {}
 
   ngOnInit() {
     this.webSocketService.connect();
@@ -58,6 +63,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   processServerData(message: string): void {
+     this.statusService.show(new StatusMsg({ message: "Loading data...", status_type: StatusType.Info, time_stamp: Date.now().toString() }))
     try {
       // Parse the message as an IpcData object
       const ipcData: IpcData = JSON.parse(message);
@@ -67,7 +73,9 @@ export class AppComponent implements OnInit, OnDestroy {
         ipcData.request_type === 'initial_response' ||
         ipcData.request_type === 'evaluated_response' ||
         ipcData.request_type === 'reset_response'
-      ) {
+      )
+      {
+        vscode.postMessage({ command: 'update_session' , payload: message});
         // Parse the json_value as the SweepModel
         const data = JSON.parse(ipcData.json_value);
         if (data.sweep_model) {
@@ -77,7 +85,7 @@ export class AppComponent implements OnInit, OnDestroy {
           // Update visibility based on the device list
           if (this.sweepConfig.device_list.length > 0) {
             this.isMainSweepVisible = true;
-            vscode.postMessage({ command: 'update_session' , payload: message});
+            
           }
         } else {
           console.error('sweep_model property is missing in the data');
@@ -97,6 +105,7 @@ export class AppComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.log('Error parsing server data:', error);
     }
+     this.statusService.clear()
   }
 
   ngOnDestroy(): void {

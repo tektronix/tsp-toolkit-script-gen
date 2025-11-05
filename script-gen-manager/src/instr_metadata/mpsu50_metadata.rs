@@ -22,8 +22,18 @@ impl Mpsu50Metadata {
 
         //TODO: verify for Trebuchet PSU (model: MPSU50-2ST)
         // Add ranges
-        base.add_range("source.levelv".to_string(), -50.1, 50.1);
-        base.add_range("source.leveli".to_string(), -5.0, 5.0);
+        let max_supported_voltage = 50.1;
+        let max_supported_current = 5.0;
+        base.add_range(
+            "source.levelv".to_string(),
+            -max_supported_voltage,
+            max_supported_voltage,
+        );
+        base.add_range(
+            "source.leveli".to_string(),
+            -max_supported_current,
+            max_supported_current,
+        );
 
         base.add_range("source.limiti".to_string(), 0.01, 5.1);
 
@@ -33,17 +43,58 @@ impl Mpsu50Metadata {
         // when pulse mode is off
         let exclude_i = NumberLimit::new(-10.0e-9, 10.0e-9, false, None);
         let mut region_map_metadata = RegionMapMetadata::new(None, exclude_i);
-        region_map_metadata.add_region(1, 0.0, 0.0, 50.0, 1.0);
-        region_map_metadata.add_region(1, 0.0, 0.0, 10.0, 5.0);
-        region_map_metadata.add_region(1, 0.0, 0.0, -10.0, -5.0);
-        region_map_metadata.add_region(1, 0.0, 0.0, -50.0, -1.0);
-        base.add_region_map("psu.region", region_map_metadata);
+
+        region_map_metadata.add_region(1, 0.0, 0.0, 10.0, max_supported_current);
+        region_map_metadata.add_region(1, 0.0, 0.0, -10.0, -max_supported_current);
+
+        Self::add_1st_quadrant_curved_region(10.0, 50.0, 0.001, 0.0, &mut region_map_metadata); //First quadrant curve
+        Self::add_3rd_quadrant_curved_region(-10.0, -50.0, -0.001, 0.0, &mut region_map_metadata); //Third quadrant curve
+
+        base.add_region_map("50 V", region_map_metadata); //Use source range to identify region map
 
         base.add_overrange_scale(1.002);
 
         Mpsu50Metadata {
             base,
             // Initialize additional properties
+        }
+    }
+
+    fn add_1st_quadrant_curved_region(
+        voltage_start: f64,
+        voltage_max: f64,
+        step: f64,    // Use the step parameter to finely control the approximation
+        current: f64, // Fixed current for the curve
+        region_map_metadata: &mut RegionMapMetadata,
+    ) {
+        // Add region maps iteratively as small rectangles to approximate the curve
+
+        let mut v1 = voltage_start;
+
+        while v1.abs() <= voltage_max.abs() {
+            let v2 = v1 + step;
+            let i2 = voltage_max / v2.abs();
+            region_map_metadata.add_region(1, v1, current, v2, i2);
+            v1 += step;
+        }
+    }
+
+    fn add_3rd_quadrant_curved_region(
+        voltage_start: f64,
+        voltage_max: f64,
+        step: f64,    // Use the step parameter to finely control the approximation
+        current: f64, // Fixed current for the curve
+        region_map_metadata: &mut RegionMapMetadata,
+    ) {
+        // Add region maps iteratively as small rectangles to approximate the curve
+
+        let mut v1 = voltage_start;
+
+        while v1.abs() <= voltage_max.abs() {
+            let v2 = v1 + step;
+            let i2 = voltage_max / v2.abs();
+            region_map_metadata.add_region(1, v2, i2, v1, current);
+            v1 += step;
         }
     }
 }

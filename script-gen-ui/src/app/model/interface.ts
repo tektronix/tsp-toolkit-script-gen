@@ -113,9 +113,9 @@ export interface IDevice {
 }
 
 export enum StatusType {
-  Info,
-  Warning,
-  Error,
+  Info = "Info",
+  Warning = "Warning",
+  Error = "Error",
 }
 
 export interface IStatusMsg {

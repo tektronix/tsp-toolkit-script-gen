@@ -22,7 +22,7 @@ export class WebSocketService {
     };
 
     this.socket.onmessage = (event) => {
-      console.log('Message received from server:', event.data);
+      //console.log('Message received from server:', event.data);
       this.messageSubject.next(event.data);
     };
 

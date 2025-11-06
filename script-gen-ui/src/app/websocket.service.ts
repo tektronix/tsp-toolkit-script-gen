@@ -2,6 +2,9 @@ import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { IpcData } from './model/ipcData';
 import { v4 as uuidv4 } from 'uuid';
+import { StatusMsg } from './model/sweep_data/statusMsg';
+import { StatusType } from './model/interface';
+import { StatusService } from './services/status.service';
 
 @Injectable({
   providedIn: 'root',
@@ -10,8 +13,7 @@ export class WebSocketService {
   private socket: WebSocket;
   private messageSubject: Subject<string> = new Subject<string>();
   private readonly CHUNK_SIZE = 30 * 1024; // 30 KB per chunk
-
-  constructor() {
+  constructor(private statusService: StatusService) {
     this.socket = new WebSocket('ws://localhost:27950/ws');
   }
 
@@ -80,8 +82,14 @@ export class WebSocketService {
         'WebSocket is not open. ReadyState:',
         this.socket.readyState
       );
-    }
+      const msg = new StatusMsg({
+        message: "WebSocket connection failed. Please close and relaunch the TSP Script Generation webView UI", 
+        status_type: StatusType.Error, 
+        time_stamp: Date.now().toString()
+      });
+      this.statusService.show(msg);
   }
+}
 
   getMessages(): Observable<string> {
     return this.messageSubject.asObservable();

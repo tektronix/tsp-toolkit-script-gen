@@ -129,6 +129,11 @@ impl SweepModel {
                 &instr_name,
             );
 
+            self.set_measure_range(
+                bias_channel.common_chan_attributes.meas_range.clone(),
+                &instr_name,
+            );
+
             let val = self
                 .get_function_value(&bias_channel.common_chan_attributes.meas_function)
                 .clone();
@@ -199,6 +204,16 @@ impl SweepModel {
 
         self.val_replacement_map
             .insert(instr_name.clone() + ":SRANGE", val);
+    }
+
+    fn set_measure_range(&mut self, channel_range: ChannelRange, instr_name: &String) {
+        let mut val = self.format_range(channel_range.clone());
+
+        if channel_range.is_range_auto() {
+            val = "CONSTANTS.AUTO".to_string();
+        }
+        self.val_replacement_map
+            .insert(instr_name.clone() + ":MRANGE", val);
     }
 
     //Returns the value used in the script
@@ -278,6 +293,15 @@ impl SweepModel {
                     .start_stop_channel
                     .common_chan_attributes
                     .source_range
+                    .clone(),
+                &instr_name,
+            );
+
+            self.set_measure_range(
+                step_channel
+                    .start_stop_channel
+                    .common_chan_attributes
+                    .meas_range
                     .clone(),
                 &instr_name,
             );
@@ -491,6 +515,15 @@ impl SweepModel {
                     .start_stop_channel
                     .common_chan_attributes
                     .source_range
+                    .clone(),
+                &instr_name,
+            );
+
+            self.set_measure_range(
+                sweep_channel
+                    .start_stop_channel
+                    .common_chan_attributes
+                    .meas_range
                     .clone(),
                 &instr_name,
             );

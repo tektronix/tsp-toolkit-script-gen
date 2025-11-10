@@ -758,7 +758,7 @@ impl SweepModel {
     ///
     /// # Returns
     /// A formatted string representing the range value. If the range is set to auto or follow limit,
-    /// the original value is returned. Otherwise, the scaled value is formatted using the `format` method.
+    /// the original value is returned. Otherwise, the scaled value is formatted with 3 decimal places.
     fn format_range(&self, range: ChannelRange) -> String {
         let mut result = String::from("NaN");
         if range.is_range_auto() || range.is_range_follow_limiti() {
@@ -766,7 +766,12 @@ impl SweepModel {
         } else {
             let range_value = range.get_scaled_value();
             if let Some(value) = range_value {
-                result = self.format(value);
+                // Format with 3 decimal places, using scientific notation if needed
+                if value.abs() < 1e-3 || value.abs() >= 1e3 {
+                    result = format!("{:.3e}", value);
+                } else {
+                    result = format!("{:.3}", value);
+                }
             }
         }
         result

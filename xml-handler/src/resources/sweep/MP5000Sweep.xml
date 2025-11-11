@@ -570,6 +570,11 @@
                                     step_source_complete_events)
                             end
 
+                            -- Adding step-to-sweep-delay    --
+                            if sweep_source_event ~= nil then
+                                tm_add.delay.constant(self.trigger_model, block.wait_sweep, stepToSweepDelay)
+                            end
+
                             -- Notify other channels that the steppers are done stepping
                             tm_add.notify(self.trigger_model, block.step_notify, self.event_source)
 
@@ -1278,7 +1283,7 @@
             local numberOfSteps    = %STEP-COUNT%
             local numberOfSweeps   = %SWEEP-POINTS%
 
-            local stepToSweepDelay = %STEP-TO-SWEEP-DELAY%
+            stepToSweepDelay = %STEP-TO-SWEEP-DELAY%
 
             local nplc             = %NPLC%
 

@@ -19,7 +19,7 @@ pub struct CommonChanAttributes {
     pub source_function: ParameterString,
     pub meas_function: ParameterString,
     pub source_range: ChannelRange,
-    meas_range: ChannelRange,
+    pub meas_range: ChannelRange,
     pub source_limiti: Option<ParameterFloat>,
     pub source_limitv: Option<ParameterFloat>,
     pub sense_mode: Option<ParameterString>,
@@ -153,6 +153,7 @@ impl CommonChanAttributes {
 
     fn evaluate_measure_function(&mut self) {
         if self.meas_function.value == self.source_function.value {
+            self.meas_range.unit = self.source_range.unit.clone();
             self.meas_range.range = self.source_range.range.clone();
             self.meas_range.value = self.source_range.value.clone();
         } else {
@@ -163,6 +164,7 @@ impl CommonChanAttributes {
     }
 
     fn set_meas_range(&mut self, metadata: &MetadataEnum) {
+        self.meas_range.unit = self.determine_units(&self.meas_function.value);
         if self.meas_function.value == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
             self.meas_range.range = self.get_range(metadata, "source_meas.rangev");
         } else {

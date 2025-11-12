@@ -98,6 +98,7 @@
         ---@field nplc number | nil
         ---@field aperture number | nil
         ---@field rate `CONSTANTS.RATE_FAST` | `CONSTANTS.RATE_NORMAL` | nil
+        ---@field range number | "AUTO" The range to use, or Auto 
         -- ---@field autozero boolean Whether autozero should be turned on or not
         ---@field count integer The number of measurments to take
         -- ---@field filter_enable boolean Whether to enable the filter or not
@@ -385,6 +386,20 @@
                                 self.channel.measure.nplc = self.measure.nplc
                             elseif self.measure.aperture ~= nil then
                                 self.channel.measure.aperture = self.measure.aperture
+                            end
+                            -- range
+                            if self.measure.range == CONSTANTS.AUTO then
+                                if self.measure.func == CONSTANTS.FUNC_DC_VOLTAGE then
+                                    self.channel.measure.autorangev = self.slot.smu.ON
+                                elseif self.measure.func == CONSTANTS.FUNC_DC_CURRENT then
+                                    self.channel.measure.autorangei = self.slot.smu.ON
+                                end
+                            else
+                                if self.measure.func == CONSTANTS.FUNC_DC_VOLTAGE then
+                                    self.channel.measure.rangev = self.measure.range
+                                elseif self.measure.func == CONSTANTS.FUNC_DC_CURRENT then
+                                    self.channel.measure.rangei = self.measure.range
+                                end
                             end
                             -- count
                             self.channel.measure.count = self.measure.count
@@ -791,6 +806,20 @@
                                     self.channel.measure.rate = self.channel.RATE_FAST
                                 elseif self.measure.rate == CONSTANTS.RATE_NORMAL then
                                     self.channel.measure.rate = self.channel.RATE_NORMAL
+                                end
+                            end
+                            -- range
+                            if self.measure.range == CONSTANTS.AUTO then
+                                if self.measure.func == CONSTANTS.FUNC_DC_VOLTAGE then
+                                    self.channel.measure.autorangev = self.slot.psu.ON
+                                elseif self.measure.func == CONSTANTS.FUNC_DC_CURRENT then
+                                    self.channel.measure.autorangei = self.slot.psu.ON
+                                end
+                            else
+                                if self.measure.func == CONSTANTS.FUNC_DC_VOLTAGE then
+                                    self.channel.measure.rangev = self.measure.range
+                                elseif self.measure.func == CONSTANTS.FUNC_DC_CURRENT then
+                                    self.channel.measure.rangei = self.measure.range
                                 end
                             end
                             -- count
@@ -1314,6 +1343,7 @@
         <substitute name="BIAS-DEVICE:SRANGE">%SRANGE%</substitute>
         <substitute name="BIAS-DEVICE:BIAS">%BIAS%</substitute>
         <substitute name="BIAS-DEVICE:MFUNCTION">%MFUNCTION%</substitute>
+        <substitute name="BIAS-DEVICE:MRANGE">%MRANGE%</substitute>
         <substitute name="BIAS-DEVICE:SENSE">%SENSE%</substitute>
         <substitute name="BIAS-DEVICE:LIMITI">%LIMITI%</substitute>
         <substitute name="BIAS-DEVICE:LIMITV">%LIMITV%</substitute>
@@ -1334,6 +1364,7 @@
                 },
                 measure = {
                     nplc = nplc,
+                    range = %MRANGE%,
                     aperture = aperture,
                     count = measure_count,
                     delay = measure_delay,
@@ -1391,6 +1422,7 @@
         <substitute name="STEP-DEVICE:START">%START%</substitute>
         <substitute name="STEP-DEVICE:STOP">%STOP%</substitute>
         <substitute name="STEP-DEVICE:LIST">%LIST%</substitute>
+        <substitute name="STEP-DEVICE:MRANGE">%MRANGE%</substitute>
         <substitute name="STEP-DEVICE:MFUNCTION">%MFUNCTION%</substitute>
         <substitute name="STEP-DEVICE:SENSE">%SENSE%</substitute>
         <substitute name="STEP-DEVICE:LIMITI">%LIMITI%</substitute>
@@ -1440,6 +1472,7 @@
                 },
                 measure = {
                     nplc = nplc,
+                    range = %MRANGE%,
                     aperture = aperture,
                     count = measure_count,
                     delay = measure_delay,
@@ -1496,7 +1529,8 @@
         <substitute name="SWEEP-DEVICE:SRANGE">%SRANGE%</substitute>
         <substitute name="SWEEP-DEVICE:START">%START%</substitute>
         <substitute name="SWEEP-DEVICE:STOP">%STOP%</substitute>
-        <substitute name="SWEEP-DEVICE:LIST">%LIST%</substitute>
+        <substitute name="SWEEP-DEVICE:LIST">%LIST%</substitute>        
+        <substitute name="SWEEP-DEVICE:MRANGE">%MRANGE%</substitute>
         <substitute name="SWEEP-DEVICE:MFUNCTION">%MFUNCTION%</substitute>
         <substitute name="SWEEP-DEVICE:SENSE">%SENSE%</substitute>
         <substitute name="SWEEP-DEVICE:LIMITI">%LIMITI%</substitute>
@@ -1546,6 +1580,7 @@
                 },
                 measure = {
                     nplc = nplc,
+                    range = %MRANGE%,
                     aperture = aperture,
                     count = measure_count,
                     delay = measure_delay,

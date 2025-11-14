@@ -555,6 +555,7 @@
                                 step = self.slot_idx .. self.channel_idx .. &quot;_step_step&quot;,
                                 waitall_steps = self.slot_idx .. self.channel_idx .. &quot;_step_waitall_&quot;,
                                 step_notify = self.slot_idx .. self.channel_idx .. &quot;_step_done&quot;,
+                                delay_sweep = self.slot_idx .. self.channel_idx .. &quot;_step_delay_sweep&quot;,
                                 wait_sweep = self.slot_idx .. self.channel_idx .. &quot;_step_wait_sweep&quot;,
                                 measure = self.slot_idx .. self.channel_idx .. &quot;_step_measure&quot;,
                                 waitall_step_meas = self.slot_idx .. self.channel_idx .. &quot;_step_other_measure_waitall_&quot;,
@@ -587,7 +588,7 @@
 
                             -- Adding step-to-sweep-delay    --
                             if sweep_source_event ~= nil then
-                                tm_add.delay.constant(self.trigger_model, block.wait_sweep, stepToSweepDelay)
+                                tm_add.delay.constant(self.trigger_model, block.delay_sweep, stepToSweepDelay)
                             end
 
                             -- Notify other channels that the steppers are done stepping

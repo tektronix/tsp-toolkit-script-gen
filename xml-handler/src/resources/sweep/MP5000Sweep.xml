@@ -802,20 +802,9 @@
                                     self.channel.measure.rate = self.channel.RATE_NORMAL
                                 end
                             end
-                            -- range
-                            if self.measure.range == CONSTANTS.AUTO then
-                                if self.measure.func == CONSTANTS.FUNC_DC_VOLTAGE then
-                                    self.channel.measure.autorangev = self.slot.psu.ON
-                                elseif self.measure.func == CONSTANTS.FUNC_DC_CURRENT then
-                                    self.channel.measure.autorangei = self.slot.psu.ON
-                                end
-                            else
-                                if self.measure.func == CONSTANTS.FUNC_DC_VOLTAGE then
-                                    self.channel.measure.rangev = self.measure.range
-                                elseif self.measure.func == CONSTANTS.FUNC_DC_CURRENT then
-                                    self.channel.measure.rangei = self.measure.range
-                                end
-                            end
+
+                            -- MPSUs have no range settings
+
                             -- count
                             self.channel.measure.count = self.measure.count
                             -- TODO: filter_enable

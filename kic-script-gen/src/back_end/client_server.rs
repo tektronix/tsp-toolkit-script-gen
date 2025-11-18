@@ -77,11 +77,6 @@ impl AppState {
             // Check if the folder exists and is writable
 
             if folder.exists() {
-                let permissions = folder.metadata().map(|m| m.permissions()).unwrap();
-                if permissions.readonly() {
-                    println!("Cannot update work folder: folder is read-only");
-                    return;
-                }
                 *work_folder_guard = Some(path_file.to_string_lossy().to_string());
                 println!("Work folder updated to: {work_folder_guard:?}");
             } else {

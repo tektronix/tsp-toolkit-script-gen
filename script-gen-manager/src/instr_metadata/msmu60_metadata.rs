@@ -4,6 +4,51 @@ use crate::model::{
 
 use super::base_metadata::{BaseMetadata, Metadata};
 
+// Epsilon for floating-point comparisons
+const EPSILON: f64 = 1e-15;
+
+// Voltage range constants for MSMU60
+const VOLTAGE_AUTO: &str = "AUTO";
+const VOLTAGE_200_MV: &str = "200 mV";
+const VOLTAGE_2_V: &str = "2 V";
+const VOLTAGE_6_V: &str = "6 V";
+const VOLTAGE_20_V: &str = "20 V";
+const VOLTAGE_60_V: &str = "60 V";
+
+// Current range constants for MSMU60
+const CURRENT_AUTO: &str = "AUTO";
+const CURRENT_100_NA: &str = "100 nA";
+const CURRENT_1_UA: &str = "1 \u{00B5}A"; // Unicode character for micro (µ)
+const CURRENT_10_UA: &str = "10 \u{00B5}A";
+const CURRENT_100_UA: &str = "100 \u{00B5}A";
+const CURRENT_1_MA: &str = "1 mA";
+const CURRENT_10_MA: &str = "10 mA";
+const CURRENT_100_MA: &str = "100 mA";
+const CURRENT_1_A: &str = "1 A";
+const CURRENT_1_5_A: &str = "1.5 A";
+
+// Range arrays built from constants
+const VOLTAGE_RANGES: &[&str] = &[
+    VOLTAGE_AUTO,
+    VOLTAGE_200_MV,
+    VOLTAGE_2_V,
+    VOLTAGE_6_V,
+    VOLTAGE_20_V,
+    VOLTAGE_60_V,
+];
+const CURRENT_RANGES: &[&str] = &[
+    CURRENT_AUTO,
+    CURRENT_100_NA,
+    CURRENT_1_UA,
+    CURRENT_10_UA,
+    CURRENT_100_UA,
+    CURRENT_1_MA,
+    CURRENT_10_MA,
+    CURRENT_100_MA,
+    CURRENT_1_A,
+    CURRENT_1_5_A,
+];
+
 #[derive(Debug, Clone)]
 pub struct Msmu60Metadata {
     base: BaseMetadata,
@@ -14,26 +59,8 @@ impl Msmu60Metadata {
     pub fn new() -> Self {
         let mut base = BaseMetadata::new();
         // Add additional key-value pairs for MSmu60Metadata
-        base.add_option(
-            "source_meas.rangev",
-            vec!["AUTO", "200 mV", "2 V", "6 V", "20 V", "60 V"],
-        );
-        // "\u{00B5}"" - Unicode character for micro (µ)
-        base.add_option(
-            "source_meas.rangei",
-            vec![
-                "AUTO",
-                "100 nA",
-                "1 \u{00B5}A",
-                "10 \u{00B5}A",
-                "100 \u{00B5}A",
-                "1 mA",
-                "10 mA",
-                "100 mA",
-                "1 A",
-                "1.5 A",
-            ],
-        );
+        base.add_option("source_meas.rangev", VOLTAGE_RANGES.to_vec());
+        base.add_option("source_meas.rangei", CURRENT_RANGES.to_vec());
 
         base.add_default("source_meas.range.defaultv", "AUTO");
         base.add_default("source_meas.range.defaulti", "AUTO");
@@ -42,8 +69,8 @@ impl Msmu60Metadata {
         base.add_range("source.levelv".to_string(), -60.6, 60.6);
         base.add_range("source.leveli".to_string(), -1.515, 1.515);
 
-        base.add_range("source.limiti".to_string(), -1e-8, 1.515);
-        base.add_range("source.limitv".to_string(), -0.02, 60.6);
+        base.add_range("source.limiti".to_string(), -1.515, 1.515);
+        base.add_range("source.limitv".to_string(), -60.6, 60.6);
 
         base.add_range("source.step_to_sweep_delay".to_string(), 0.0, 100.0);
 
@@ -51,10 +78,38 @@ impl Msmu60Metadata {
         // when pulse mode is off
         let exclude_v = Some(NumberLimit::new(-0.01, 0.01, false, None));
         let exclude_i = NumberLimit::new(-10.0e-9, 10.0e-9, false, None);
-        let mut region_map_metadata = RegionMapMetadata::new(exclude_v, exclude_i);
-        region_map_metadata.add_region(1, -60.0, -0.1, 60.0, 0.1);
-        region_map_metadata.add_region(1, -20.0, -1.5, 20.0, 1.5);
-        base.add_region_map("smu.region", region_map_metadata);
+
+        let mut inner_region = RegionMapMetadata::new(exclude_v.clone(), exclude_i.clone());
+        inner_region.add_region(
+            1,
+            -60.6 - EPSILON,
+            -0.1 - EPSILON,
+            60.6 + EPSILON,
+            0.1 + EPSILON,
+        );
+        base.add_region_map(VOLTAGE_60_V, inner_region.clone());
+        base.add_region_map(CURRENT_100_NA, inner_region.clone());
+        base.add_region_map(CURRENT_1_UA, inner_region.clone());
+        base.add_region_map(CURRENT_10_UA, inner_region.clone());
+        base.add_region_map(CURRENT_100_UA, inner_region.clone());
+        base.add_region_map(CURRENT_1_MA, inner_region.clone());
+
+        let mut outer_region = RegionMapMetadata::new(exclude_v.clone(), exclude_i.clone());
+        outer_region.add_region(
+            1,
+            -20.0 - EPSILON,
+            -1.515 - EPSILON,
+            20.0 + EPSILON,
+            1.515 + EPSILON,
+        );
+        base.add_region_map(VOLTAGE_200_MV, outer_region.clone());
+        base.add_region_map(VOLTAGE_2_V, outer_region.clone());
+        base.add_region_map(VOLTAGE_6_V, outer_region.clone());
+        base.add_region_map(VOLTAGE_20_V, outer_region.clone());
+        base.add_region_map(CURRENT_10_MA, outer_region.clone());
+        base.add_region_map(CURRENT_100_MA, outer_region.clone());
+        base.add_region_map(CURRENT_1_A, outer_region.clone());
+        base.add_region_map(CURRENT_1_5_A, outer_region.clone());
 
         base.add_overrange_scale(1.01);
 

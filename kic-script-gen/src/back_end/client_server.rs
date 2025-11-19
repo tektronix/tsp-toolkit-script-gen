@@ -17,6 +17,7 @@ use std::path::Path;
 
 use super::data_model::DataModel;
 use crate::back_end::ipc_data::IpcData;
+use script_gen_manager::model::sweep_data::status_msg::{StatusMsg, StatusType};
 
 #[derive(Serialize, Deserialize)]
 pub struct ScriptPath {
@@ -80,10 +81,11 @@ impl AppState {
                 *work_folder_guard = Some(path_file.to_string_lossy().to_string());
                 println!("Work folder updated to: {work_folder_guard:?}");
             } else {
-                println!(
-                    "Work folder does not exist: {:?}",
-                    path_file.to_string_lossy().to_string()
+                let status_msg = StatusMsg::new(
+                    StatusType::Error,
+                    format!("The folder is read-only (OR) Work folder does not exist: {:?}", path_file.to_string_lossy().to_string())
                 );
+                println!("{}", serde_json::to_string(&status_msg).unwrap_or_else(|_| status_msg.message.clone()));
             }
         } else {
             println!("Failed to parse work folder from JSON: {json_value}");

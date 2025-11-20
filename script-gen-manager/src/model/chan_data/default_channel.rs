@@ -267,6 +267,7 @@ impl CommonChanAttributes {
     }
 
     pub fn validate_source_limits(&mut self, metadata: &MetadataEnum) {
+        //This is the fixed min/max range
         if let Some((min, max)) = self.get_range_limits(metadata, "source.limiti") {
             if let Some(ref mut limiti) = self.source_limiti {
                 limiti.value = Self::limit(limiti.value, min, max);
@@ -284,36 +285,38 @@ impl CommonChanAttributes {
         start_value: &ParameterFloat,
         stop_value: &ParameterFloat,
     ) {
-        if let Some((min, max)) = self.get_range_limits(&self.device.metadata, ":MODE") {
-            if let Some(ref mut limiti) = self.source_limiti {
-                limiti.value = Self::limit(limiti.value, min, max);
-            }
-        }
-
+        //Use region map to further limit the source limits based on the source function and range
+        let mut limit_value = start_value.value;
         if let Some(region_map) =
             self.get_region_map(&self.device.metadata, &self.source_range.value)
         {
-            //Do this only to the PSU for now
-            let mut limit_value = start_value.value;
             if stop_value.value.abs() > limit_value.abs() {
                 //Use the largest absolute value
                 limit_value = stop_value.value;
             }
-            if let Some(ref mut limiti) = self.source_limiti {
-                let curr_limit = region_map.get_current_limit(limit_value);
-                limiti.value =
-                    Self::limit(limiti.value, curr_limit.get_min(), curr_limit.get_max());
-                println!("Evaluated current limit value is {:?}", limiti.value);
+            match &self.source_function.value[..] {
+                s if s == BaseMetadata::FUNCTION_VOLTAGE => {
+                    // Source is Voltage. Hence, limit current
+                    if let Some(ref mut limiti) = self.source_limiti {
+                        let curr_limit = region_map.get_current_limit(limit_value);
+                        limiti.value =
+                            Self::limit(limiti.value, curr_limit.get_min(), curr_limit.get_max());
+                    }
+                }
+                s if s == BaseMetadata::FUNCTION_CURRENT => {
+                    //Source is Current. Hence, limit voltage
+                    if let Some(ref mut limitv) = self.source_limitv {
+                        let voltage_limit = region_map.get_voltage_limit(limit_value);
+                        limitv.value = Self::limit(
+                            limitv.value,
+                            voltage_limit.get_min(),
+                            voltage_limit.get_max(),
+                        );
+                    }
+                }
+                _ => {} //If neither voltage nor current, do nothing, for now. Existing limits apply.
             }
         }
-
-        if let Some((min, max)) = self.get_range_limits(&self.device.metadata, "source.limitv") {
-            if let Some(ref mut limitv) = self.source_limitv {
-                limitv.value = Self::limit(limitv.value, min, max);
-            }
-        }
-
-        println!("Source range value is {:?}", self.source_range.value);
     }
 
     fn limit(mut value: f64, min: f64, max: f64) -> f64 {

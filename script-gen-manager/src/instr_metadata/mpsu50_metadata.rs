@@ -23,7 +23,7 @@ impl Mpsu50Metadata {
         //TODO: verify for Trebuchet PSU (model: MPSU50-2ST)
         // Add ranges
         let max_supported_voltage = 50.1;
-        let max_supported_current = 5.0;
+        let max_supported_current = 5.1;
         base.add_range(
             "source.levelv".to_string(),
             -max_supported_voltage,

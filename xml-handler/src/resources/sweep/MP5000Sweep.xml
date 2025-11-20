@@ -84,7 +84,7 @@
 
         ---@class Source
         ---@field values ScalarValue | LogValues | LinearValues | ListValues The value or values to source
-        ---@field range number | "AUTO" The range to use, or Auto
+        ---@field range number | &quot;AUTO&quot; The range to use, or Auto
         ---@field limiti number The current limit
         ---@field limitv number | nil The voltage limit
         ---@field delay number The time to delay before sourcing
@@ -98,7 +98,7 @@
         ---@field nplc number | nil
         ---@field aperture number | nil
         ---@field rate `CONSTANTS.RATE_FAST` | `CONSTANTS.RATE_NORMAL` | nil
-        ---@field range number | "AUTO" The range to use, or Auto 
+        ---@field range number | &quot;AUTO&quot; The range to use, or Auto
         -- ---@field autozero boolean Whether autozero should be turned on or not
         ---@field count integer The number of measurments to take
         -- ---@field filter_enable boolean Whether to enable the filter or not
@@ -147,7 +147,7 @@
         ---@class ModelComponent
         ---@field reset fun(self: Device) The function used to reset the device
         ---@field config fun(self: Device) The function used to configure the device settings
-        ---@field trigger_model_setup fun(self: Device) The function used to set up the trigger model
+        ---@field trigger_model_setup fun(self: Device, bias_source_event: any | nil, bias_measure_event: any| nil, step_source_event: any | nil, step_measure_event: any | nil, sweep_source_event: any | nil, sweep_measure_event: any | nil, bias_source_complete_events: any[] | nil, bias_measure_complete_events: any[] | nil) The function used to set up the trigger model
         ---@field trigger_model_initiate fun(self: Device) The function used to initiate the trigger model
 
         UTILITY = {
@@ -268,7 +268,7 @@
 
             ---Functions for the MSMU60-2 module for MP5000-series mainframes
             ---@return Model
-            MSMU60_2 = function()
+            MSMU = function()
                 return {
                     common = {
                         --- Resets this MSMU60-2
@@ -282,13 +282,10 @@
                             self.node.trigger.timer[2].reset()
                             self.node.trigger.timer[3].reset()
                             self.node.trigger.timer[4].reset()
-                            --for _, v in ipairs(self.slot.trigger.model.table()) do
                             self.slot.trigger.model.abort()
                             self.slot.trigger.model.delete(self.node_name .. &quot; Bias Trigger Model&quot;)
                             self.slot.trigger.model.delete(self.node_name .. &quot; Step Trigger Model&quot;)
                             self.slot.trigger.model.delete(self.node_name .. &quot; Sweep Trigger Model&quot;)
-                            --    self.slot.trigger.model.delete(v)
-                            --end
                         end,
                         --- Configures this MSMU60-2
                         ---@param self Device
@@ -524,13 +521,13 @@
                             end
 
                             -- Loop back to `bias_wait_sweep_block` until all iterations are complete
-                            if sweep_measure_event ~= nil then
-                                tm_add.branch.counter(self.trigger_model, block.loop,
-                                    block.wait_sweep,
-                                    UTILITY.TOTAL_COUNT)
-                            elseif step_measure_event ~= nil then
+                            if step_measure_event ~= nil then
                                 tm_add.branch.counter(self.trigger_model, block.loop,
                                     block.bias_notify,
+                                    UTILITY.TOTAL_COUNT)
+                            elseif sweep_measure_event ~= nil then
+                                tm_add.branch.counter(self.trigger_model, block.loop,
+                                    block.wait_sweep,
                                     UTILITY.TOTAL_COUNT)
                             end
                         end,
@@ -580,7 +577,6 @@
 
                             if step_source_complete_events ~= nil and table.getn(step_source_complete_events) &gt; 0 then
                                 -- Add an optional wait for other sweep events only on the first stepper
-                                --logevent(self, &quot;WAIT ALL STEPS&quot;)
                                 UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
                                     block.waitall_steps,
                                     step_source_complete_events)
@@ -739,12 +735,12 @@
                 }
             end,
 
-            ---Functions for the MPSU-2ST module for MP5000-series mainframes
+            ---Functions for MPSU modules for MP5000-series mainframes
             ---@return Model
-            MPSU50_2ST = function()
+            MPSU = function()
                 return {
                     common = {
-                        --- Resets this MPSU50_2ST
+                        --- Resets this MPSU
                         ---@param self Device
                         reset = function(self)
                             self.channel.reset()
@@ -755,34 +751,31 @@
                             self.node.trigger.timer[2].reset()
                             self.node.trigger.timer[3].reset()
                             self.node.trigger.timer[4].reset()
-                            --for _, v in ipairs(self.slot.trigger.model.table()) do
                             self.slot.trigger.model.abort()
-                            --    self.slot.trigger.model.delete(v)
-                            --end
                         end,
-                        --- Configures this MPSU50_2ST
+                        --- Configures this MPSU
                         ---@param self Device
                         config = function(self)
                             UTILITY.init_slot_event_ids(self.slot, { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 })
-                           
 
-                            local event_id = UTILITY.get_slot_event_id(self.slot)
-                            if event_id then
-                                self.event_source = event_id
+                            local event_source_id = UTILITY.get_slot_event_id(self.slot)
+                            if event_source_id then
+                                self.event_source = event_source_id
                             else
-                                error(&quot;Unable to assign event ID to channel: all event IDs for slot[&quot; ..
+                                error(&quot;Unable to assign event source ID to channel: all event IDs for slot[&quot; ..
                                     self.slot_idx .. &quot;] have been consumed.&quot;)
                                 exit()
                             end
 
-                            event_id = UTILITY.get_slot_event_id(self.slot)
-                            if event_id then
-                                self.event_measure = event_id
+                            local event_measure_id = UTILITY.get_slot_event_id(self.slot)
+                            if event_measure_id then
+                                self.event_measure = event_measure_id
                             else
-                                error(&quot;Unable to assign event ID to channel: all event IDs for slot[&quot; ..
+                                error(&quot;Unable to assign event measure ID to channel: all event IDs for slot[&quot; ..
                                     self.slot_idx .. &quot;] have been consumed.&quot;)
                                 exit()
                             end
+
 
                             -- Source Settings --
                             -- func, level/list/log/linear
@@ -809,20 +802,9 @@
                                     self.channel.measure.rate = self.channel.RATE_NORMAL
                                 end
                             end
-                            -- range
-                            if self.measure.range == CONSTANTS.AUTO then
-                                if self.measure.func == CONSTANTS.FUNC_DC_VOLTAGE then
-                                    self.channel.measure.autorangev = self.slot.psu.ON
-                                elseif self.measure.func == CONSTANTS.FUNC_DC_CURRENT then
-                                    self.channel.measure.autorangei = self.slot.psu.ON
-                                end
-                            else
-                                if self.measure.func == CONSTANTS.FUNC_DC_VOLTAGE then
-                                    self.channel.measure.rangev = self.measure.range
-                                elseif self.measure.func == CONSTANTS.FUNC_DC_CURRENT then
-                                    self.channel.measure.rangei = self.measure.range
-                                end
-                            end
+
+                            -- MPSUs have no range settings
+
                             -- count
                             self.channel.measure.count = self.measure.count
                             -- TODO: filter_enable
@@ -865,32 +847,59 @@
                     bias = {
                         --- Configure the trigger model for a Bias
                         ---@param self Device
-                        ---@param bias_event nil Unused
-                        ---@param step_event any | nil The event ID associated with all the steps completing (only one)
-                        ---@param sweep_event any | nil The event ID associated with all the sweep steps completing (only one)
-                        ---@param bias_complete_events any[] | nil The event ID(s) associated with all other bias steps completing. Should only be passed to one bias channel.
-                        trigger_model_setup = function(self, bias_event, step_event, sweep_event, bias_complete_events)
+                        ---@param bias_source_event nil Unused
+                        ---@param bias_measure_event nil Unused
+                        ---@param step_source_event any | nil The event ID associated with all the steps completing source actions (only one)
+                        ---@param step_measure_event any | nil The event ID associated with all the steps completing measure actions (only one)
+                        ---@param sweep_source_event any | nil The event ID associated with all the sweep steps completing source actions (only one)
+                        ---@param sweep_measure_event any | nil The event ID associated with all the sweep steps completing measure actions (only one)
+                        ---@param bias_source_complete_events any[] | nil The event ID(s) associated with all other bias source-action steps completing. Should only be passed to one bias channel.
+                        ---@param bias_measure_complete_events any[] | nil The event ID(s) associated with all other bias measure-action steps completing. Should only be passed to one bias channel.
+                        trigger_model_setup = function(self, bias_source_event, bias_measure_event, step_source_event,
+                                                       step_measure_event, sweep_source_event, sweep_measure_event,
+                                                       bias_source_complete_events, bias_measure_complete_events)
+                            UTILITY.MSMU().bias.trigger_model_setup(self, bias_source_event, bias_measure_event,
+                                step_source_event, step_measure_event, sweep_source_event, sweep_measure_event,
+                                bias_source_complete_events, bias_measure_complete_events)
                         end,
                     },
                     step = {
                         --- Configure the trigger model for a Step
                         ---@param self Device
-                        ---@param bias_event any The event that indicates the biases are fully started.
-                        ---@param step_event nil Unused
-                        ---@param sweep_event any The event that indicates the sweepsare fully started.
-                        ---@param step_complete_events any[] | nil The event ID(s) associated with all other steps completing. Should only be passed to one bias channel.
-                        trigger_model_setup = function(self, bias_event, step_event, sweep_event, step_complete_events)
+                        ---@param bias_source_event any|nil The event ID associated with all the biases completing source actions (only one)
+                        ---@param bias_measure_event any | nil The event ID associated with all the biases completing measure actions (only one)
+                        ---@param step_source_event nil Unused
+                        ---@param step_measure_event nil Unused
+                        ---@param sweep_source_event any | nil The event ID associated with all the sweep steps completing source actions (only one)
+                        ---@param sweep_measure_event any | nil The event ID associated with all the sweep steps completing measure actions (only one)
+                        ---@param step_source_complete_events any[] | nil The event ID(s) associated with all other source-action steps completing. Should only be passed to one bias channel.
+                        ---@param step_measure_complete_events any[] | nil The event ID(s) associated with all other measure-action steps completing. Should only be passed to one bias channel.
+                        trigger_model_setup = function(self, bias_source_event, bias_measure_event, step_source_event,
+                                                       step_measure_event, sweep_source_event, sweep_measure_event,
+                                                       step_source_complete_events, step_measure_complete_events)
+                            UTILITY.MSMU().step.trigger_model_setup(self, bias_source_event, bias_measure_event,
+                                step_source_event, step_measure_event, sweep_source_event, sweep_measure_event,
+                                step_source_complete_events, step_measure_complete_events)
                         end,
                     },
 
                     sweep = {
                         --- Configure the trigger model for a Step
                         ---@param self Device
-                        ---@param bias_event any
-                        ---@param step_event any
-                        ---@param sweep_event nil Unused
-                        ---@param sweep_complete_events any
-                        trigger_model_setup = function(self, bias_event, step_event, sweep_event, sweep_complete_events)
+                        ---@param bias_source_event any|nil The event ID associated with all the biases completing source actions (only one)
+                        ---@param bias_measure_event any | nil The event ID associated with all the biases completing measure actions (only one)
+                        ---@param step_source_event any | nil The event ID associated with all the steps completing source actions (only one)
+                        ---@param step_measure_event any | nil The event ID associated with all the steps completing measure actions (only one)
+                        ---@param sweep_source_event nil Unused
+                        ---@param sweep_measure_event nil Unused
+                        ---@param sweep_source_complete_events any
+                        ---@param sweep_measure_complete_events any
+                        trigger_model_setup = function(self, bias_source_event, bias_measure_event, step_source_event,
+                                                       step_measure_event, sweep_source_event, sweep_measure_event,
+                                                       sweep_source_complete_events, sweep_measure_complete_events)
+                            UTILITY.MSMU().sweep.trigger_model_setup(self, bias_source_event, bias_measure_event,
+                                step_source_event, step_measure_event, sweep_source_event, sweep_measure_event,
+                                sweep_source_complete_events, sweep_measure_complete_events)
                         end,
 
                     },
@@ -901,12 +910,11 @@
             ---@param device DeviceDetails
             ---@return Model | nil, &quot;smu&quot; | &quot;psu&quot; | nil
             get_model_from_device = function(device)
-                -- XXX: DEBUG ONLY, REMOVE MSMU200-2
-                if device.model == &quot;MSMU60-2&quot; then
-                    return UTILITY.MSMU60_2(), &quot;smu&quot;
+                if string.find(device.model, &quot;MSMU&quot;) ~= nil then
+                    return UTILITY.MSMU(), &quot;smu&quot;
                 end
-                if device.model == &quot;MPSU50-2ST&quot; then
-                    return UTILITY.MPSU50_2ST(), &quot;psu&quot;
+                if string.find(device.model, &quot;MPSU&quot;) ~= nil then
+                    return UTILITY.MPSU(), &quot;psu&quot;
                 end
                 return nil, nil
             end,
@@ -1279,13 +1287,13 @@
 
             for i, n in ipairs(nodes.biases) do
                 for _, buf in ipairs(n.measure.buffers) do
-                    table.insert(buffers, { heading = &quot;Bias[&quot; .. i .. &quot;].&quot; .. iv_to_string(buf.type), buffer = buf.buffer })
+                    table.insert(buffers, { heading = &quot;bias[&quot; .. i .. &quot;].&quot; .. iv_to_string(buf.type), buffer = buf.buffer })
                 end
             end
 
             for i, n in ipairs(nodes.steps) do
                 for _, buf in ipairs(n.measure.buffers) do
-                    table.insert(buffers, { heading = &quot;Step[&quot; .. i .. &quot;].&quot; .. iv_to_string(buf.type), buffer = buf.buffer })
+                    table.insert(buffers, { heading = &quot;step[&quot; .. i .. &quot;].&quot; .. iv_to_string(buf.type), buffer = buf.buffer })
                 end
             end
 
@@ -1297,6 +1305,7 @@
 
             print_table_from_buffers(buffers)
         end
+
 
         --#endregion Util
 
@@ -1530,7 +1539,7 @@
         <substitute name="SWEEP-DEVICE:SRANGE">%SRANGE%</substitute>
         <substitute name="SWEEP-DEVICE:START">%START%</substitute>
         <substitute name="SWEEP-DEVICE:STOP">%STOP%</substitute>
-        <substitute name="SWEEP-DEVICE:LIST">%LIST%</substitute>        
+        <substitute name="SWEEP-DEVICE:LIST">%LIST%</substitute>
         <substitute name="SWEEP-DEVICE:MRANGE">%MRANGE%</substitute>
         <substitute name="SWEEP-DEVICE:MFUNCTION">%MFUNCTION%</substitute>
         <substitute name="SWEEP-DEVICE:SENSE">%SENSE%</substitute>

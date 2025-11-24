@@ -1,10 +1,10 @@
 export class TimingCalculation {
-  numMeas: number = 0;
-  lineFreq: number = 0;
-  overhead: number = 0;
-  sourceDelay: number = 0;
-  measDelay: number = 0;
-  measTime: number = 0; // measurement time
+  numMeas = 0;
+  lineFreq = 0;
+  overhead = 0;
+  sourceDelay = 0;
+  measDelay = 0;
+  measTime = 0; // measurement time
 
   constructor(params: {
     numMeas?: number,

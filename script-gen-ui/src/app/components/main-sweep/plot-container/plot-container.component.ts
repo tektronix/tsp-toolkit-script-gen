@@ -7,7 +7,7 @@ import {
   OnChanges,
   SimpleChanges,
   ViewChildren,
-  QueryList, OnDestroy,
+  QueryList,
 } from '@angular/core';
 import { BiasChannel } from '../../../model/chan_data/biasChannel';
 import { StepChannel } from '../../../model/chan_data/stepChannel';
@@ -20,7 +20,6 @@ import { PlotBiasComponent } from './plot-bias/plot-bias.component';
 import { PlotStepComponent } from './plot-step/plot-step.component';
 import { PlotSweepComponent } from './plot-sweep/plot-sweep.component';
 import {
-  ParameterFloat,
   ParameterInt,
   SweepTimingConfig,
 } from '../../../model/sweep_data/SweepTimingConfig';

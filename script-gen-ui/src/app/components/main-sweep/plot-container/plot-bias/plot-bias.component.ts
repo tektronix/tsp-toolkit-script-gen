@@ -38,6 +38,7 @@ export class PlotBiasComponent
   // @Input() plotLayout: any;
   @Input() plotDataX: number[] = [];
   @Input() plotConfig: { staticPlot: boolean } | undefined;
+  @Input() tickDifference: number | undefined;
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
   plotDivID = '';
 
@@ -204,8 +205,11 @@ export class PlotBiasComponent
       this.bias = this.biasChannel.bias;
 
       this.plotDivID = `plotDiv${this.biasChannel.common_chan_attributes.chan_name}`;
-      this.plotData1.x = this.plotDataX;
+
     }
+
+    this.plotData1.x = this.plotDataX;
+    console.log("biasplotdata x", this.plotDataX, this.plotData1.x);
 
     // Generate x-axis data if stepGlobalParameters are available
     if (this.stepGlobalParameters) {
@@ -275,10 +279,10 @@ export class PlotBiasComponent
   }
 
   private generateXAxisData(): void {
-    if (!this.stepGlobalParameters) return;
+    // if (!this.stepGlobalParameters) return;
 
-    const numSteps = this.stepGlobalParameters.step_points?.value ?? 1;
-    const delayTime = this.stepGlobalParameters.step_to_sweep_delay?.value ?? 0;
+    // const numSteps = this.stepGlobalParameters.step_points?.value ?? 1;
+    // const delayTime = this.stepGlobalParameters.step_to_sweep_delay?.value ?? 0;
 
     // Generate x-axis data using the same formula as step and sweep components
     // const xData: number[] = [];
@@ -289,9 +293,12 @@ export class PlotBiasComponent
     this.plotData1.x = this.plotDataX;
 
     // Calculate total time and dtick (same as step/sweep components)
-    const totalTime = numSteps * (1 + delayTime);
-    this.plotLayout.xaxis.dtick = totalTime / 10;
-    this.plotLayout.xaxis2.dtick = totalTime / 10;
+    // const totalTime = numSteps * (1 + delayTime);
+    if (this.tickDifference) {
+      this.plotLayout.xaxis.dtick = this.tickDifference/10;
+      this.plotLayout.xaxis2.dtick = this.tickDifference/10;
+    }
+
   }
 
   private updatePlotLayout(): void {

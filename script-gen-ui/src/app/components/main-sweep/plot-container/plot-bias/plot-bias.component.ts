@@ -32,8 +32,7 @@ import { StepGlobalParameters } from '../../../../model/sweep_data/stepSweepConf
   styleUrl: './plot-bias.component.scss',
 })
 export class PlotBiasComponent
-  implements AfterViewInit, OnInit, OnDestroy, OnChanges
-{
+  implements AfterViewInit, OnInit, OnDestroy, OnChanges {
   @Input() biasChannel: BiasChannel | undefined;
   // @Input() plotData: any;
   // @Input() plotLayout: any;
@@ -190,7 +189,7 @@ export class PlotBiasComponent
   measRange: ChannelRange | undefined;
   bias: ParameterFloat | undefined;
 
-  constructor(public elementRef: ElementRef) {}
+  constructor(public elementRef: ElementRef) { }
 
   ngOnInit(): void {
     if (this.biasChannel) {
@@ -205,6 +204,7 @@ export class PlotBiasComponent
       this.bias = this.biasChannel.bias;
 
       this.plotDivID = `plotDiv${this.biasChannel.common_chan_attributes.chan_name}`;
+      this.plotData1.x = this.plotDataX;
     }
 
     // Generate x-axis data if stepGlobalParameters are available
@@ -218,6 +218,7 @@ export class PlotBiasComponent
     // Set constant y-values for bias
     const biasValue = this.bias?.value ?? 0;
     this.plotData1.y = new Array(this.plotData1.x.length).fill(biasValue);
+    // this.generateXAxisData();
 
     this.updatePlotLayout();
     this.plotData1.line.color = this.color;
@@ -239,6 +240,7 @@ export class PlotBiasComponent
     }
 
     this.observeThemeChanges();
+    this.plotData1.x = this.plotDataX;
   }
 
   // the plots are rendered only after the DOM is created, so we need to render them after the DOM is loaded
@@ -279,12 +281,12 @@ export class PlotBiasComponent
     const delayTime = this.stepGlobalParameters.step_to_sweep_delay?.value ?? 0;
 
     // Generate x-axis data using the same formula as step and sweep components
-    const xData: number[] = [];
-    for (let i = 0; i <= numSteps; i++) {
-      xData.push(i * (1 + delayTime));
-    }
+    // const xData: number[] = [];
+    // for (let i = 0; i <= numSteps; i++) {
+    //   xData.push(i * (1 + delayTime));
+    // }
 
-    this.plotData1.x = xData;
+    this.plotData1.x = this.plotDataX;
 
     // Calculate total time and dtick (same as step/sweep components)
     const totalTime = numSteps * (1 + delayTime);
@@ -308,7 +310,7 @@ export class PlotBiasComponent
           max = Math.max(...range);
         }
       } else {
-        max = parseToDecimal(this.sourceRange.value,(this.plotLayout.yaxis2.ticksuffix).trim());
+        max = parseToDecimal(this.sourceRange.value, (this.plotLayout.yaxis2.ticksuffix).trim());
       }
       if (typeof max === 'number' && !isNaN(max)) {
         const maxRange = PlotUtils.computeMaxRange(-max, max);

@@ -100,6 +100,7 @@ export class PlotContainerComponent implements OnInit, OnChanges {
       const measDelay = this.sweepTimingConfig.smu_timing.measure_delay.value;
       const mode = "nplc";
       const value = this.sweepTimingConfig.smu_timing.nplc.value;
+      const stepToSweepDelay = this.stepGlobalParameters?.step_to_sweep_delay?.value ?? 0;
 
       const timingCalc = new TimingCalculation({
         numMeas,
@@ -108,7 +109,7 @@ export class PlotContainerComponent implements OnInit, OnChanges {
         sourceDelay,
         measDelay
       });
-      this.totalTimePerStep = timingCalc.calculateTotalTime(mode, overhead, lineFreq, value, sourceDelay, measDelay);
+      this.totalTimePerStep = timingCalc.calculateTotalTime(mode, overhead, lineFreq, value, sourceDelay, measDelay, stepToSweepDelay);
       console.log("totaltime", this.totalTimePerStep);
     }
   }

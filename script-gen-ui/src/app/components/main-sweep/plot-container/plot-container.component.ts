@@ -1,10 +1,11 @@
 import {
   Component,
   OnInit,
-  AfterViewInit,
   ViewChild,
   ElementRef,
   Input,
+  OnChanges,
+  SimpleChanges,
   ViewChildren,
   QueryList, OnDestroy,
 } from '@angular/core';
@@ -21,11 +22,13 @@ import { PlotSweepComponent } from './plot-sweep/plot-sweep.component';
 import {
   ParameterFloat,
   ParameterInt,
+  SweepTimingConfig,
 } from '../../../model/sweep_data/SweepTimingConfig';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { BrowserModule } from '@angular/platform-browser';
+import { TimingCalculation } from '../../utils/timing-calculation';
 
 @Component({
   selector: 'app-plot-container',
@@ -42,15 +45,14 @@ import { BrowserModule } from '@angular/platform-browser';
   templateUrl: './plot-container.component.html',
   styleUrls: ['./plot-container.component.scss'],
 })
-export class PlotContainerComponent implements OnInit, AfterViewInit, OnDestroy {
+export class PlotContainerComponent implements OnInit, OnChanges {
   @ViewChild('plotContainer', { static: false }) plotContainer!: ElementRef;
   @Input() biasChannels: BiasChannel[] = [];
   @Input() stepChannels: StepChannel[] = [];
   @Input() sweepChannels: SweepChannel[] = [];
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
   @Input() sweepGlobalParameters: SweepGlobalParameters | undefined;
-  @Input() listofSweepPoints: ParameterFloat[][] = [];
-  @Input() listofStepPoints: ParameterFloat[][] = [];
+  @Input() sweepTimingConfig: SweepTimingConfig | undefined;
 
   @Input() colorMap = new Map<string, string>(); // Accept colorMap from MainSweepComponent
   @Input() activeComponent: 'bias' | 'step' | 'sweep' | null = null; // Accept active component
@@ -65,142 +67,62 @@ export class PlotContainerComponent implements OnInit, AfterViewInit, OnDestroy 
 
   numberOfSteps: ParameterInt | undefined;
   plotDataX: number[] = [];
-  plotLayout = {
-    xaxis: {
-      visible: true,
-      ticksuffix: ' s',
-      rangemode: 'nonnegative',
-      separatethousands: false,
-      tickfont: { family: 'Times New Roman', color: 'white' },
-      dtick: 1,
-      tick0: 0,
-      showtickprefix: 'none',
-      showticksuffix: 'all',
-      tickwidth: 0,
-      showline: true,
-      layer: 'below traces',
-      zeroline: false,
-      zerolinecolor: 'gray',
-      zerolinewidth: 1,
-      showgrid: true,
-      gridcolor: 'lightgrey',
-      gridwidth: 0.5,
-      griddash: 'dot',
-      type: 'linear',
-      position: 20,
-    },
-    yaxis: {
-      visible: true,
-      ticksuffix: ' V',
-      range: [0, 2],
-      tickfont: { family: 'Times New Roman', color: 'white' },
-      dtick: 0.5,
-      tick0: 0,
-      tickwidth: 0,
-      linewidth: 1,
-      layer: 'below traces',
-      showline: false,
-      showticklabels: false,
-      showgrid: true,
-      gridcolor: 'lightgrey',
-      gridwidth: 0.3,
-      type: 'linear',
-      griddash: 'dot',
-    },
-    yaxis2: {
-      title: {
-        font: { color: 'white' },
-      },
-      tickfont: { color: 'white' },
-      anchor: 'x',
-      overlaying: 'y',
-      side: 'left',
-      position: -3,
-      showline: false,
-      showlegend: false,
-      showticklabels: true,
-      zerolinewidth: 0,
-      showgrid: true,
-      gridcolor: 'lightgrey',
-      gridwidth: 0.3,
-      type: 'linear',
-      griddash: 'dot',
-      // position: 20,
-      visible: true,
-      ticksuffix: ' mV',
-      range: [0, 2], // Adjust the range as needed
-      separatethousands: false,
-      // tickfont: { family: 'Times New Roman', color: 'white' },
-      dtick: 2,
-      tick0: 0,
-      showtickprefix: 'all',
-      showticksuffix: 'all',
-      tickwidth: 0,
-      linecolor: 'black',
-      linewidth: 1,
-      layer: 'below traces',
-    },
-    // grid: {rows: 1, columns: 1, pattern: 'independent'},
-    paper_bgcolor: 'black',
-    plot_bgcolor: 'black',
-    hovermode: 'closest',
-    dragmode: false,
-    autosize: false,
-    height: 150,
-    width: 700,
-    margin: {
-      l: 40,
-      r: 20,
-      b: 25,
-      t: 20,
-      pad: 4,
-    },
-    shapes: [
-      {
-        type: 'line',
-        x0: 0, // Start of the line on the x-axis
-        x1: 10, // End of the line on the x-axis
-        y0: 2, // Y-axis value where the line starts
-        y1: 2, // Y-axis value where the line ends (same as y0 for a horizontal line)
-        line: {
-          color: 'grey', // Color of the line
-          width: 2, // Thickness of the line
-          dash: 'solid', // Line style: 'solid', 'dot', 'dash', etc.
-        },
-      },
-    ],
-  };
   plotConfig: { staticPlot: boolean; responsive: boolean } | undefined;
 
-  originalBackgroundColor = '';
-  activeBackgroundColor = '';
-  mutationObserver: MutationObserver | undefined;
+  totalTimePerStep: number | undefined;
 
-  constructor(public elementRef: ElementRef) {}
+  constructor(public elementRef: ElementRef) { }
 
   ngOnInit(): void {
-    this.plotDataX = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     this.plotConfig = { staticPlot: true, responsive: true };
+    this.calculateTimePerStep();
+    this.plotdataXCalculation();
+    console.log("plodataX", this.plotDataX);
 
     if (this.stepGlobalParameters) {
-      this.numberOfSteps = this.stepGlobalParameters.step_points; // Assuming step_points has a 'value' property containing the number
+      this.numberOfSteps = this.stepGlobalParameters.step_points; 
     }
-
-    console.log('Bias Channels:', this.biasChannels);
-    console.log('Step Channels:', this.stepChannels);
-    console.log('Sweep Channels:', this.sweepChannels);
-    console.log('Step Global Parameters:', this.stepGlobalParameters);
-    console.log('Sweep Global Parameters:', this.sweepGlobalParameters);
-    console.log('plot bias list', this.plotBiasComponents);
   }
 
-  ngAfterViewInit(): void {
-    this.plotBiasComponents.changes.subscribe(() => {
-      console.log(
-        'Updated plotBiasComponents:',
-        this.plotBiasComponents.toArray()
-      );
-    });
+  ngOnChanges(changes: SimpleChanges){
+    if(changes['sweepGlobalParameters'] || changes['stepGlobalParameters']){
+      this.calculateTimePerStep();
+      this.plotdataXCalculation();
+    }
+  }
+
+  calculateTimePerStep(): void {
+    if (this.sweepTimingConfig) {
+      const numMeas = this.sweepGlobalParameters?.sweep_points.value;
+      const lineFreq = 60;
+      const overhead = 78e-6;
+      const sourceDelay = this.sweepTimingConfig.smu_timing.source_delay.value;
+      const measDelay = this.sweepTimingConfig.smu_timing.measure_delay.value;
+      const mode = "nplc";
+      const value = this.sweepTimingConfig.smu_timing.nplc.value;
+
+      const timingCalc = new TimingCalculation({
+        numMeas,
+        lineFreq,
+        overhead,
+        sourceDelay,
+        measDelay
+      });
+      this.totalTimePerStep = timingCalc.calculateTotalTime(mode, overhead, lineFreq, value, sourceDelay, measDelay);
+      console.log("totaltime", this.totalTimePerStep);
+    }
+  }
+
+  plotdataXCalculation(): void {
+    if (this.totalTimePerStep) {
+      const points = 11;
+      const xData: number[] = [];
+      const interval = this.totalTimePerStep / (points - 1);
+      for (let i = 0; i < points; i++) {
+        xData.push(i * interval);
+      }
+      this.plotDataX = xData;
+    }
   }
 
   getColor(uuid: string): string {
@@ -223,11 +145,6 @@ export class PlotContainerComponent implements OnInit, AfterViewInit, OnDestroy 
         : 'var(--vscode-activityBar-border)',
       color: isActive ? 'black' : 'var(--vscode-badge-foreground)',
     };
-  }
-
-  listOfSweepPointsUpdate(newPoints: ParameterFloat[][]) {
-    // This creates a new reference, triggering ngOnChanges in the child
-    this.listofSweepPoints = [...newPoints];
   }
 
   scrollToPlot(componentType: 'bias' | 'step' | 'sweep', index: number): void {
@@ -254,45 +171,4 @@ export class PlotContainerComponent implements OnInit, AfterViewInit, OnDestroy 
     }
   }
 
-   getCssVariableValue(variableName: string): string {
-    const root = document.documentElement;
-    const value = getComputedStyle(root).getPropertyValue(variableName).trim();
-    return value;
-  }
-
-  rgbToHex(rgb: string): string {
-    const match = rgb.match(/\d+/g);
-    if (!match) return rgb;
-    const [r, g, b] = match.map(Number);
-    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-  }
-  initializePlot(): void {
-    const backgroundColor = this.getCssVariableValue('--vscode-editor-background');
-    const backgroundColorHex = backgroundColor.startsWith('rgb')
-      ? this.rgbToHex(backgroundColor)
-      : backgroundColor;
-    this.originalBackgroundColor = backgroundColorHex;
-    // Subclasses should set plotLayout.paper_bgcolor and plotLayout.plot_bgcolor
-    const activeBg = this.getCssVariableValue('--vscode-activityErrorBadge-foreground');
-    this.activeBackgroundColor = activeBg.startsWith('rgb')
-      ? this.rgbToHex(activeBg)
-      : activeBg;
-  }
-  observeThemeChanges(onThemeChange: () => void): void {
-    const root = document.documentElement;
-    this.mutationObserver = new MutationObserver(() => {
-      this.initializePlot();
-      onThemeChange();
-    });
-    this.mutationObserver.observe(root, {
-      attributes: true,
-      attributeFilter: ['style'],
-    });
-  }
-
-  ngOnDestroy(): void {
-    if (this.mutationObserver) {
-      this.mutationObserver.disconnect();
-    }
-  }
 }

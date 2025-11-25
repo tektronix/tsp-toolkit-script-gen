@@ -366,7 +366,7 @@ impl SweepConfig {
         self.update_channel_devices();
         self.global_parameters.evaluate();
         self.step_global_parameters.step_points.limit(1, 60000);
-        self.sweep_global_parameters.sweep_points.limit(1, 60000);
+        self.sweep_global_parameters.sweep_points.limit(2, 60000);
         self.global_parameters
             .sweep_timing_config
             .measure_count

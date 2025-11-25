@@ -76,7 +76,7 @@ export class PlotContainerComponent implements OnInit, OnChanges {
     this.plotConfig = { staticPlot: true, responsive: true };
     this.calculateTimePerStep();
     this.plotdataXCalculation();
-    console.log("plodataX", this.plotDataX);
+    // console.log("plodataX", this.plotDataX);
 
     if (this.stepGlobalParameters) {
       this.numberOfSteps = this.stepGlobalParameters.step_points;

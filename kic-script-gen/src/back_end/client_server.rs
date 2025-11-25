@@ -364,6 +364,15 @@ pub async fn start(mut script_model: ScriptModel) -> anyhow::Result<()> {
                 if let Some(session) = session.as_mut() {
                     session.text(response).await.unwrap();
                 }
+            } else if trimmed_line.contains("lineFrequency") {
+                println!("line frequency received");
+                if let Ok(freq) = trimmed_line.replace("lineFrequency", "").trim().parse::<f64>() {
+                    let mut data_model = app_state.data_model.lock().await;
+                    data_model.sweep_model.sweep_config.global_parameters.set_line_frequency(freq);
+                    println!("Set line frequency to {}", freq);
+                } else {
+                    println!("Failed to parse line frequency value: {}", trimmed_line);
+                }
             } else if trimmed_line.contains("refresh") {
                 println!("instrument data requested"); // refreshing by initiating session again does not affect the JSON state
             } else if trimmed_line.contains("reset") {

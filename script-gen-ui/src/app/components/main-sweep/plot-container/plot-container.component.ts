@@ -79,47 +79,46 @@ export class PlotContainerComponent implements OnInit, OnChanges {
     console.log("plodataX", this.plotDataX);
 
     if (this.stepGlobalParameters) {
-      this.numberOfSteps = this.stepGlobalParameters.step_points; 
+      this.numberOfSteps = this.stepGlobalParameters.step_points;
     }
   }
 
-  ngOnChanges(changes: SimpleChanges){
-    if(changes['sweepGlobalParameters'] || changes['stepGlobalParameters']){
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['sweepGlobalParameters'] || changes['stepGlobalParameters']) {
       this.calculateTimePerStep();
       this.plotdataXCalculation();
     }
   }
 
   calculateTimePerStep(): void {
-    if (this.sweepTimingConfig) {
-      const numMeas = this.sweepGlobalParameters?.sweep_points.value;
+    if (this.sweepTimingConfig && this.stepGlobalParameters) {
+      const numMeas = this.sweepTimingConfig.measure_count.value;
       const lineFreq = 60;
       const overhead = 78e-6;
       const sourceDelay = this.sweepTimingConfig.smu_timing.source_delay.value;
       const measDelay = this.sweepTimingConfig.smu_timing.measure_delay.value;
-      const mode = "nplc";
-      const value = this.sweepTimingConfig.smu_timing.nplc.value;
-      const stepToSweepDelay = this.stepGlobalParameters?.step_to_sweep_delay?.value ?? 0;
+      const stepToSweepDelay = this.stepGlobalParameters.step_to_sweep_delay.value;
 
-      const timingCalc = new TimingCalculation({
-        numMeas,
-        lineFreq,
-        overhead,
-        sourceDelay,
-        measDelay
-      });
-      this.totalTimePerStep = timingCalc.calculateTotalTime(mode, overhead, lineFreq, value, sourceDelay, measDelay, stepToSweepDelay);
-      console.log("totaltime", this.totalTimePerStep);
+      const mode = this.sweepTimingConfig.smu_timing.nplc_type.value;
+      const modeString = mode as 'Aperture' | 'NPLC';   // Made same as JSON string
+      let value: number;
+      if (mode === 'NPLC') {
+        value = this.sweepTimingConfig.smu_timing.nplc.value;
+      } else {
+        value = this.sweepTimingConfig.smu_timing.aperture.value;
+      }
+
+      const timingCalc = new TimingCalculation();
+      this.totalTimePerStep = timingCalc.calculateTotalTime(modeString, numMeas, overhead, lineFreq, value, sourceDelay, measDelay, stepToSweepDelay);
     }
   }
 
   plotdataXCalculation(): void {
     if (this.totalTimePerStep) {
       const points = 11;
-      const xData: number[] = [];
-      const interval = this.totalTimePerStep / (points - 1);
+      const xData: number[] = [0];
       for (let i = 0; i < points; i++) {
-        xData.push(i * interval);
+        xData.push(i * this.totalTimePerStep);
       }
       this.plotDataX = xData;
     }

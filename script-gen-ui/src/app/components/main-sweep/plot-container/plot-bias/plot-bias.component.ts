@@ -295,8 +295,8 @@ export class PlotBiasComponent
     // Calculate total time and dtick (same as step/sweep components)
     // const totalTime = numSteps * (1 + delayTime);
     if (this.tickDifference) {
-      this.plotLayout.xaxis.dtick = this.tickDifference/10;
-      this.plotLayout.xaxis2.dtick = this.tickDifference/10;
+      this.plotLayout.xaxis.dtick = this.tickDifference;
+      this.plotLayout.xaxis2.dtick = this.tickDifference;
     }
 
   }

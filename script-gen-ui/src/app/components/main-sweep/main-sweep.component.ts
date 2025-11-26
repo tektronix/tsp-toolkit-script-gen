@@ -11,7 +11,7 @@ import { BiasComponent } from './bias/bias.component';
 import { StepComponent } from './step/step.component';
 import { SweepComponent } from './sweep/sweep.component';
 import { WebSocketService } from '../../websocket.service';
-import { SweepConfig } from '../../model/sweep_data/sweepConfig';
+import { GlobalParameters, SweepConfig } from '../../model/sweep_data/sweepConfig';
 import {
   ParameterFloat,
   ParameterInt,
@@ -108,6 +108,7 @@ export class MainSweepComponent implements OnChanges {
   showPopupBox = false;
   showTiming = false;
   sweepTimingConfig: SweepTimingConfig | undefined;
+  globalParameters: GlobalParameters | undefined;
   showList = false; //Sweep list popup box
   deviceList: Device[] = [];
   showBiasTooltip = false;
@@ -222,12 +223,14 @@ export class MainSweepComponent implements OnChanges {
     if (this.sweepConfig) {
       this.sweepTimingConfig =
         this.sweepConfig.global_parameters.sweep_timing_config;
+
       this.deviceList = this.sweepConfig.device_list;
       this.biasChannels = this.sweepConfig.bias_channels;
       this.stepChannels = this.sweepConfig.step_channels;
       this.sweepChannels = this.sweepConfig.sweep_channels;
       this.stepGlobalParameters = this.sweepConfig.step_global_parameters;
       this.sweepGlobalParameters = this.sweepConfig.sweep_global_parameters;
+      this.globalParameters = this.sweepConfig.global_parameters;
 
       this.sweepPoints = this.sweepGlobalParameters.sweep_points;
       this.isListSweep = this.sweepGlobalParameters.list_sweep;

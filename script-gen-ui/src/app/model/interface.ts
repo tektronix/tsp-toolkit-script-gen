@@ -50,6 +50,8 @@ export interface ISweepTimingConfig {
 
 export interface IGlobalParameters {
   sweep_timing_config: ISweepTimingConfig;
+  overhead_time: number;
+  line_frequency: number;
 }
 
 export interface ICommonChanAttributes {

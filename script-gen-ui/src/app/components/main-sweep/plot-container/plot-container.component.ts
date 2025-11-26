@@ -28,6 +28,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { BrowserModule } from '@angular/platform-browser';
 import { TimingCalculation } from '../../utils/timing-calculation';
+import { GlobalParameters } from '../../../model/sweep_data/sweepConfig';
 
 @Component({
   selector: 'app-plot-container',
@@ -52,6 +53,7 @@ export class PlotContainerComponent implements OnInit, OnChanges {
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
   @Input() sweepGlobalParameters: SweepGlobalParameters | undefined;
   @Input() sweepTimingConfig: SweepTimingConfig | undefined;
+  @Input() globalParameters: GlobalParameters | undefined;
 
   @Input() colorMap = new Map<string, string>(); // Accept colorMap from MainSweepComponent
   @Input() activeComponent: 'bias' | 'step' | 'sweep' | null = null; // Accept active component
@@ -91,10 +93,10 @@ export class PlotContainerComponent implements OnInit, OnChanges {
   }
 
   calculateTimePerStep(): void {
-    if (this.sweepTimingConfig && this.stepGlobalParameters) {
+    if (this.sweepTimingConfig && this.stepGlobalParameters && this.globalParameters) {
       const numMeas = this.sweepTimingConfig.measure_count.value;
-      const lineFreq = 60;
-      const overhead = 78e-6;
+      const lineFreq = this.globalParameters.line_frequency;
+      const overhead = this.globalParameters.overhead_time;
       const sourceDelay = this.sweepTimingConfig.smu_timing.source_delay.value;
       const measDelay = this.sweepTimingConfig.smu_timing.measure_delay.value;
       const stepToSweepDelay = this.stepGlobalParameters.step_to_sweep_delay.value;

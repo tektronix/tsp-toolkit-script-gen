@@ -16,9 +16,13 @@ import { SweepTimingConfig } from './SweepTimingConfig';
 
 export class GlobalParameters {
   sweep_timing_config: SweepTimingConfig;
+  line_frequency: number;
+  overhead_time: number;
 
   constructor(data: IGlobalParameters) {
     this.sweep_timing_config = new SweepTimingConfig(data.sweep_timing_config);
+    this.line_frequency = data.line_frequency;
+    this.overhead_time = data.overhead_time;
   }
 
   toJSON() {

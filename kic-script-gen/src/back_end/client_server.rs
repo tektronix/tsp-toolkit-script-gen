@@ -365,13 +365,20 @@ pub async fn start(mut script_model: ScriptModel) -> anyhow::Result<()> {
                     session.text(response).await.unwrap();
                 }
             } else if trimmed_line.contains("lineFrequency") {
-                println!("line frequency received");
-                if let Ok(freq) = trimmed_line.replace("lineFrequency", "").trim().parse::<f64>() {
-                    let mut data_model = app_state.data_model.lock().await;
-                    data_model.sweep_model.sweep_config.global_parameters.set_line_frequency(freq);
-                    println!("Set line frequency to {}", freq);
-                } else {
-                    println!("Failed to parse line frequency value: {}", trimmed_line);
+                println!("line frequency received {}", trimmed_line);
+                match serde_json::from_str::<serde_json::Value>(trimmed_line) {
+                    Ok(json_obj) => {
+                        if let Some(freq) = json_obj.get("lineFrequency").and_then(|v| v.as_f64()) {
+                            let mut data_model = app_state.data_model.lock().await;
+                            data_model.sweep_model.sweep_config.global_parameters.set_line_frequency(freq);
+                            println!("Set line frequency to {}", freq);
+                        } else {
+                            println!("'lineFrequency' key not found or not a number in JSON: {}", trimmed_line);
+                        }
+                    }
+                    Err(e) => {
+                        println!("Failed to parse line frequency JSON: {} | Error: {}", trimmed_line, e);
+                    }
                 }
             } else if trimmed_line.contains("refresh") {
                 println!("instrument data requested"); // refreshing by initiating session again does not affect the JSON state

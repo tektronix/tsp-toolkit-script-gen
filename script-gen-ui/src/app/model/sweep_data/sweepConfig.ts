@@ -28,6 +28,8 @@ export class GlobalParameters {
   toJSON() {
     return {
       sweep_timing_config: this.sweep_timing_config.toJSON(),
+      line_frequency: this.line_frequency,
+      overhead_time: this.overhead_time,
     };
   }
 }

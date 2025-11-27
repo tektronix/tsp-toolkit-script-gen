@@ -119,6 +119,7 @@ export class TimingComponent implements OnDestroy, OnChanges {
     });
     const psu_timing = new PsuTiming({
       rate: this.rate!,
+      aperture_value: this.sweepTimingConfig?.psu_timing.aperture_value || [],
     });
     return new SweepTimingConfig({
       measure_count: this.measureCount!,

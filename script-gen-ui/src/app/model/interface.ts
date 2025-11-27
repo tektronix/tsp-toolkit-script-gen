@@ -39,6 +39,7 @@ export interface ISmuTiming {
 }
 
 export interface IPsuTiming {
+  aperture_value: number[];
   rate: IParameterString;
 }
 

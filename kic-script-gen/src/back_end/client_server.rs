@@ -370,14 +370,24 @@ pub async fn start(mut script_model: ScriptModel) -> anyhow::Result<()> {
                     Ok(json_obj) => {
                         if let Some(freq) = json_obj.get("lineFrequency").and_then(|v| v.as_f64()) {
                             let mut data_model = app_state.data_model.lock().await;
-                            data_model.sweep_model.sweep_config.global_parameters.set_line_frequency(freq);
+                            data_model
+                                .sweep_model
+                                .sweep_config
+                                .global_parameters
+                                .set_line_frequency(freq);
                             println!("Set line frequency to {}", freq);
                         } else {
-                            println!("'lineFrequency' key not found or not a number in JSON: {}", trimmed_line);
+                            println!(
+                                "'lineFrequency' key not found or not a number in JSON: {}",
+                                trimmed_line
+                            );
                         }
                     }
                     Err(e) => {
-                        println!("Failed to parse line frequency JSON: {} | Error: {}", trimmed_line, e);
+                        println!(
+                            "Failed to parse line frequency JSON: {} | Error: {}",
+                            trimmed_line, e
+                        );
                     }
                 }
             } else if trimmed_line.contains("refresh") {

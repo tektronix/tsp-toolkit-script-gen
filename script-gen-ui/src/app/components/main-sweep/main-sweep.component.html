@@ -208,6 +208,8 @@
             (showStepListChange)="
               onShowStepListChange($event.stepId, $event.value)
             "
+            (stepListPositionChange)="onStepListPositionChange($event)"
+            [savedStepListPosition]="getStepListPosition(stepChannel.start_stop_channel.common_chan_attributes.uuid)"
           ></app-step>
         </div>
       </div>

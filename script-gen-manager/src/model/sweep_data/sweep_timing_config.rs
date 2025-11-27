@@ -139,12 +139,14 @@ impl SmuTiming {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PsuTiming {
     rate: ParameterString,
+    aperture_value: Vec<f64>,
 }
 
 impl PsuTiming {
     pub fn new() -> Self {
         let mut psu_timing = PsuTiming {
             rate: ParameterString::new("rate"),
+            aperture_value: vec![],
         };
         psu_timing.set_defaults();
         psu_timing
@@ -156,6 +158,7 @@ impl PsuTiming {
             BaseMetadata::RATE_FAST.to_string(),
         ];
         self.rate.value = BaseMetadata::RATE_NORMAL.to_string();
+        self.aperture_value = vec![0.066667, 0.016667]; // 66.667ms, 16.667ms
     }
 
     pub fn evaluate(&mut self) {

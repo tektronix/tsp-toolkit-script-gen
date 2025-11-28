@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/consistent-generic-constructors */
 import {
   Component,
   ViewChildren,
@@ -92,7 +93,7 @@ export class MainSweepComponent implements OnChanges {
     if (this.activeComponent !== component || this.activeIndex !== index) {
       this.isScrolled = false;
     }
-    
+
     this.activeComponent = component;
     this.activeIndex = index;
     console.log(`Active Component: ${component}, Index: ${index}`);
@@ -128,7 +129,7 @@ export class MainSweepComponent implements OnChanges {
   }[] = [];
 
   showStepListStates: Record<string, boolean> = {}; // step list pop up box boolean tracking
-
+  stepListPositions: Map<string, { left: number; top: number }> = new Map(); // step list positions
   @Input() sweepConfig: SweepConfig | undefined;
 
   isBiasExpanded = false;
@@ -147,12 +148,12 @@ export class MainSweepComponent implements OnChanges {
       // Handle the change in sweepConfig here if needed
       this.updateAll();
       console.log('sweepConfig updated:', this.sweepConfig);
-      
+
       // Re-scroll to active plot after data updates if there's an active component
       if (this.activeComponent !== null && this.activeIndex !== null) {
         setTimeout(() => {
           this.scrollToPlotInPlotContainer(this.activeComponent!, this.activeIndex!);
-        }, 10); 
+        }, 10);
       }
     }
   }
@@ -281,6 +282,14 @@ export class MainSweepComponent implements OnChanges {
 
   onShowStepListChange(stepId: string, value: boolean) {
     this.showStepListStates[stepId] = value;
+  }
+
+  onStepListPositionChange(data: { stepId: string; position: { left: number; top: number } }) {
+    this.stepListPositions.set(data.stepId, data.position);
+  }
+
+  getStepListPosition(stepId: string): { left: number; top: number } | null {
+    return this.stepListPositions.get(stepId) || null;
   }
 
   listOfSweepPointsUpdate(

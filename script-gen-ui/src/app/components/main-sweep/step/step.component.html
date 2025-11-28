@@ -193,9 +193,11 @@
           [listsWithNames]="stepListsWithNames"
           [noOfPointsOrSteps]="stepPoints?.value"
           [isNoOfPointsOrSteps]="selectedDeviceOption?.isValid ?? false"
+          [savedListPosition]="stepListPosition"
           (closeList)="closeStepListPopup()"
           (listOfPoints)="listOfStepPointsUpdate($event)"
           (updatedStepsOrPoints)="stepPointsUpdatefromList($event)"
+          (listPositionChange)="onStepListPositionChange($event)">
         ></app-list>
       </div>
     </div>

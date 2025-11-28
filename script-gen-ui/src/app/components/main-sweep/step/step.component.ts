@@ -70,11 +70,18 @@ export class StepComponent implements OnChanges {
 
   @Input() listStep = false; // list checkbox
   @Input() showStepList = false; //edit list popup
+  @Input() savedStepListPosition: { left: number; top: number } | null = null;
   @Output() showStepListChange = new EventEmitter<{
     stepId: string;
     value: boolean;
-  }>(); //storing the value main-sweep since this will be reloaded after changes
+  }>();
+  //storing the value main-sweep since this will be reloaded after changes
+  @Output() stepListPositionChange = new EventEmitter<{
+    stepId: string;
+    position: { left: number; top: number };
+  }>();
   list: ParameterFloat[] = []; // list of points
+  stepListPosition: { left: number; top: number } | null = null;
 
   @Input() stepChannel: StepChannel | undefined;
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
@@ -155,6 +162,11 @@ export class StepComponent implements OnChanges {
       }
 
       this.updateStepListsWithNames();
+
+      // Use saved position if available
+      if (this.savedStepListPosition) {
+        this.stepListPosition = this.savedStepListPosition;
+      }
     }
   }
 
@@ -281,5 +293,14 @@ export class StepComponent implements OnChanges {
       this.stepPoints.value = steps;
       this.submitStepGlobalParamsData();
     }
+  }
+
+  onStepListPositionChange(position: { left: number; top: number }) {
+    this.stepListPosition = position;
+    console.log('Step List Position Changed:', position);
+    this.stepListPositionChange.emit({
+      stepId: this.uuid,
+      position: position,
+    });
   }
 }

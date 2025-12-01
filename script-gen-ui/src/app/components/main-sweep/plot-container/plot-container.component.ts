@@ -162,7 +162,7 @@ export class PlotContainerComponent implements OnInit, OnChanges {
   plotdataXCalculation(): void {
     if (this.totalTimePerStep) {
       const points = 11;
-      const xData: number[] = [0];
+      const xData: number[] = [];
       for (let i = 0; i < points; i++) {
         xData.push(i * this.totalTimePerStep);
       }

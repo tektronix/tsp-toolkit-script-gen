@@ -279,17 +279,6 @@ export class PlotBiasComponent
   }
 
   private generateXAxisData(): void {
-    // if (!this.stepGlobalParameters) return;
-
-    // const numSteps = this.stepGlobalParameters.step_points?.value ?? 1;
-    // const delayTime = this.stepGlobalParameters.step_to_sweep_delay?.value ?? 0;
-
-    // Generate x-axis data using the same formula as step and sweep components
-    // const xData: number[] = [];
-    // for (let i = 0; i <= numSteps; i++) {
-    //   xData.push(i * (1 + delayTime));
-    // }
-
     this.plotData1.x = this.plotDataX;
 
     // Calculate total time and dtick (same as step/sweep components)

@@ -72,8 +72,8 @@ export class PlotContainerComponent implements OnInit, OnChanges {
 
   totalTimePerStep: number | undefined;
   modeString: 'Aperture' | 'NPLC' = 'Aperture';
-  modeValue: number = 0;
-  ID: string = '';
+  modeValue = 0;
+  ID = '';
 
   constructor(public elementRef: ElementRef) { }
 
@@ -120,7 +120,7 @@ export class PlotContainerComponent implements OnInit, OnChanges {
     let mode = this.sweepTimingConfig?.smu_timing.nplc_type.value;
     this.modeString = mode as 'Aperture' | 'NPLC';
     this.modeValue = 0;
-    let rate = this.sweepTimingConfig?.psu_timing.rate.value;
+    const rate = this.sweepTimingConfig?.psu_timing.rate.value;
     if (this.sweepTimingConfig) {
       if (ID.includes('smu')) {
         mode = this.sweepTimingConfig.smu_timing.nplc_type.value;

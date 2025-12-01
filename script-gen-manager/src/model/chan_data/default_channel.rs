@@ -286,13 +286,13 @@ impl CommonChanAttributes {
         stop_value: &ParameterFloat,
     ) {
         //Use region map to further limit the source limits based on the source function and range
-        let mut limit_value = start_value.value;
+        let mut limit_value = start_value.value.abs();
         if let Some(region_map) =
             self.get_region_map(&self.device.metadata, &self.source_range.value)
         {
             if stop_value.value.abs() > limit_value.abs() {
                 //Use the largest absolute value
-                limit_value = stop_value.value;
+                limit_value = stop_value.value.abs();
             }
             match &self.source_function.value[..] {
                 s if s == BaseMetadata::FUNCTION_VOLTAGE => {

@@ -120,6 +120,8 @@ export class SweepComponent implements OnChanges {
       this.stop = this.sweepChannel.start_stop_channel.stop;
       this.style = this.sweepChannel.start_stop_channel.style;
 
+      this.list = this.sweepChannel.start_stop_channel.list;
+
       if (this.deviceList) {
         this.deviceOptionList = this.deviceList
           .filter(

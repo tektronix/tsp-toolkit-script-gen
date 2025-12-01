@@ -160,8 +160,6 @@ impl PsuTiming {
             BaseMetadata::RATE_FAST.to_string(),
         ];
         self.rate.value = BaseMetadata::RATE_NORMAL.to_string();
-        // self.rate_normal = 0.066667;
-        // self.rate_fast = 0.016667;
     }
 
     pub fn evaluate(&mut self) {

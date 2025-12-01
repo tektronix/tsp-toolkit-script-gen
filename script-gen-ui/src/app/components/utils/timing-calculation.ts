@@ -17,7 +17,7 @@ export class TimingCalculation {
    * @param measDelay measure delay (s)
    * @param stepToSweepDelay step to sweep delay (s)
    */
-  calculateTotalTime(mode: 'Aperture' | 'NPLC', numMeas: number, overhead: number, lineFreq: number, value: number, sourceDelay: number, measDelay: number, stepToSweepDelay: number): number {
+  calculateTotalTime(mode: 'Aperture' | 'NPLC', numMeas: number, overhead: number, lineFreq: number, value: number, sourceDelay: number, measDelay: number, stepToSweepDelay: number, sweepPoints: number): number {
     this.overhead = overhead;
     this.lineFreq = lineFreq;
     this.numMeas = numMeas;
@@ -26,6 +26,6 @@ export class TimingCalculation {
     } else if (mode === 'NPLC') {
       this.measTime = (this.numMeas * ((1 / this.lineFreq) * value) + measDelay) + sourceDelay;
     }
-    return stepToSweepDelay + this.overhead + this.measTime;
+    return sweepPoints*(stepToSweepDelay + this.overhead + this.measTime);
   }
 }

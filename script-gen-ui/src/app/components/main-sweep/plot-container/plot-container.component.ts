@@ -71,6 +71,9 @@ export class PlotContainerComponent implements OnInit, OnChanges {
   plotConfig: { staticPlot: boolean; responsive: boolean } | undefined;
 
   totalTimePerStep: number | undefined;
+  modeString: 'Aperture' | 'NPLC' = 'Aperture';
+  modeValue: number = 0;
+  ID: string = '';
 
   constructor(public elementRef: ElementRef) { }
 
@@ -95,76 +98,62 @@ export class PlotContainerComponent implements OnInit, OnChanges {
   }
 
   calculateTime(): void {
-    let modeString: 'Aperture' | 'NPLC';
-    let modeValue: number | undefined;
-    let ID: string = '';
     if (this.sweepChannels && this.sweepChannels.length > 0) {
-      const sweepId = this.sweepChannels[0].start_stop_channel.common_chan_attributes.device_id;
-      ID = sweepId;
+      this.ID = this.sweepChannels[0].start_stop_channel.common_chan_attributes.device_id;
     }
     else if (this.stepChannels && this.stepChannels.length > 0) {
-      const stepId = this.stepChannels[0].start_stop_channel.common_chan_attributes.device_id;
-      ID = stepId;
+      this.ID = this.stepChannels[0].start_stop_channel.common_chan_attributes.device_id;
     }
     else if (this.biasChannels && this.biasChannels.length > 0) {
-      const biasId = this.biasChannels[0].common_chan_attributes.device_id;
-      ID = biasId;
+      this.ID = this.biasChannels[0].common_chan_attributes.device_id;
     }
     else {
       this.plotDataX = [0, 1e-6, 2e-6, 3e-6, 4e-6, 5e-6, 6e-6, 7e-6, 8e-6, 9e-6, 10e-6];
     }
-    const result = this.checkDeviceType(ID);
-    modeString = result.modeString;
-    modeValue = result.modeValue;
-    this.calculateTimePerStep(modeString, modeValue);
+    const result = this.checkDeviceType(this.ID);
+    this.modeString = result.modeString;
+    this.modeValue = result.modeValue;
+    this.calculateTimePerStep();
   }
 
-  checkDeviceType(ID: string): {modeString: 'Aperture' | 'NPLC'; modeValue : number } {
+  checkDeviceType(ID: string): { modeString: 'Aperture' | 'NPLC'; modeValue: number } {
     let mode = this.sweepTimingConfig?.smu_timing.nplc_type.value;
-    let modeString = mode as 'Aperture' | 'NPLC';
-    let modeValue: number = 0;
+    this.modeString = mode as 'Aperture' | 'NPLC';
+    this.modeValue = 0;
     let rate = this.sweepTimingConfig?.psu_timing.rate.value;
     if (ID.includes('smu') && this.sweepTimingConfig) {
       mode = this.sweepTimingConfig?.smu_timing.nplc_type.value;
       if (mode === 'NPLC') {
-        modeString = 'NPLC';
-        modeValue = this.sweepTimingConfig?.smu_timing.nplc.value;
+        this.modeString = 'NPLC';
+        this.modeValue = this.sweepTimingConfig?.smu_timing.nplc.value;
       } else if (mode === 'Aperture') {
-        modeString = 'Aperture';
-        modeValue = this.sweepTimingConfig?.smu_timing.aperture.value;
+        this.modeString = 'Aperture';
+        this.modeValue = this.sweepTimingConfig?.smu_timing.aperture.value;
       }
     } else if (ID.includes('psu') && this.sweepTimingConfig) {
       mode = 'Aperture';
-      modeString = 'Aperture'
+      this.modeString = 'Aperture';
       if (rate === 'Fast') {
-        modeValue = this.sweepTimingConfig?.psu_timing.aperture_value[1];
+        this.modeValue = this.sweepTimingConfig?.psu_timing.aperture_value[1];
       } else if (rate === 'Normal') {
-        modeValue = this.sweepTimingConfig?.psu_timing.aperture_value[0];
+        this.modeValue = this.sweepTimingConfig?.psu_timing.aperture_value[0];
       }
     }
-    return { modeString, modeValue };
+    return { modeString: this.modeString, modeValue: this.modeValue };
   }
 
-  calculateTimePerStep(modeString : 'Aperture' | 'NPLC', modeValue: number): void {
-    if (this.sweepTimingConfig && this.stepGlobalParameters && this.globalParameters) {
+  calculateTimePerStep(): void {
+    if (this.sweepTimingConfig && this.stepGlobalParameters && this.globalParameters && this.sweepGlobalParameters) {
       const numMeas = this.sweepTimingConfig.measure_count.value;
       const lineFreq = this.globalParameters.line_frequency;
       const overhead = this.globalParameters.overhead_time;
       const sourceDelay = this.sweepTimingConfig.smu_timing.source_delay.value;
       const measDelay = this.sweepTimingConfig.smu_timing.measure_delay.value;
       const stepToSweepDelay = this.stepGlobalParameters.step_to_sweep_delay.value;
-
-      // const mode = this.sweepTimingConfig.smu_timing.nplc_type.value;
-      // const modeString = mode as 'Aperture' | 'NPLC';   // Made same as JSON string
-      // let value: number;
-      // if (mode === 'NPLC') {
-      //   value = this.sweepTimingConfig.smu_timing.nplc.value;
-      // } else {
-      //   value = this.sweepTimingConfig.smu_timing.aperture.value;
-      // }
+      const sweepPoints = this.sweepGlobalParameters.sweep_points.value;
 
       const timingCalc = new TimingCalculation();
-      this.totalTimePerStep = timingCalc.calculateTotalTime(modeString, numMeas, overhead, lineFreq, modeValue, sourceDelay, measDelay, stepToSweepDelay);
+      this.totalTimePerStep = timingCalc.calculateTotalTime(this.modeString, numMeas, overhead, lineFreq, this.modeValue, sourceDelay, measDelay, stepToSweepDelay, sweepPoints);
     }
   }
 

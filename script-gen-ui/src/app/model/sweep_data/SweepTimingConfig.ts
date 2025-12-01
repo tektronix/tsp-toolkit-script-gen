@@ -118,17 +118,20 @@ export class SmuTiming {
 
 export class PsuTiming {
   rate: ParameterString;
-  aperture_value: number[];
+  rate_normal: number;
+  rate_fast: number;
 
   constructor(data: IPsuTiming) {
     this.rate = new ParameterString(data.rate);
-    this.aperture_value = data.aperture_value;
+    this.rate_normal = data.rate_normal;
+    this.rate_fast = data.rate_fast;
   }
 
   toJSON() {
     return {
       rate: this.rate.toJSON(),
-      aperture_value: this.aperture_value,
+      rate_normal: this.rate_normal,
+      rate_fast: this.rate_fast,
     };
   }
 }

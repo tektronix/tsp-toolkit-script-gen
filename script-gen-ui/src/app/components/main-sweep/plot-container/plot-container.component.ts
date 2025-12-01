@@ -121,22 +121,24 @@ export class PlotContainerComponent implements OnInit, OnChanges {
     this.modeString = mode as 'Aperture' | 'NPLC';
     this.modeValue = 0;
     let rate = this.sweepTimingConfig?.psu_timing.rate.value;
-    if (ID.includes('smu') && this.sweepTimingConfig) {
-      mode = this.sweepTimingConfig?.smu_timing.nplc_type.value;
-      if (mode === 'NPLC') {
-        this.modeString = 'NPLC';
-        this.modeValue = this.sweepTimingConfig?.smu_timing.nplc.value;
-      } else if (mode === 'Aperture') {
+    if (this.sweepTimingConfig) {
+      if (ID.includes('smu')) {
+        mode = this.sweepTimingConfig.smu_timing.nplc_type.value;
+        if (mode === 'NPLC') {
+          this.modeString = 'NPLC';
+          this.modeValue = this.sweepTimingConfig.smu_timing.nplc.value;
+        } else if (mode === 'Aperture') {
+          this.modeString = 'Aperture';
+          this.modeValue = this.sweepTimingConfig.smu_timing.aperture.value;
+        }
+      } else if (ID.includes('psu')) {
+        mode = 'Aperture';
         this.modeString = 'Aperture';
-        this.modeValue = this.sweepTimingConfig?.smu_timing.aperture.value;
-      }
-    } else if (ID.includes('psu') && this.sweepTimingConfig) {
-      mode = 'Aperture';
-      this.modeString = 'Aperture';
-      if (rate === 'Fast') {
-        this.modeValue = this.sweepTimingConfig?.psu_timing.aperture_value[1];
-      } else if (rate === 'Normal') {
-        this.modeValue = this.sweepTimingConfig?.psu_timing.aperture_value[0];
+        if (rate === 'Fast') {
+          this.modeValue = this.sweepTimingConfig.psu_timing.rate_fast;
+        } else if (rate === 'Normal') {
+          this.modeValue = this.sweepTimingConfig.psu_timing.rate_normal;
+        }
       }
     }
     return { modeString: this.modeString, modeValue: this.modeValue };

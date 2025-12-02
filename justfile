@@ -30,7 +30,9 @@ lint: lint-script-gen-ui lint-rust
 
 build triple=native-triple: build-script-gen-ui (build-rust triple)
 
-build-release triple=native-triple: build-release-script-gen-ui (build-release-rust triple)
+build-release triple=native-triple:
+    just build-release-script-gen-ui
+    just build-release-rust {{triple}}
 
 test: test-rust test-script-gen-ui
 
@@ -38,7 +40,9 @@ test-cov: test-cov-rust test-cov-script-gen-ui
 
 sbom: sbom-script-gen-ui sbom-rust sbom-root
 
-pre-package triple=native-triple: pre-package-script-gen-ui (pre-package-rust triple)
+pre-package triple=native-triple target-dir="": pre-package-script-gen-ui (pre-package-rust triple)
+    {{if target-dir != "" { "rm -r " + target-dir + "/bin" + "/*" } else { "" } }}
+    {{if target-dir != "" { "cp -r bin/* '" + target-dir + "/bin'" } else { "" } }}
 
 package vscode-platform=native-vscode-platform os=os() cpu=arch() triple=native-triple: && packaging-cleanup
     npm pkg set "name={{package-name}}-{{vscode-platform}}" --verbose
@@ -151,6 +155,17 @@ build-release-script-gen-ui: init-script-gen-ui
 [group("rust")]
 build-release-rust triple=native-triple:
     cargo build --release --target {{triple}}
+
+# All
+[group("build-release")]
+[group("all")]
+compile-toolkit:
+    code . --"{{env("TOOLKIT_DIR", "\\")}}"
+    code --profile-temp --extensionDevelopmentPath="{{env("TOOLKIT_DIR", "\\")}}"
+build-release-dev triple=native-triple: 
+    just build-release {{triple}}
+    just pre-package {{triple}} "{{env("TARGET_DIR", "\\")}}"
+    just compile-toolkit
 
 ################################################################################
 # TEST #########################################################################

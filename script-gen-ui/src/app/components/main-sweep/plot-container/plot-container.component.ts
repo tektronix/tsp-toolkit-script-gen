@@ -74,6 +74,7 @@ export class PlotContainerComponent implements OnInit, OnChanges {
   modeString: 'Aperture' | 'NPLC' = 'Aperture';
   modeValue = 0;
   ID = '';
+  tickDifference = 0;
 
   constructor(public elementRef: ElementRef) { }
 
@@ -160,13 +161,14 @@ export class PlotContainerComponent implements OnInit, OnChanges {
   }
 
   plotdataXCalculation(): void {
-    if (this.totalTimePerStep) {
-      const points = 11;
+    if (this.totalTimePerStep && this.stepGlobalParameters) {
+      const points = this.stepGlobalParameters.step_points.value;
       const xData: number[] = [];
       for (let i = 0; i < points; i++) {
         xData.push(i * this.totalTimePerStep);
       }
       this.plotDataX = xData;
+      this.tickDifference = xData.length / 10;
     }
   }
 

@@ -318,28 +318,38 @@ export class PlotStepComponent
   }
 
   private stepListPlot() {
-    if (this.listStep && this.stepPoints && this.stop) {
-      const stepValues = this.listStep
-        .map((pf) => pf?.value ?? 0)
-        .concat(this.listStep[this.listStep.length - 1]?.value ?? 0);
+    if (this.listStep && this.plotDataX && this.plotDataX.length > 0) {
+      // Generate y values to match plotDataX length
+      let stepValues = this.listStep.map((pf) => pf?.value ?? 0);
+      // If not enough values, pad or interpolate
+      if (stepValues.length < this.plotDataX.length) {
+        // Pad with last value
+        const padValue = stepValues[stepValues.length - 1] ?? 0;
+        stepValues = stepValues.concat(Array(this.plotDataX.length - stepValues.length).fill(padValue));
+      } else if (stepValues.length > this.plotDataX.length) {
+        // Truncate
+        stepValues = stepValues.slice(0, this.plotDataX.length);
+      }
       this.generatePlotData(stepValues, 'LIST');
     }
     this.renderPlot();
   }
 
   private stepValues() {
-    if (this.start && this.stop && this.stepPoints) {
-      document.body.classList.add('wait-cursor'); // Force wait cursor everywhere
-      const stepSize =
-        (this.stop.value - this.start.value) / (this.stepPoints.value - 1);
-      const yData = Array.from(
-        { length: this.stepPoints.value },
-        (_, i) => (this.start?.value ?? 0) + i * stepSize
-      ).concat(this.stop?.value ?? 0);
-
+    if (this.start && this.stop && this.plotDataX && this.plotDataX.length > 0 && this.stepPoints) {
+      const numberOfSteps = this.stepPoints.value;
+      const stepWidth = Math.floor(this.plotDataX.length / numberOfSteps);
+      // const remainder = this.plotDataX.length % numberOfSteps;
+      const stepSize = (this.stop.value - this.start.value) / (numberOfSteps - 1);
+      let yData: number[] = [];
+      for (let step = 0; step < numberOfSteps; step++) {
+        const value = (this.start.value) + step * stepSize;
+        const width = stepWidth;
+        yData = yData.concat(Array(width).fill(value));
+      }
+       yData = yData.concat(this.stop.value);
       this.generatePlotData(yData, 'LIN');
     }
-    document.body.classList.remove('wait-cursor'); // Restore cursor after rendering
   }
 
   private updatePlotLayout(): void {
@@ -391,10 +401,10 @@ export class PlotStepComponent
       // this.plotLayout.xaxis.type = 'log';
       // this.plotData1.line.shape = 'vh';
 
-      if (this.start && this.stop && this.stepPoints) {
+      if (this.start && this.stop && this.plotDataX && this.plotDataX.length > 0) {
         const startValue = this.start.value > 0 ? this.start.value : 1e-12;
         const stopValue = this.stop.value > 0 ? this.stop.value : 1e-12;
-        const numPoints = this.stepPoints.value;
+        const numPoints = this.plotDataX.length;
         const stepFactor = Math.pow(
           stopValue / startValue,
           1 / (numPoints - 1)
@@ -403,8 +413,7 @@ export class PlotStepComponent
         const yData = Array.from(
           { length: numPoints },
           (_, i) => startValue * Math.pow(stepFactor, i)
-        ).concat(this.stop.value);
-
+        );
         this.generatePlotData(yData, 'LOG');
       }
     } else {

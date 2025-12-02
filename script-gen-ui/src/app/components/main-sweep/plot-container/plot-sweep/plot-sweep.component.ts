@@ -8,6 +8,7 @@ import {
   OnChanges,
   SimpleChanges,
   HostListener,
+  input,
 } from '@angular/core';
 import { SweepChannel } from '../../../../model/chan_data/sweepChannel';
 import { CommonChanAttributes } from '../../../../model/chan_data/defaultChannel';
@@ -42,7 +43,8 @@ export class PlotSweepComponent
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
   @Input() plotDataX: number[] = [];
   @Input() plotConfig: { staticPlot: boolean } | undefined;
-  @Input() sweepPointsList: ParameterFloat[][] = [];
+  @Input() tickDifference: number | undefined;
+  @Input() totalTimePerStep: number | undefined;
 
   @Input() isActive = false;
   @Input() activeStyle: { backgroundColor: string; color: string } = {
@@ -294,110 +296,119 @@ export class PlotSweepComponent
     }
   }
 
-  private generatePlotDataxy(sweepValues: number[], xData?: number[]) {
-    if (this.numPoints && this.numSteps) {
-      const numSteps = this.numSteps;
-      const numberOfPoints = this.numPoints?.value;
-      const delayTime = this.stepToSweepDelay?.value ?? 0;
-      
-      if (delayTime > 0) {
-        const { x, y } = this.generateDataWithDelay(sweepValues, numSteps, numberOfPoints, delayTime, xData);
-        this.plotData1.x = x;
-        this.plotData1.y = y;
-      } else {
-        this.generateDataWithoutDelay(sweepValues, numSteps, numberOfPoints, xData);
-      }
-    }
-  }
+  // private generatePlotDataxy(sweepValues: number[], xData?: number[]) {
+  //   if (this.numPoints && this.numSteps) {
+  //     const numSteps = this.numSteps;
+  //     const numberOfPoints = this.numPoints?.value;
+  //     const delayTime = this.stepToSweepDelay?.value ?? 0;
 
-  private generateDataWithDelay(
-    sweepValues: number[], 
-    numSteps: number, 
-    numberOfPoints: number, 
-    delayTime: number, 
-    xData?: number[]
-  ): { x: number[], y: number[] } {
-    const finalX: number[] = [];
-    const finalY: number[] = [];
-    const delayPoints = Math.max(5, Math.floor(delayTime * 10));
-    
-    // Generate data for each step with delay
-    for (let step = 0; step < numSteps; step++) {
-      const stepStartTime = step * (1 + delayTime);
-      
-      // Add delay period (zeros) at the beginning of each step
-      for (let d = 0; d < delayPoints; d++) {
-        finalX.push(stepStartTime + (d * delayTime) / delayPoints);
-        finalY.push(0);
-      }
-      
-      // Add the actual sweep data for this step
-      for (let j = 0; j < numberOfPoints; j++) {
-        if (xData) {
-          const originalIndex = step * numberOfPoints + j;
-          if (originalIndex < xData.length) {
-            finalX.push(stepStartTime + delayTime + (j / numberOfPoints));
-          }
-        } else {
-          finalX.push(stepStartTime + delayTime + (j / numberOfPoints));
-        }
-        finalY.push(sweepValues[j]);
-      }
-    }
-    
-    // Add final point
-    if (sweepValues.length > 0) {
-      const finalStepTime = numSteps * (1 + delayTime);
-      finalX.push(finalStepTime);
-      finalY.push(sweepValues[sweepValues.length - 1]);
-    }
-    
-    return { x: finalX, y: finalY };
-  }
+  //     // if (delayTime > 0) {
+  //     //   const { x, y } = this.generateDataWithDelay(sweepValues, numSteps, numberOfPoints, delayTime, xData);
+  //     //   this.plotData1.x = x;
+  //     //   this.plotData1.y = y;
+  //     // } else {
+  //     //   this.generateDataWithoutDelay(sweepValues, numSteps, numberOfPoints, xData);
+  //     // }
+  //   }
+  // }
 
-  private generateDataWithoutDelay(sweepValues: number[], numSteps: number, numberOfPoints: number, xData?: number[]) {
-    this.plotData1.y = Array.from({ length: numSteps }, () => sweepValues)
-      .flat()
-      .concat(sweepValues[sweepValues.length - 1]);
+  // private generateDataWithDelay(
+  //   sweepValues: number[],
+  //   numSteps: number,
+  //   numberOfPoints: number,
+  //   delayTime: number,
+  //   xData?: number[]
+  // ): { x: number[], y: number[] } {
+  //   const finalX: number[] = [];
+  //   const finalY: number[] = [];
+  //   const delayPoints = Math.max(5, Math.floor(delayTime * 10));
 
-    if (xData) {
-      this.plotData1.x = xData;
-    } else {
-      this.plotData1.x = Array.from({ length: numSteps }, (_, i) =>
-        Array.from({ length: numberOfPoints }, (_, j) => i + j / numberOfPoints)
-      )
-        .flat()
-        .concat(numSteps);
-    }
-  }
+  //   // Generate data for each step with delay
+  //   for (let step = 0; step < numSteps; step++) {
+  //     const stepStartTime = step * (1 + delayTime);
+
+  //     // Add delay period (zeros) at the beginning of each step
+  //     for (let d = 0; d < delayPoints; d++) {
+  //       finalX.push(stepStartTime + (d * delayTime) / delayPoints);
+  //       finalY.push(0);
+  //     }
+
+  //     // Add the actual sweep data for this step
+  //     for (let j = 0; j < numberOfPoints; j++) {
+  //       if (xData) {
+  //         const originalIndex = step * numberOfPoints + j;
+  //         if (originalIndex < xData.length) {
+  //           finalX.push(stepStartTime + delayTime + (j / numberOfPoints));
+  //         }
+  //       } else {
+  //         finalX.push(stepStartTime + delayTime + (j / numberOfPoints));
+  //       }
+  //       finalY.push(sweepValues[j]);
+  //     }
+  //   }
+
+  //   // Add final point
+  //   if (sweepValues.length > 0) {
+  //     const finalStepTime = numSteps * (1 + delayTime);
+  //     finalX.push(finalStepTime);
+  //     finalY.push(sweepValues[sweepValues.length - 1]);
+  //   }
+
+  //   return { x: finalX, y: finalY };
+  // }
+
+  // private generateDataWithoutDelay(sweepValues: number[], numSteps: number, numberOfPoints: number, xData?: number[]) {
+  //   this.plotData1.y = Array.from({ length: numSteps }, () => sweepValues)
+  //     .flat()
+  //     .concat(sweepValues[sweepValues.length - 1]);
+
+  //   if (xData) {
+  //     this.plotData1.x = xData;
+  //   } else {
+  //     this.plotData1.x = Array.from({ length: numSteps }, (_, i) =>
+  //       Array.from({ length: numberOfPoints }, (_, j) => i + j / numberOfPoints)
+  //     )
+  //       .flat()
+  //       .concat(numSteps);
+  //   }
+  // }
 
   private generatePlotData(sweepValues: number[], type: string) {
-    if (this.numPoints && this.numSteps && this.stepToSweepDelay) {
+    if (this.numPoints && this.numSteps && this.stepToSweepDelay && this.tickDifference && this.totalTimePerStep) {
       const targetLength = this.plotWidth / this.numSteps;
+      let processedXData: number[] = [];
+      let processedYData: number[] = [];
 
-      
-      if (this.numPoints?.value > targetLength) {
-        let xData: number[] = [];
-        if (type == 'LIN' || type == 'LOG' || type == 'LIST') {
-          const interpolated = PlotUtils.minMaxInterpolation(
-            sweepValues,
-            targetLength
-          );
-          sweepValues = interpolated.y;
+      // Interpolate numPoints between each consecutive value in plotDataX
+      if (this.plotDataX && this.plotDataX.length > 1 && this.numPoints?.value) {
+        const numPoints = this.numPoints.value;
+        for (let i = 0; i < this.plotDataX.length - 1; i++) {
+          const x0 = this.plotDataX[i];
+          const x1 = this.plotDataX[i + 1];
+          for (let j = 0; j < numPoints; j++) {
+            processedXData.push(x0 + (x1 - x0) * (j / numPoints));
+          }
         }
-        xData = Array.from({ length: this.numSteps }, (_, i) =>
-            Array.from({ length: sweepValues.length }, (_, j) => i + j / sweepValues.length)).flat().concat(this.numSteps)
-        this.generatePlotDataxy(sweepValues, xData);
+        processedXData.push(this.plotDataX[this.plotDataX.length - 1]);
       } else {
-        this.generatePlotDataxy(sweepValues);
+        processedXData = this.plotDataX;
       }
-      
-      // Update x-axis range to include delay time for each step
-      const delayTime = this.stepToSweepDelay.value;
-      const totalTime = this.numSteps * (1 + delayTime); // Each step now takes (1 + delayTime) units
-      
-      this.plotLayout.xaxis.dtick = totalTime / 10;
-      this.plotLayout.xaxis.range = [0, totalTime];
+
+      if (this.numPoints?.value > targetLength) {
+        processedYData = PlotUtils.minMaxInterpolation(
+          sweepValues,
+          targetLength
+        ).y;
+      } else {
+        processedYData = sweepValues;
+      }
+      this.plotData1.x = processedXData;
+      this.plotData1.y = Array.from({ length: this.numSteps }, () => sweepValues)
+        .flat()
+        .concat(sweepValues[sweepValues.length - 1]);
+
+      this.plotLayout.xaxis.dtick = this.tickDifference;
+      this.plotLayout.xaxis.range = [0, this.tickDifference * 10];
     }
   }
 

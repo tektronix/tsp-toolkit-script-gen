@@ -271,7 +271,6 @@ export class PlotStepComponent
 
   private generatePlotData(yData: number[], type: string): void {
     if (this.stepPoints && this.stepToSweepDelay && this.tickDifference) {
-      const delayTime = this.stepToSweepDelay?.value ?? 0;
       const targetLength = this.plotWidth;
       let processedYData = [...yData];
       let processedXData: number[] = this.plotDataX;

@@ -82,7 +82,7 @@ export class PlotContainerComponent implements OnInit, OnChanges {
     this.plotConfig = { staticPlot: true, responsive: true };
     // this.calculateTimePerStep();
     this.calculateTime();
-    this.plotdataXCalculation();
+    // this.plotdataXCalculation();
     // console.log("plodataX", this.plotDataX);
 
     if (this.stepGlobalParameters) {
@@ -94,7 +94,7 @@ export class PlotContainerComponent implements OnInit, OnChanges {
     if (changes['sweepGlobalParameters'] || changes['stepGlobalParameters'] && changes['sweepTimingConfig']) {
       // this.calculateTimePerStep();
       this.calculateTime();
-      this.plotdataXCalculation();
+      // this.plotdataXCalculation();
     }
   }
 
@@ -157,6 +157,7 @@ export class PlotContainerComponent implements OnInit, OnChanges {
 
       const timingCalc = new TimingCalculation();
       this.totalTimePerStep = timingCalc.calculateTotalTime(this.modeString, numMeas, overhead, lineFreq, this.modeValue, sourceDelay, measDelay, stepToSweepDelay, sweepPoints);
+      this.plotdataXCalculation();
     }
   }
 
@@ -164,11 +165,11 @@ export class PlotContainerComponent implements OnInit, OnChanges {
     if (this.totalTimePerStep && this.stepGlobalParameters) {
       const points = this.stepGlobalParameters.step_points.value;
       const xData: number[] = [];
-      for (let i = 0; i < points; i++) {
+      for (let i = 0; i < points + 1; i++) {
         xData.push(i * this.totalTimePerStep);
       }
       this.plotDataX = xData;
-      this.tickDifference = xData.length / 10;
+      this.tickDifference = xData[points]/10;
     }
   }
 

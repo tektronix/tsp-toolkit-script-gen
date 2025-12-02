@@ -83,6 +83,7 @@ export class PlotBiasComponent
       type: 'linear',
       position: 20,
       linewidth: 1,
+      range: [0,1],
     },
     xaxis2: {
       visible: true,
@@ -283,6 +284,7 @@ export class PlotBiasComponent
     if (this.tickDifference) {
       this.plotLayout.xaxis.dtick = this.tickDifference;
       this.plotLayout.xaxis2.dtick = this.tickDifference;
+      this.plotLayout.xaxis.range = [0, this.tickDifference * 10];
     }
   }
 

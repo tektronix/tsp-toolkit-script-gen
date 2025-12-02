@@ -96,15 +96,13 @@ export class PlotUtils {
   static minMaxInterpolation(
     data: number[],
     targetLength: number
-  ): { x: number[]; y: number[] } {
+  ): { y: number[] } {
     const n = data.length;
     if (targetLength >= n) {
       return {
-        x: Array.from({ length: n }, (_, i) => i),
         y: data.slice(),
       };
     }
-    const x: number[] = [];
     const y: number[] = [];
     const binSize = n / targetLength;
     for (let i = 0; i < targetLength; i++) {
@@ -114,10 +112,8 @@ export class PlotUtils {
       if (bin.length > 0) {
         y.push(Math.min(...bin));
         y.push(Math.max(...bin));
-        x.push(i);
-        x.push(i);
       }
     }
-    return { x, y };
+    return { y };
   }
 }

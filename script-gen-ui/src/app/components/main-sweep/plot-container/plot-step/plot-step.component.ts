@@ -274,42 +274,19 @@ export class PlotStepComponent
       const delayTime = this.stepToSweepDelay?.value ?? 0;
       const targetLength = this.plotWidth;
       let processedYData = [...yData];
-      // let processedXData: number[] = [];
-      // const numberofSteps: number = this.stepPoints.value;
-      // processedXData = Array.from({ length: processedYData.length }, (_, i) => (i / (processedYData.length - 1) * numberofSteps)).concat(numberofSteps).flat();
-
-      // Adding delay first if its exists
-      // if (delayTime > 0) {
-      //   const { y } = this.generateDataWithDelay(processedYData, delayTime);
-      //   processedYData = y;
-      // }
+      let processedXData: number[] = this.plotDataX;
 
       if (processedYData.length > targetLength) {
         if (type == 'LIN' || type == 'LOG' || type == 'LIST') {
-          // If we have delay, we need to interpolate X,Y pairs together to maintain timing
-          // This was suggested to be better than interpolation in this case so the graph is continous in all places and works well in our use case
-          if (delayTime > 0) {
-            // Create indices for interpolation based on target length
-            const indices = Array.from({ length: targetLength }, (_, i) =>
-              Math.floor((i / (targetLength - 1)) * (processedYData.length - 1))
-            );
-
-            // Interpolate by sampling the delay-generated data at calculated indices
-            processedYData = indices.map(i => processedYData[i]);
-            // processedXData = indices.map(i => processedXData[i]);
-          } else {
-            // Without delay, use original interpolation method
-            const interpolated = PlotUtils.minMaxInterpolation(processedYData, targetLength);
-            processedYData = interpolated.y;
-            // processedXData = Array.from({ length: processedYData.length }, (_, i) => (i / (processedYData.length - 1) * numberofSteps)).concat(numberofSteps).flat();
-          }
+          const interpolatedy = PlotUtils.minMaxInterpolation(processedYData, targetLength);
+          processedYData = interpolatedy.y;
+          const interpolatedx = PlotUtils.minMaxInterpolation(this.plotDataX, targetLength);
+          processedXData = interpolatedx.y;
         }
       }
 
-      this.plotData1.x = this.plotDataX;
+      this.plotData1.x = processedXData;
       this.plotData1.y = processedYData;
-
-      // const totalTime = this.stepPoints.value * (1 + delayTime); // Each step now takes (1 + delayTime) units
 
       this.plotLayout.xaxis.dtick = this.tickDifference;
       this.plotLayout.xaxis.range = [0, this.tickDifference * 10];
@@ -347,7 +324,7 @@ export class PlotStepComponent
         const width = stepWidth;
         yData = yData.concat(Array(width).fill(value));
       }
-       yData = yData.concat(this.stop.value);
+      yData = yData.concat(this.stop.value);
       this.generatePlotData(yData, 'LIN');
     }
   }

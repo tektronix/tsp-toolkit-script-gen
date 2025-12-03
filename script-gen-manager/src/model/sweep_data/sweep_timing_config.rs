@@ -139,12 +139,16 @@ impl SmuTiming {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PsuTiming {
     rate: ParameterString,
+    rate_normal: f64,
+    rate_fast: f64,
 }
 
 impl PsuTiming {
     pub fn new() -> Self {
         let mut psu_timing = PsuTiming {
             rate: ParameterString::new("rate"),
+            rate_normal: 0.066667,
+            rate_fast: 0.016667,
         };
         psu_timing.set_defaults();
         psu_timing

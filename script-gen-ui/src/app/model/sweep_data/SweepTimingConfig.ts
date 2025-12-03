@@ -118,14 +118,20 @@ export class SmuTiming {
 
 export class PsuTiming {
   rate: ParameterString;
+  rate_normal: number;
+  rate_fast: number;
 
   constructor(data: IPsuTiming) {
     this.rate = new ParameterString(data.rate);
+    this.rate_normal = data.rate_normal;
+    this.rate_fast = data.rate_fast;
   }
 
   toJSON() {
     return {
       rate: this.rate.toJSON(),
+      rate_normal: this.rate_normal,
+      rate_fast: this.rate_fast,
     };
   }
 }

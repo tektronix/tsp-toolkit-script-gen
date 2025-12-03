@@ -35,7 +35,7 @@ impl Mpsu50Metadata {
             max_supported_current,
         );
 
-        base.add_range("source.limiti".to_string(), 0.01, 5.1);
+        base.add_range("source.limiti".to_string(), -5.1, 5.1);
 
         base.add_range("source.step_to_sweep_delay".to_string(), 0.0, 100.0);
 
@@ -44,21 +44,21 @@ impl Mpsu50Metadata {
         let exclude_i = NumberLimit::new(-10.0e-9, 10.0e-9, false, None);
         let mut region_map_metadata = RegionMapMetadata::new(None, exclude_i);
 
-        region_map_metadata.add_region(1, 0.0, 0.0, 10.0, max_supported_current);
-        region_map_metadata.add_region(1, 0.0, 0.0, -10.0, -max_supported_current);
+        region_map_metadata.add_region(1, 0.0, 10.0e-9, 10.0, max_supported_current);
+        region_map_metadata.add_region(1, 0.0, -10.0e-9, -10.0, -max_supported_current);
 
         Self::add_1st_quadrant_curved_region(
             10.0,
             max_supported_voltage,
             0.0001,
-            0.0,
+            10.0e-9,
             &mut region_map_metadata,
         ); //First quadrant curve
         Self::add_3rd_quadrant_curved_region(
             -10.0,
             -max_supported_voltage,
             -0.0001,
-            0.0,
+            -10.0e-9,
             &mut region_map_metadata,
         ); //Third quadrant curve
 

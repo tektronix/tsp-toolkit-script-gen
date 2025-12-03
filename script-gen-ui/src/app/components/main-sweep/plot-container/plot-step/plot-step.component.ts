@@ -38,6 +38,7 @@ export class PlotStepComponent
   @Input() stepGlobalParameters: StepGlobalParameters | undefined;
 
   @Input() plotDataX: number[] = [];
+  @Input() tickDifference: number | undefined;
   @Input() plotConfig: { staticPlot: boolean } | undefined;
   @Input() stepPointsList: ParameterFloat[][] = [];
 
@@ -262,115 +263,69 @@ export class PlotStepComponent
   onResize(): void {
     this.windowHeight = window.innerHeight;
     this.windowWidth = window.innerWidth;
-    console.log('Window resized');
+    // console.log('Window resized');
     this.plotLayout.width = (this.windowWidth * 58) / 100;
     this.renderPlot();
-    console.log('Plot resized to:', this.plotLayout.width);
+    // console.log('Plot resized to:', this.plotLayout.width);
   }
 
   private generatePlotData(yData: number[], type: string): void {
-    if (this.stepPoints && this.stepToSweepDelay) {
-      const delayTime = this.stepToSweepDelay?.value ?? 0;
+    if (this.stepPoints && this.stepToSweepDelay && this.tickDifference) {
       const targetLength = this.plotWidth;
       let processedYData = [...yData];
-      let processedXData: number[] = [];
-      const numberofSteps: number = this.stepPoints.value;
-      processedXData = Array.from({ length: processedYData.length }, (_, i) => (i / (processedYData.length - 1) * numberofSteps)).concat(numberofSteps).flat();
-
-      // Adding delay first if its exists
-      if (delayTime > 0) {
-        const { x, y } = this.generateDataWithDelay(processedYData, processedXData, delayTime);
-        processedXData = x;
-        processedYData = y;
-      }
+      let processedXData: number[] = this.plotDataX;
 
       if (processedYData.length > targetLength) {
         if (type == 'LIN' || type == 'LOG' || type == 'LIST') {
-          // If we have delay, we need to interpolate X,Y pairs together to maintain timing
-          // This was suggested to be better than interpolation in this case so the graph is continous in all places and works well in our use case
-          if (delayTime > 0) {
-            // Create indices for interpolation based on target length
-            const indices = Array.from({ length: targetLength }, (_, i) =>
-              Math.floor((i / (targetLength - 1)) * (processedYData.length - 1))
-            );
-
-            // Interpolate by sampling the delay-generated data at calculated indices
-            processedYData = indices.map(i => processedYData[i]);
-            processedXData = indices.map(i => processedXData[i]);
-          } else {
-            // Without delay, use original interpolation method
-            const interpolated = PlotUtils.minMaxInterpolation(processedYData, targetLength);
-            processedYData = interpolated.y;
-            processedXData = Array.from({ length: processedYData.length }, (_, i) => (i / (processedYData.length - 1) * numberofSteps)).concat(numberofSteps).flat();
-          }
+          const interpolatedy = PlotUtils.minMaxInterpolation(processedYData, targetLength);
+          processedYData = interpolatedy.y;
+          const interpolatedx = PlotUtils.minMaxInterpolation(this.plotDataX, targetLength);
+          processedXData = interpolatedx.y;
         }
       }
 
       this.plotData1.x = processedXData;
       this.plotData1.y = processedYData;
 
-      const totalTime = this.stepPoints.value * (1 + delayTime); // Each step now takes (1 + delayTime) units
-
-      this.plotLayout.xaxis.dtick = totalTime / 10;
-      this.plotLayout.xaxis.range = [0, totalTime];
+      this.plotLayout.xaxis.dtick = this.tickDifference;
+      this.plotLayout.xaxis.range = [0, this.tickDifference * 10];
+      console.log('plotdata', this.plotData1);
     }
-  }
-
-  private generateDataWithDelay(yData: number[], xData: number[], delayTime: number): { x: number[], y: number[] } {
-    const finalX: number[] = [];
-    const finalY: number[] = [];
-    const delayPoints = Math.max(5, Math.floor(delayTime * 10));
-    const numSteps = yData.length - 1; // Exclude the final repeated point
-
-    // Generate data for each step with delay
-    for (let step = 0; step < numSteps; step++) {
-      const stepStartTime = step * (1 + delayTime);
-      const currentYValue = yData[step];
-
-      // Add delay period (repeat current y value) at the beginning of each step
-      for (let d = 0; d < delayPoints; d++) {
-        finalX.push(stepStartTime + (d * delayTime) / delayPoints);
-        finalY.push(currentYValue);
-      }
-
-      // Add the actual step point after delay
-      finalX.push(stepStartTime + delayTime);
-      finalY.push(currentYValue);
-    }
-
-    // Add final point
-    if (yData.length > 0) {
-      const finalStepTime = numSteps * (1 + delayTime);
-      finalX.push(finalStepTime);
-      finalY.push(yData[yData.length - 1]);
-    }
-
-    return { x: finalX, y: finalY };
   }
 
   private stepListPlot() {
-    if (this.listStep && this.stepPoints && this.stop) {
-      const stepValues = this.listStep
-        .map((pf) => pf?.value ?? 0)
-        .concat(this.listStep[this.listStep.length - 1]?.value ?? 0);
+    if (this.listStep && this.plotDataX && this.plotDataX.length > 0) {
+      // Generate y values to match plotDataX length
+      let stepValues = this.listStep.map((pf) => pf?.value ?? 0);
+      // If not enough values, pad or interpolate
+      if (stepValues.length < this.plotDataX.length) {
+        // Pad with last value
+        const padValue = stepValues[stepValues.length - 1] ?? 0;
+        stepValues = stepValues.concat(Array(this.plotDataX.length - stepValues.length).fill(padValue));
+      } else if (stepValues.length > this.plotDataX.length) {
+        // Truncate
+        stepValues = stepValues.slice(0, this.plotDataX.length);
+      }
       this.generatePlotData(stepValues, 'LIST');
     }
     this.renderPlot();
   }
 
   private stepValues() {
-    if (this.start && this.stop && this.stepPoints) {
-      document.body.classList.add('wait-cursor'); // Force wait cursor everywhere
-      const stepSize =
-        (this.stop.value - this.start.value) / (this.stepPoints.value - 1);
-      const yData = Array.from(
-        { length: this.stepPoints.value },
-        (_, i) => (this.start?.value ?? 0) + i * stepSize
-      ).concat(this.stop?.value ?? 0);
-
+    if (this.start && this.stop && this.plotDataX && this.plotDataX.length > 0 && this.stepPoints) {
+      const numberOfSteps = this.stepPoints.value;
+      const stepWidth = Math.floor(this.plotDataX.length / numberOfSteps);
+      // const remainder = this.plotDataX.length % numberOfSteps;
+      const stepSize = (this.stop.value - this.start.value) / (numberOfSteps - 1);
+      let yData: number[] = [];
+      for (let step = 0; step < numberOfSteps; step++) {
+        const value = (this.start.value) + step * stepSize;
+        const width = stepWidth;
+        yData = yData.concat(Array(width).fill(value));
+      }
+      yData = yData.concat(this.stop.value);
       this.generatePlotData(yData, 'LIN');
     }
-    document.body.classList.remove('wait-cursor'); // Restore cursor after rendering
   }
 
   private updatePlotLayout(): void {
@@ -422,10 +377,10 @@ export class PlotStepComponent
       // this.plotLayout.xaxis.type = 'log';
       // this.plotData1.line.shape = 'vh';
 
-      if (this.start && this.stop && this.stepPoints) {
+      if (this.start && this.stop && this.plotDataX && this.plotDataX.length > 0) {
         const startValue = this.start.value > 0 ? this.start.value : 1e-12;
         const stopValue = this.stop.value > 0 ? this.stop.value : 1e-12;
-        const numPoints = this.stepPoints.value;
+        const numPoints = this.plotDataX.length;
         const stepFactor = Math.pow(
           stopValue / startValue,
           1 / (numPoints - 1)
@@ -434,8 +389,7 @@ export class PlotStepComponent
         const yData = Array.from(
           { length: numPoints },
           (_, i) => startValue * Math.pow(stepFactor, i)
-        ).concat(this.stop.value);
-
+        );
         this.generatePlotData(yData, 'LOG');
       }
     } else {

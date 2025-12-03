@@ -39,6 +39,8 @@ export interface ISmuTiming {
 }
 
 export interface IPsuTiming {
+  rate_normal: number;
+  rate_fast: number;
   rate: IParameterString;
 }
 
@@ -50,6 +52,8 @@ export interface ISweepTimingConfig {
 
 export interface IGlobalParameters {
   sweep_timing_config: ISweepTimingConfig;
+  overhead_time: number;
+  line_frequency: number;
 }
 
 export interface ICommonChanAttributes {

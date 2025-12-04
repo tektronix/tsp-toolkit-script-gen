@@ -24,6 +24,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { BrowserModule } from '@angular/platform-browser';
 import { PlotUtils } from '../plot-utils';
+import { parseScientificInput } from '../../../controls/input-parser.util';
 
 @Component({
   selector: 'app-plot-step',
@@ -40,7 +41,9 @@ export class PlotStepComponent
   @Input() plotDataX: number[] = [];
   @Input() tickDifference: number | undefined;
   @Input() plotConfig: { staticPlot: boolean } | undefined;
-  @Input() stepPointsList: ParameterFloat[][] = [];
+  @Input() totalTimePerStep: number | undefined;
+  totalTimePerStepConverted: string | undefined;
+  
 
   private _isActive = false;
 
@@ -112,6 +115,8 @@ export class PlotStepComponent
       type: 'linear',
       position: 20,
       linewidth: 1,
+      tickformat: '.3~s',
+      exponentformat: 'SI'
     },
     xaxis2: {
       visible: true,
@@ -218,7 +223,7 @@ export class PlotStepComponent
   }
 
   ngOnInit() {
-    if (this.stepChannel && this.stepGlobalParameters) {
+    if (this.stepChannel && this.stepGlobalParameters && this.totalTimePerStep) {
       this.commonChanAttributes =
         this.stepChannel.start_stop_channel.common_chan_attributes;
 
@@ -239,12 +244,14 @@ export class PlotStepComponent
 
       this.stepPoints = this.stepGlobalParameters.step_points;
       this.stepToSweepDelay = this.stepGlobalParameters.step_to_sweep_delay;
+      this.totalTimePerStepConverted = parseScientificInput(this.totalTimePerStep.toString(), 's');
     }
     this.plotData1.x = this.plotDataX;
     this.plotData1.line.color = this.color;
     this.updatePlotLayout();
     this.initializePlot();
     this.observeThemeChanges();
+    
   }
 
   // the plots are rendered only after the DOM is created, so we need to render them after the DOM is loaded

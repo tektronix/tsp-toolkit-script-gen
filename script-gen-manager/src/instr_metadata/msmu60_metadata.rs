@@ -99,9 +99,9 @@ impl Msmu60Metadata {
         let mut outer_region = RegionMapMetadata::new(exclude_v.clone(), exclude_i.clone());
         outer_region.add_region(
             1,
-            -20.0 - EPSILON,
+            -20.2 - EPSILON,
             -1.515 - EPSILON,
-            20.0 + EPSILON,
+            20.2 + EPSILON,
             1.515 + EPSILON,
         );
         base.add_region_map(VOLTAGE_200_MV, outer_region.clone());

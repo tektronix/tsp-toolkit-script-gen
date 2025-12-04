@@ -83,9 +83,9 @@ impl Msmu60Metadata {
         inner_region.add_region(
             1,
             -60.6 - EPSILON,
-            -0.1 - EPSILON,
+            -0.101 - EPSILON,
             60.6 + EPSILON,
-            0.1 + EPSILON,
+            0.101 + EPSILON,
         );
         base.add_region_map(VOLTAGE_60_V, inner_region.clone());
         base.add_region_map(CURRENT_100_NA, inner_region.clone());
@@ -93,6 +93,8 @@ impl Msmu60Metadata {
         base.add_region_map(CURRENT_10_UA, inner_region.clone());
         base.add_region_map(CURRENT_100_UA, inner_region.clone());
         base.add_region_map(CURRENT_1_MA, inner_region.clone());
+        base.add_region_map(CURRENT_10_MA, inner_region.clone());
+        base.add_region_map(CURRENT_100_MA, inner_region.clone());
 
         let mut outer_region = RegionMapMetadata::new(exclude_v.clone(), exclude_i.clone());
         outer_region.add_region(
@@ -106,8 +108,6 @@ impl Msmu60Metadata {
         base.add_region_map(VOLTAGE_2_V, outer_region.clone());
         base.add_region_map(VOLTAGE_6_V, outer_region.clone());
         base.add_region_map(VOLTAGE_20_V, outer_region.clone());
-        base.add_region_map(CURRENT_10_MA, outer_region.clone());
-        base.add_region_map(CURRENT_100_MA, outer_region.clone());
         base.add_region_map(CURRENT_1_A, outer_region.clone());
         base.add_region_map(CURRENT_1_5_A, outer_region.clone());
 

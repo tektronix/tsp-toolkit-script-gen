@@ -110,6 +110,8 @@ export class PlotSweepComponent
       type: 'linear',
       position: 20,
       linewidth: 1,
+      tickformat: '.3~s',
+      exponentformat: 'SI'
     },
     xaxis2: {
       visible: true,

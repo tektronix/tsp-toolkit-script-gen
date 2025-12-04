@@ -57,7 +57,7 @@ impl StartStopChannel {
         }
     }
 
-    pub fn evaluate(&mut self, list_size: usize) {
+    pub fn evaluate(&mut self, list_size: usize, is_list_enabled: bool) {
         self.common_chan_attributes.evaluate();
         self.determine_start_value();
         self.determine_stop_value();
@@ -65,8 +65,25 @@ impl StartStopChannel {
         //List evaluation
 
         self.update_list(list_size);
-        self.common_chan_attributes
-            .evaluate_source_limits(&self.start, &self.stop);
+
+        if is_list_enabled {
+            let min_value = self
+                .list
+                .iter()
+                .min_by(|a, b| a.value.partial_cmp(&b.value).unwrap())
+                .unwrap();
+            let max_value = self
+                .list
+                .iter()
+                .max_by(|a, b| a.value.partial_cmp(&b.value).unwrap())
+                .unwrap();
+
+            self.common_chan_attributes
+                .evaluate_source_limits(min_value, max_value);
+        } else {
+            self.common_chan_attributes
+                .evaluate_source_limits(&self.start, &self.stop);
+        }
     }
 
     fn update_list(&mut self, list_size: usize) {

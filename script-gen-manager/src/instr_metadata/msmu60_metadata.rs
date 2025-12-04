@@ -69,8 +69,8 @@ impl Msmu60Metadata {
         base.add_range("source.levelv".to_string(), -60.6, 60.6);
         base.add_range("source.leveli".to_string(), -1.515, 1.515);
 
-        base.add_range("source.limiti".to_string(), -1.515, 1.515);
-        base.add_range("source.limitv".to_string(), -60.6, 60.6);
+        base.add_range("source.limiti".to_string(), 10.0e-9, 1.515);
+        base.add_range("source.limitv".to_string(), 10.0e-9, 60.6);
 
         base.add_range("source.step_to_sweep_delay".to_string(), 0.0, 100.0);
 

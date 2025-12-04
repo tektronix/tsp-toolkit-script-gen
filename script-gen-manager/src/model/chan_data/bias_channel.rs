@@ -26,6 +26,8 @@ impl BiasChannel {
 
     pub fn evaluate(&mut self) {
         self.common_chan_attributes.evaluate();
+        self.common_chan_attributes
+            .evaluate_source_limits(&self.bias, &self.bias); //Use the bias value for both start and stop as the absolute max is used
         self.determine_bias_value();
     }
 

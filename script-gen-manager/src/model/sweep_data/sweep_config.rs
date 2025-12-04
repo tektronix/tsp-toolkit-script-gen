@@ -393,14 +393,16 @@ impl SweepConfig {
         }
 
         for step_channel in &mut self.step_channels {
-            step_channel
-                .start_stop_channel
-                .evaluate(self.step_global_parameters.step_points.value as usize);
+            step_channel.start_stop_channel.evaluate(
+                self.step_global_parameters.step_points.value as usize,
+                self.step_global_parameters.list_step,
+            );
         }
         for sweep_channel in &mut self.sweep_channels {
-            sweep_channel
-                .start_stop_channel
-                .evaluate(self.sweep_global_parameters.sweep_points.value as usize);
+            sweep_channel.start_stop_channel.evaluate(
+                self.sweep_global_parameters.sweep_points.value as usize,
+                self.sweep_global_parameters.list_sweep,
+            );
         }
     }
 

@@ -1015,6 +1015,7 @@
         ---Initialize data such as the number of sweep steps per step, number of steps, and total number of points
         ---@param nodes NodesDef
         local function Init(nodes)
+            UTILITY.event_ids = {}
             local is_step = false
             local is_sweep = false
             if nodes.steps and nodes.steps[1] then

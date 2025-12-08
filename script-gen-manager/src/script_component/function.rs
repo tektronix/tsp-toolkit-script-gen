@@ -110,12 +110,6 @@ pub trait FunctionModel: Send + Sync {
     ///
     /// * `script_buffer` - A mutable reference to the script buffer.
     fn build(&mut self, script_buffer: &mut ScriptBuffer) {
-        let chunk_name = script_buffer.get_unique_name(format!("_{}", self.get_type()));
-        self.start_chunk(script_buffer);
-
-        script_buffer.body_append(format!("function {}()\n", chunk_name));
-        script_buffer.change_indent(ScriptBuffer::DEFAULT_INDENT);
-
         let metadata = self.get_metadata();
         let val_replacement_map = self.get_val_replacement_map();
 
@@ -128,12 +122,6 @@ pub trait FunctionModel: Send + Sync {
                 }
             }
         }
-
-        script_buffer.change_indent(-ScriptBuffer::DEFAULT_INDENT);
-        script_buffer.body_append("end".to_owned());
-
-        self.finish_chunk(script_buffer);
-        script_buffer.postamble_append(format!("{}()", chunk_name));
     }
 
     /// Formats a floating-point value.

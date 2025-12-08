@@ -86,7 +86,6 @@ export class PlotBiasComponent
       range: [0, 1],
       tickformat: '.3~s',
       exponentformat: 'SI',
-      // ticksuffix: ' W', // adding space 
     },
     xaxis2: {
       visible: true,

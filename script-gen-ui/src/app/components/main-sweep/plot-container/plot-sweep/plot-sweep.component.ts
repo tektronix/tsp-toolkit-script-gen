@@ -84,7 +84,7 @@ export class PlotSweepComponent
   plotLayout = {
     xaxis: {
       visible: true,
-      ticksuffix: ' s',
+      ticksuffix: 's',
       rangemode: 'nonnegative',
       separatethousands: false,
       tickfont: {

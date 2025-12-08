@@ -89,7 +89,7 @@ export class PlotStepComponent
   plotLayout = {
     xaxis: {
       visible: true,
-      ticksuffix: ' s',
+      ticksuffix: 's',
       rangemode: 'nonnegative',
       separatethousands: false,
       tickfont: {

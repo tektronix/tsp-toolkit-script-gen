@@ -58,7 +58,7 @@ export class PlotBiasComponent
   plotLayout = {
     xaxis: {
       visible: true,
-      ticksuffix: ' s',
+      ticksuffix: 's',
       rangemode: 'nonnegative',
       separatethousands: false,
       tickfont: {
@@ -85,7 +85,7 @@ export class PlotBiasComponent
       linewidth: 1,
       range: [0, 1],
       tickformat: '.3~s',
-      exponentformat: 'SI'
+      exponentformat: 'SI',
     },
     xaxis2: {
       visible: true,

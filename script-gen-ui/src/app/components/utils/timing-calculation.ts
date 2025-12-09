@@ -26,6 +26,6 @@ export class TimingCalculation {
     } else if (mode === 'NPLC') {
       this.measTime = (this.numMeas * ((1 / this.lineFreq) * value) + measDelay) + sourceDelay;
     }
-    return sweepPoints*(stepToSweepDelay + this.overhead + this.measTime);
+    return stepToSweepDelay + sweepPoints*(this.overhead + this.measTime);
   }
 }

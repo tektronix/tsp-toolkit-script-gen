@@ -87,6 +87,7 @@ impl Msmu60Metadata {
             60.6 + EPSILON,
             0.101 + EPSILON,
         );
+        base.add_region_map(VOLTAGE_AUTO, inner_region.clone());
         base.add_region_map(VOLTAGE_60_V, inner_region.clone());
         base.add_region_map(CURRENT_100_NA, inner_region.clone());
         base.add_region_map(CURRENT_1_UA, inner_region.clone());

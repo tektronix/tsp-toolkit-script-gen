@@ -84,7 +84,7 @@ export class PlotSweepComponent
   plotLayout = {
     xaxis: {
       visible: true,
-      ticksuffix: ' s',
+      ticksuffix: 's',
       rangemode: 'nonnegative',
       separatethousands: false,
       tickfont: {
@@ -302,15 +302,31 @@ export class PlotSweepComponent
       const targetLength = this.plotWidth / this.numSteps;
       let processedXData: number[] = [];
       let processedYData: number[] = [];
+      let processedSweepValues = [...sweepValues];
 
-      // Interpolate numPoints between each consecutive value in plotDataX
-      if (this.plotDataX && this.plotDataX.length > 1 && this.numPoints?.value) {
-        const numPoints = this.numPoints.value;
+      if(this.stepToSweepDelay.value > 0 && this.totalTimePerStep > 0 ){
+        processedSweepValues = [0, ...sweepValues];
+      }
+
+      if (this.plotDataX && this.plotDataX.length > 1) {
+        const hasDelay = this.stepToSweepDelay.value > 0;
+        
         for (let i = 0; i < this.plotDataX.length - 1; i++) {
-          const x0 = this.plotDataX[i];
-          const x1 = this.plotDataX[i + 1];
-          for (let j = 0; j < numPoints; j++) {
-            processedXData.push(x0 + (x1 - x0) * (j / numPoints));
+          const stepStart = this.plotDataX[i];
+          const stepEnd = this.plotDataX[i + 1];
+          
+          if (hasDelay) {
+            processedXData.push(stepStart);
+            processedXData.push(stepStart + this.stepToSweepDelay.value);
+            for (let j = 1; j < this.numPoints.value; j++) {
+              const sweepProgress = j / (this.numPoints.value - 1);
+              const sweepDuration = stepEnd - (stepStart + this.stepToSweepDelay.value);
+              processedXData.push(stepStart + this.stepToSweepDelay.value + sweepProgress * sweepDuration);
+            }
+          } else {
+            for (let j = 0; j < this.numPoints.value; j++) {
+              processedXData.push(stepStart + (stepEnd - stepStart) * (j / this.numPoints.value));
+            }
           }
         }
         processedXData.push(this.plotDataX[this.plotDataX.length - 1]);
@@ -320,17 +336,17 @@ export class PlotSweepComponent
 
       if (this.numPoints?.value > targetLength) {
         processedYData = PlotUtils.minMaxInterpolation(
-          sweepValues,
+          processedSweepValues,
           targetLength
         ).y;
       } else {
-        processedYData = sweepValues;
+        processedYData = processedSweepValues;
       }
-      console.log(processedYData);
+      console.log(processedYData, processedSweepValues, sweepValues);
       this.plotData1.x = processedXData;
-      this.plotData1.y = Array.from({ length: this.numSteps }, () => sweepValues)
+      this.plotData1.y = Array.from({ length: this.numSteps }, () => processedSweepValues)
         .flat()
-        .concat(sweepValues[sweepValues.length - 1]);
+        .concat(processedSweepValues[processedSweepValues.length - 1]);
 
       this.plotLayout.xaxis.dtick = this.tickDifference;
       this.plotLayout.xaxis.range = [0, this.tickDifference * 10];

@@ -61,6 +61,8 @@ export class TimingComponent implements OnDestroy, OnChanges {
 
   boundaryElement = 'app-root';
 
+  isDragDisabled = false;
+
   @Input() sweepTimingConfig: SweepTimingConfig | undefined;
   @Output() ok = new EventEmitter<void>();
   @Output() emitTimingData = new EventEmitter<void>();
@@ -127,6 +129,24 @@ export class TimingComponent implements OnDestroy, OnChanges {
       smu_timing: smu_timing,
       psu_timing: psu_timing,
     });
+  }
+
+  onInputBlur(event: FocusEvent) {
+    this.isDragDisabled = false;
+  }
+
+  onInputMouseDown(event: MouseEvent) {
+    this.isDragDisabled = true;
+    
+    setTimeout(() => {
+      if (this.isDragDisabled) {
+        this.isDragDisabled = false;
+      }
+    }, 500);
+  }
+
+  onInputMouseUp(event: MouseEvent) {
+    this.isDragDisabled = false;
   }
 
   ngOnDestroy(): void {

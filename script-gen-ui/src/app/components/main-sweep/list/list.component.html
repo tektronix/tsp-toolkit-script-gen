@@ -1,4 +1,4 @@
-<div #listPopUp class="sweep-list-popup" cdkDrag cdkDragBoundary="body">
+<div #listPopUp class="sweep-list-popup" cdkDrag cdkDragBoundary="body" [cdkDragDisabled]="isDragDisabled">
   <div class="sweep-list-popup-content">
     <div class="sweep-list-popup-header" cdkDragHandle>
       <h3 style="margin: 0">List</h3>
@@ -14,6 +14,9 @@
           *ngIf="noOfPointsOrSteps !== undefined && noOfPointsOrSteps !== null"
           (inputChange)="emitStepsOrPoints()"
           [disabled]="!isNoOfPointsOrSteps"
+          (mousedown)="onInputMouseDown($event)"
+          (mouseup)="onInputMouseUp($event)"
+          (blur)="onInputBlur($event)"
         ></app-input-numeric>
       </div>
       <div class="sweep-list-popup-inputs">
@@ -42,6 +45,9 @@
                   (inputChange)="onChange()"
                   style="width: 95%"
                   [disabled]="!sweep.isDeviceValid"
+                  (mousedown)="onInputMouseDown($event)"
+                  (mouseup)="onInputMouseUp($event)"
+                  (blur)="onInputBlur($event)"
                 ></app-input-plain>
               </td>
             </tr>

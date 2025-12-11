@@ -49,6 +49,7 @@ export class ListComponent implements OnChanges, AfterViewInit {
   @Output() updatedStepsOrPoints = new EventEmitter<number>();
 
   rowIndices: number[] = [];
+  isDragDisabled = false;
 
   getRowIndices(): number[] {
     return this.listsWithNames.length > 0
@@ -96,5 +97,23 @@ export class ListComponent implements OnChanges, AfterViewInit {
       const rect = this.listPopUp.nativeElement.getBoundingClientRect();
       this.listPositionChange.emit({ left: rect.left, top: rect.top });
     }
+  }
+
+  onInputBlur(event: FocusEvent) {
+    this.isDragDisabled = false;
+  }
+
+  onInputMouseDown(event: MouseEvent) {
+    this.isDragDisabled = true;
+    
+    setTimeout(() => {
+      if (this.isDragDisabled) {
+        this.isDragDisabled = false;
+      }
+    }, 500);
+  }
+
+  onInputMouseUp(event: MouseEvent) {
+    this.isDragDisabled = false;
   }
 }

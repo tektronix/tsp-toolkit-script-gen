@@ -99,11 +99,11 @@ export class ListComponent implements OnChanges, AfterViewInit {
     }
   }
 
-  onInputBlur(_event: FocusEvent) {
+  onInputBlur() {
     this.isDragDisabled = false;
   }
 
-  onInputMouseDown(_event: MouseEvent) {
+  onInputMouseDown() {
     this.isDragDisabled = true;
     
     setTimeout(() => {
@@ -113,7 +113,7 @@ export class ListComponent implements OnChanges, AfterViewInit {
     }, 500);
   }
 
-  onInputMouseUp(_event: MouseEvent) {
+  onInputMouseUp() {
     this.isDragDisabled = false;
   }
 }

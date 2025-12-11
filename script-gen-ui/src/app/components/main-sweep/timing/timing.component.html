@@ -1,5 +1,5 @@
 <div class="popup">
-  <div class="popup-content" cdkDrag cdkDragBoundary="body">
+  <div class="popup-content" cdkDrag cdkDragBoundary="body" [cdkDragDisabled]="isDragDisabled">
     <!-- <span class="close" (click)="close_Timing()">&times;</span> -->
     <div>
       <div class="popup-header" cdkDragHandle>
@@ -16,6 +16,9 @@
           [label]="'Measure Count (per step)'"
           *ngIf="measureCount"
           (inputChange)="submitTimingData()"
+          (mousedown)="onInputMouseDown()"
+          (mouseup)="onInputMouseUp()"
+          (blur)="onInputBlur()"
           ></app-input-numeric>
         </div>
 
@@ -42,6 +45,9 @@
           [label]="'NPLC'"
           *ngIf="nplc"
           (inputChange)="submitTimingData()"
+          (mousedown)="onInputMouseDown()"
+          (mouseup)="onInputMouseUp()"
+          (blur)="onInputBlur()"
         ></app-input-numeric>
       </div>
       <div *ngIf="nplcType?.value === 'Aperture'">
@@ -52,6 +58,9 @@
           [unit]="aperture.unit"
           *ngIf="aperture"
           (inputChange)="submitTimingData()"
+          (mousedown)="onInputMouseDown()"
+          (mouseup)="onInputMouseUp()"
+          (blur)="onInputBlur()"
         ></app-input-plain>
       </div>
       <div>
@@ -73,6 +82,9 @@
           [unit]="sourceDelay.unit"
           *ngIf="sourceDelay"
           (inputChange)="submitTimingData()"
+          (mousedown)="onInputMouseDown()"
+          (mouseup)="onInputMouseUp()"
+          (blur)="onInputBlur()"
         ></app-input-plain>
       </div>
       <div>
@@ -94,6 +106,9 @@
           [unit]="measureDelay.unit"
           *ngIf="measureDelay"
           (inputChange)="submitTimingData()"
+          (mousedown)="onInputMouseDown()"
+          (mouseup)="onInputMouseUp()"
+          (blur)="onInputBlur()"
         ></app-input-plain>
       </div>
     </div>

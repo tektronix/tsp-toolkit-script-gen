@@ -131,11 +131,11 @@ export class TimingComponent implements OnDestroy, OnChanges {
     });
   }
 
-  onInputBlur(event: FocusEvent) {
+  onInputBlur(_event: FocusEvent) {
     this.isDragDisabled = false;
   }
 
-  onInputMouseDown(event: MouseEvent) {
+  onInputMouseDown(_event: MouseEvent) {
     this.isDragDisabled = true;
     
     setTimeout(() => {
@@ -145,7 +145,7 @@ export class TimingComponent implements OnDestroy, OnChanges {
     }, 500);
   }
 
-  onInputMouseUp(event: MouseEvent) {
+  onInputMouseUp(_event: MouseEvent) {
     this.isDragDisabled = false;
   }
 

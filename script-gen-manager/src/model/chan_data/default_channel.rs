@@ -285,16 +285,28 @@ impl CommonChanAttributes {
         start_value: &ParameterFloat,
         stop_value: &ParameterFloat,
     ) {
+        let voltage_auto = "VOLTAGE_AUTO".to_string();
+        let current_auto = "CURRENT_AUTO".to_string();
+
         //Use region map to further limit the source limits based on the source function and range
+
         let mut limit_value = start_value.value.abs();
-        if let Some(region_map) =
-            self.get_region_map(&self.device.metadata, &self.source_range.value)
-        {
+        let mut source_range = &self.source_range.value;
+        let source_function = &self.source_function.value;
+        if source_range.contains("AUTO") {
+            source_range = if source_function == &BaseMetadata::FUNCTION_VOLTAGE.to_string() {
+                &voltage_auto
+            } else {
+                &current_auto
+            };
+        }
+
+        if let Some(region_map) = self.get_region_map(&self.device.metadata, source_range) {
             if stop_value.value.abs() > limit_value.abs() {
                 //Use the largest absolute value
                 limit_value = stop_value.value.abs();
             }
-            match &self.source_function.value[..] {
+            match source_function {
                 s if s == BaseMetadata::FUNCTION_VOLTAGE => {
                     // Source is Voltage. Hence, limit current
                     if let Some(ref mut limiti) = self.source_limiti {

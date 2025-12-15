@@ -43,7 +43,7 @@ export class PlotStepComponent
   @Input() plotConfig: { staticPlot: boolean } | undefined;
   @Input() totalTimePerStep: number | undefined;
   totalTimePerStepConverted: string | undefined;
-  
+
 
   private _isActive = false;
 
@@ -160,7 +160,11 @@ export class PlotStepComponent
       zeroline: false,
     },
     yaxis2: {
-      tickfont: { family: 'Times New Roman', color: this.tickColor, size: 9 },
+      tickfont: {
+        family: 'Roboto, "Helvetica Neue", sans-serif',
+        color: this.tickColor,
+        size: 9,
+      },
       anchor: 'x',
       overlaying: 'y',
       side: 'left',
@@ -251,7 +255,7 @@ export class PlotStepComponent
     this.updatePlotLayout();
     this.initializePlot();
     this.observeThemeChanges();
-    
+
   }
 
   // the plots are rendered only after the DOM is created, so we need to render them after the DOM is loaded

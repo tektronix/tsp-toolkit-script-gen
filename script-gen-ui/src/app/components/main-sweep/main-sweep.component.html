@@ -355,7 +355,7 @@
     </div>
   </div>
 
-  <div class="plot-container" style="overflow: auto; max-height: 100vh">
+  <div class="plot-container" style="overflow: auto; max-height: 100vh" (scroll)="onPlotContainerScroll($event)">
     <app-plot-container
       [biasChannels]="biasChannels"
       [stepChannels]="stepChannels"
@@ -367,6 +367,8 @@
       [colorMap]="colorMap"
       [activeComponent]="activeComponent"
       [activeIndex]="activeIndex"
+      [savedScrollPosition]="plotContainerScrollPosition"
+      (scrollPositionChange)="onScrollPositionChange($event)"
     ></app-plot-container>
   </div>
 </div>

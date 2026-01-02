@@ -62,7 +62,7 @@ export class PlotContainerComponent implements OnInit, OnChanges, AfterViewCheck
   @Input() colorMap = new Map<string, string>(); // Accept colorMap from MainSweepComponent
   @Input() activeComponent: 'bias' | 'step' | 'sweep' | null = null; // Accept active component
   @Input() activeIndex: number | null = null; // Accept active index
-  @Input() savedScrollPosition: number = 0; // Accept saved scroll position from parent
+  @Input() savedScrollPosition = 0; // Accept saved scroll position from parent
 
   @Output() scrollPositionChange = new EventEmitter<number>(); // Emit scroll position to parent
 
@@ -102,7 +102,7 @@ export class PlotContainerComponent implements OnInit, OnChanges, AfterViewCheck
       // this.calculateTimePerStep();
       this.calculateTime();
       // this.plotdataXCalculation();
-      
+
       // Flag that scroll position needs to be restored
       this.needsScrollRestore = true;
     }
@@ -198,7 +198,7 @@ export class PlotContainerComponent implements OnInit, OnChanges, AfterViewCheck
         xData.push(i * this.totalTimePerStep);
       }
       this.plotDataX = xData;
-      this.tickDifference = xData[points]/10;
+      this.tickDifference = xData[points] / 10;
     }
   }
 

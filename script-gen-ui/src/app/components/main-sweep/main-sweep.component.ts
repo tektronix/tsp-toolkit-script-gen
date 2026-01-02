@@ -55,7 +55,7 @@ import { StatusService } from '../../services/status.service';
     PlotContainerComponent,
     ListComponent,
     TooltipComponent
-],
+  ],
   templateUrl: './main-sweep.component.html',
   styleUrls: ['./main-sweep.component.scss'],
 })
@@ -72,7 +72,7 @@ export class MainSweepComponent implements OnChanges {
   activeComponent: 'bias' | 'step' | 'sweep' | null = null; // Tracks the active component
   activeIndex: number | null = null;
   isScrolled = false;
-  plotContainerScrollPosition: number = 0; // Store scroll position
+  plotContainerScrollPosition = 0; // Store scroll position
 
   colorIndex = 0;
   colors: string[] = [
@@ -139,7 +139,7 @@ export class MainSweepComponent implements OnChanges {
   isSweepExpanded = false;
   channelsExpanderState: Map<string, boolean> = new Map<string, boolean>();
 
-  constructor(private webSocketService: WebSocketService, private statusService: StatusService) {}
+  constructor(private webSocketService: WebSocketService, private statusService: StatusService) { }
 
   // ngOnInit() {
   //   this.updateSweepListsWithNames();

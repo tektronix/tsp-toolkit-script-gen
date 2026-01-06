@@ -4,8 +4,11 @@ import {
   ViewChild,
   ElementRef,
   Input,
+  Output,
+  EventEmitter,
   OnChanges,
   SimpleChanges,
+  AfterViewChecked,
   ViewChildren,
   QueryList,
 } from '@angular/core';
@@ -45,7 +48,8 @@ import { GlobalParameters } from '../../../model/sweep_data/sweepConfig';
   templateUrl: './plot-container.component.html',
   styleUrls: ['./plot-container.component.scss'],
 })
-export class PlotContainerComponent implements OnInit, OnChanges {
+export class PlotContainerComponent implements OnInit, OnChanges, AfterViewChecked {
+  private needsScrollRestore = false;
   @ViewChild('plotContainer', { static: false }) plotContainer!: ElementRef;
   @Input() biasChannels: BiasChannel[] = [];
   @Input() stepChannels: StepChannel[] = [];
@@ -58,6 +62,9 @@ export class PlotContainerComponent implements OnInit, OnChanges {
   @Input() colorMap = new Map<string, string>(); // Accept colorMap from MainSweepComponent
   @Input() activeComponent: 'bias' | 'step' | 'sweep' | null = null; // Accept active component
   @Input() activeIndex: number | null = null; // Accept active index
+  @Input() savedScrollPosition = 0; // Accept saved scroll position from parent
+
+  @Output() scrollPositionChange = new EventEmitter<number>(); // Emit scroll position to parent
 
   @ViewChildren(PlotBiasComponent)
   plotBiasComponents!: QueryList<PlotBiasComponent>;
@@ -95,6 +102,28 @@ export class PlotContainerComponent implements OnInit, OnChanges {
       // this.calculateTimePerStep();
       this.calculateTime();
       // this.plotdataXCalculation();
+
+      // Flag that scroll position needs to be restored
+      this.needsScrollRestore = true;
+    }
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.needsScrollRestore) {
+      this.restoreScrollPosition();
+      this.needsScrollRestore = false;
+    }
+  }
+
+  onScroll(event: Event): void {
+    const element = event.target as HTMLElement;
+    this.scrollPositionChange.emit(element.scrollTop);
+  }
+
+  restoreScrollPosition(): void {
+    const container = this.elementRef.nativeElement.parentElement;
+    if (container && this.savedScrollPosition) {
+      container.scrollTop = this.savedScrollPosition;
     }
   }
 
@@ -169,7 +198,7 @@ export class PlotContainerComponent implements OnInit, OnChanges {
         xData.push(i * this.totalTimePerStep);
       }
       this.plotDataX = xData;
-      this.tickDifference = xData[points]/10;
+      this.tickDifference = xData[points] / 10;
     }
   }
 

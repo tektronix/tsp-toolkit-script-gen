@@ -1115,7 +1115,7 @@ dependencies = [
 
 [[package]]
 name = "kic-script-gen"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "actix-cors",
  "actix-files",
@@ -1843,11 +1843,11 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "script-aggregator"
-version = "0.1.0"
+version = "0.1.1"
 
 [[package]]
 name = "script-gen-manager"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "chrono",
  "phf",
@@ -2739,7 +2739,7 @@ checksum = "ea2f10b9bb0928dfb1b42b65e1f9e36f7f54dbdf08457afefb38afcdec4fa2bb"
 
 [[package]]
 name = "xml-handler"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "lazy_static",
  "quick-xml",

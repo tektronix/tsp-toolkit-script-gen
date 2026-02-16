@@ -1,8 +1,8 @@
-<div #listPopUp class="sweep-list-popup" cdkDrag cdkDragBoundary="body" [cdkDragDisabled]="isDragDisabled">
+<div #listPopUp class="sweep-list-popup" [attr.aria-label]="'listPopup'"cdkDrag cdkDragBoundary="body" [cdkDragDisabled]="isDragDisabled">
   <div class="sweep-list-popup-content">
     <div class="sweep-list-popup-header" cdkDragHandle>
       <h3 style="margin: 0">List</h3>
-      <mat-icon class="button" (click)="onClose()">close</mat-icon>
+      <mat-icon class="button" [attr.aria-label]="'closeListTab'" (click)="onClose()">close</mat-icon>
     </div>
     <div class="outer-container">
       <div style="width: 14vw">

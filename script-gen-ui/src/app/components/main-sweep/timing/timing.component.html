@@ -1,5 +1,5 @@
 <div class="popup">
-  <div class="popup-content" cdkDrag cdkDragBoundary="body" [cdkDragDisabled]="isDragDisabled">
+  <div class="popup-content" [attr.aria-label]="'TimingPopup'" cdkDrag cdkDragBoundary="body" [cdkDragDisabled]="isDragDisabled">
     <!-- <span class="close" (click)="close_Timing()">&times;</span> -->
     <div>
       <div class="popup-header" cdkDragHandle>

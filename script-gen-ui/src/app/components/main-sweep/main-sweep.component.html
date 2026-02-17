@@ -27,6 +27,7 @@
       </div>
       <div>
         <button
+          [attr.aria-label]="'OpenScript'"
           class="open-script"
           (click)="openScript()"
           title="Open generated script"
@@ -153,6 +154,7 @@
       <span style="position: relative; display: flex">
         <button
           *ngIf="stepChannels.length === 0"
+          [attr.aria-label]="'addStep'"
           class="button-icon"
           (click)="addStep()"
           [disabled]="!hasAvailableChannels()"

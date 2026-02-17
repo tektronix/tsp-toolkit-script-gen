@@ -3,7 +3,7 @@ members = ["kic-script-gen", "script-aggregator", "script-gen-manager", "xml-han
 resolver = "2"
 
 [workspace.package]
-version = "0.1.1"
+version = "0.1.2"
 #TODO
 
 [workspace.dependencies]

@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { StatusMsg } from './model/sweep_data/statusMsg';
 import { StatusType } from './model/interface';
 import { StatusService } from './services/status.service';
+import { vscode } from './app.component';
 
 @Injectable({
   providedIn: 'root',
@@ -38,12 +39,7 @@ export class WebSocketService {
   }
 
   sendInitialDataRequest(): void {
-    const ipcData = new IpcData({
-      request_type: 'get_data',
-      additional_info: '',
-      json_value: '{}',
-    });
-    this.send(JSON.stringify(ipcData));
+   vscode.postMessage({ command: 'get_initial_configuration' });
   }
 
   private chunkString(str: string, size: number): string[] {

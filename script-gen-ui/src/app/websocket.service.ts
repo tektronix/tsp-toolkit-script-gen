@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
-import { IpcData } from './model/ipcData';
 import { v4 as uuidv4 } from 'uuid';
 import { StatusMsg } from './model/sweep_data/statusMsg';
 import { StatusType } from './model/interface';

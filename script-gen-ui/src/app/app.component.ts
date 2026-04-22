@@ -19,7 +19,7 @@ import { StatusType } from './model/interface';
 
 declare const acquireVsCodeApi: unknown;
 // eslint-disable-next-line @typescript-eslint/no-empty-function
-const vscode = typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : { postMessage: () => {} };
+export const vscode = typeof acquireVsCodeApi === 'function' ? acquireVsCodeApi() : { postMessage: () => {} };
 
 @Component({
   selector: 'app-root',
@@ -75,7 +75,15 @@ export class AppComponent implements OnInit, OnDestroy {
         ipcData.request_type === 'reset_response'
       )
       {
+        if (ipcData.request_type === 'initial_response') {
+          vscode.postMessage({ command: 'create_new_session' , payload: message});
+        }
+        else if (ipcData.request_type === 'reset_response') {
+          vscode.postMessage({ command: 'get_initial_configuration' });
+        }
+        else {
         vscode.postMessage({ command: 'update_session' , payload: message});
+        }
         // Parse the json_value as the SweepModel
         const data = JSON.parse(ipcData.json_value);
         if (data.sweep_model) {

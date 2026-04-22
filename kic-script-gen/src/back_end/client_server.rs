@@ -348,7 +348,7 @@ pub async fn start(mut script_model: ScriptModel) -> anyhow::Result<()> {
         while let Some(line) = reader.next_line().await.unwrap() {
             //println!("Received from stdin: {line}");
             let trimmed_line = line.trim();
-            if trimmed_line == "shutdown" {
+            if trimmed_line.contains("shutdown") {
                 println!("Received shutdown command from stdin, shutting down...");
                 let _ = shutdown_tx.send(());
                 break;

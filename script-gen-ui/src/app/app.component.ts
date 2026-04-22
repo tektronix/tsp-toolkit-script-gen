@@ -78,6 +78,9 @@ export class AppComponent implements OnInit, OnDestroy {
         if (ipcData.request_type === 'initial_response') {
           vscode.postMessage({ command: 'create_new_session' , payload: message});
         }
+        else if (ipcData.request_type === 'reset_response') {
+          vscode.postMessage({ command: 'get_initial_configuration' });
+        }
         else {
         vscode.postMessage({ command: 'update_session' , payload: message});
         }

@@ -70,7 +70,7 @@ init-root:
 [group("script-gen-ui")]
 [working-directory: 'script-gen-ui']
 init-script-gen-ui:
-    npm install --devDependencies
+    npm install
 
 # Initialize all rust projects
 [group("init")]
@@ -162,7 +162,8 @@ build-release-rust triple=native-triple:
 compile-toolkit:
     code . --"{{env("TOOLKIT_DIR", "\\")}}"
     code --profile-temp --extensionDevelopmentPath="{{env("TOOLKIT_DIR", "\\")}}"
-build-release-dev triple=native-triple: 
+
+build-release-dev triple=native-triple:
     just build-release {{triple}}
     just pre-package {{triple}} "{{env("TARGET_DIR", "\\")}}"
     just compile-toolkit

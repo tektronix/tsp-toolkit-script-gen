@@ -2,9 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::{
-    device::Device,
-    instr_metadata::{base_metadata::Metadata, enum_metadata::MetadataEnum},
-    model::{
+    device::Device, instr_metadata::{base_metadata::Metadata, enum_metadata::MetadataEnum}, model::{
         chan_data::{
             bias_channel::BiasChannel, step_channel::StepChannel, sweep_channel::SweepChannel,
         },
@@ -606,6 +604,7 @@ impl SweepConfig {
         match metadata {
             MetadataEnum::Base(base_metadata) => base_metadata.get_range(key),
             MetadataEnum::Msmu60(msmu60_metadata) => msmu60_metadata.get_range(key),
+            MetadataEnum::Msmu200(msmu200_metadata) => msmu200_metadata.get_range(key),
             MetadataEnum::Mpsu50(mpsu50_metadata) => mpsu50_metadata.get_range(key),
         }
     }

@@ -1,11 +1,12 @@
 use super::{
-    base_metadata::BaseMetadata, mpsu50_metadata::Mpsu50Metadata, msmu60_metadata::Msmu60Metadata,
+    base_metadata::BaseMetadata, mpsu50_metadata::Mpsu50Metadata, msmu60_metadata::Msmu60Metadata, msmu200_metadata::Msmu200Metadata
 };
 
 #[derive(Debug, Clone)]
 pub enum MetadataEnum {
     Base(BaseMetadata),
     Msmu60(Msmu60Metadata),
+    Msmu200(Msmu200Metadata),
     Mpsu50(Mpsu50Metadata),
 }
 

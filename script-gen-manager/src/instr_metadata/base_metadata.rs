@@ -9,6 +9,7 @@ pub static MODEL_MAP: phf::Map<&'static str, &'static str> = phf_map! {
     "MP5103" => "Mainframe",
     "MPSU50-2ST" => "Psu",
     "MSMU60-2" => "Smu",
+    "MSMU200-2" => "Smu",
 };
 
 pub trait Metadata: Debug + Clone {

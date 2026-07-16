@@ -1,5 +1,6 @@
 use super::{
-    base_metadata::BaseMetadata, mpsu50_metadata::Mpsu50Metadata, msmu60_metadata::Msmu60Metadata, msmu200_metadata::Msmu200Metadata
+    base_metadata::BaseMetadata, mpsu50_metadata::Mpsu50Metadata,
+    msmu200_metadata::Msmu200Metadata, msmu60_metadata::Msmu60Metadata,
 };
 
 #[derive(Debug, Clone)]

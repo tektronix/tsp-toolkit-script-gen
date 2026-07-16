@@ -5,8 +5,8 @@ use crate::{
         base_metadata::{BaseMetadata, MODEL_MAP},
         enum_metadata::MetadataEnum,
         mpsu50_metadata::Mpsu50Metadata,
-        msmu60_metadata::Msmu60Metadata,
         msmu200_metadata::Msmu200Metadata,
+        msmu60_metadata::Msmu60Metadata,
     },
     model::system_info::Slot,
 };

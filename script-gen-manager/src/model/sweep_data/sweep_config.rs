@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::{
-    device::Device, instr_metadata::{base_metadata::Metadata, enum_metadata::MetadataEnum}, model::{
+    device::Device,
+    instr_metadata::{base_metadata::Metadata, enum_metadata::MetadataEnum},
+    model::{
         chan_data::{
             bias_channel::BiasChannel, step_channel::StepChannel, sweep_channel::SweepChannel,
         },

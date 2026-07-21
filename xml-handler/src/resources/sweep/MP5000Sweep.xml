@@ -271,7 +271,7 @@
             MSMU = function()
                 return {
                     common = {
-                        --- Resets this MSMU6
+                        --- Resets this MSMU
                         ---@param self Device
                         reset = function(self)
                             self.channel.reset()

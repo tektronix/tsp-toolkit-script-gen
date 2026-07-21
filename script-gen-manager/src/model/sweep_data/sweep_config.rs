@@ -606,6 +606,7 @@ impl SweepConfig {
         match metadata {
             MetadataEnum::Base(base_metadata) => base_metadata.get_range(key),
             MetadataEnum::Msmu60(msmu60_metadata) => msmu60_metadata.get_range(key),
+            MetadataEnum::Msmu200(msmu200_metadata) => msmu200_metadata.get_range(key),
             MetadataEnum::Mpsu50(mpsu50_metadata) => mpsu50_metadata.get_range(key),
         }
     }

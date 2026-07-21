@@ -266,12 +266,12 @@
                 end
             end,
 
-            ---Functions for the MSMU60-2 module for MP5000-series mainframes
+            ---Functions for the MSMU module for MP5000-series mainframes
             ---@return Model
             MSMU = function()
                 return {
                     common = {
-                        --- Resets this MSMU60-2
+                        --- Resets this MSMU
                         ---@param self Device
                         reset = function(self)
                             self.channel.reset()
@@ -287,7 +287,7 @@
                             self.slot.trigger.model.delete(self.node_name .. &quot; Step Trigger Model&quot;)
                             self.slot.trigger.model.delete(self.node_name .. &quot; Sweep Trigger Model&quot;)
                         end,
-                        --- Configures this MSMU60-2
+                        --- Configures this MSMU
                         ---@param self Device
                         config = function(self)
                             UTILITY.init_slot_event_ids(self.slot, { 1, 2, 3, 4, 5, 6, 7, 8 })

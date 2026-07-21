@@ -5,6 +5,7 @@ use crate::{
         base_metadata::{BaseMetadata, MODEL_MAP},
         enum_metadata::MetadataEnum,
         mpsu50_metadata::Mpsu50Metadata,
+        msmu200_metadata::Msmu200Metadata,
         msmu60_metadata::Msmu60Metadata,
     },
     model::system_info::Slot,
@@ -74,7 +75,15 @@ impl<'de> Deserialize<'de> for Device {
         let device_data = DeviceData::deserialize(deserializer)?;
 
         let metadata = match device_data.device_type {
-            DeviceType::Smu => MetadataEnum::Msmu60(Msmu60Metadata::new()),
+            DeviceType::Smu => {
+                if device_data.model == "MSMU60-2" {
+                    MetadataEnum::Msmu60(Msmu60Metadata::new())
+                } else if device_data.model == "MSMU200-2" {
+                    MetadataEnum::Msmu200(Msmu200Metadata::new())
+                } else {
+                    MetadataEnum::Base(BaseMetadata::default())
+                }
+            }
             DeviceType::Psu => MetadataEnum::Mpsu50(Mpsu50Metadata::new()),
             DeviceType::Unknown => MetadataEnum::Base(BaseMetadata::default()),
         };
@@ -143,7 +152,15 @@ impl Device {
         };
         let (node_id, _id) = Device::parse_id(mainframe_name, slot, chan_num, &device_type);
         let metadata = match device_type {
-            DeviceType::Smu => MetadataEnum::Msmu60(Msmu60Metadata::new()),
+            DeviceType::Smu => {
+                if slot.module == "MSMU60-2" {
+                    MetadataEnum::Msmu60(Msmu60Metadata::new())
+                } else if slot.module == "MSMU200-2" {
+                    MetadataEnum::Msmu200(Msmu200Metadata::new())
+                } else {
+                    MetadataEnum::Base(BaseMetadata::default())
+                }
+            }
             DeviceType::Psu => MetadataEnum::Mpsu50(Mpsu50Metadata::new()),
             DeviceType::Unknown => MetadataEnum::Base(BaseMetadata::default()),
         };

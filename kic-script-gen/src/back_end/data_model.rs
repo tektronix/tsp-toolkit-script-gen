@@ -1,11 +1,16 @@
 use script_gen_manager::model::sweep_data::sweep_model::SweepModel;
-use serde_json::json;
+use serde::Serialize;
 
 use crate::back_end::ipc_data::IpcData;
 
 #[derive(Clone)]
 pub struct DataModel {
     pub sweep_model: SweepModel,
+}
+
+#[derive(Serialize)]
+struct SweepModelEnvelope<'a> {
+    sweep_model: &'a SweepModel,
 }
 
 impl Default for DataModel {
@@ -76,9 +81,9 @@ impl DataModel {
                 sweep_model.sweep_config.evaluate();
 
                 //update sweep variable - required for actual script generation
-                self.sweep_model = sweep_model.clone();
+                self.sweep_model = sweep_model;
                 self.serialize_sweep_model(
-                    &sweep_model,
+                    &self.sweep_model,
                     "evaluated_response",
                     "Processed sweep model",
                 )
@@ -96,9 +101,9 @@ impl DataModel {
                 //println!("Successfully deserialized saved JSON in server: {sweep_model:?}");
                 sweep_model.sweep_config.evaluate();
 
-                self.sweep_model = sweep_model.clone();
+                self.sweep_model = sweep_model;
                 self.serialize_sweep_model(
-                    &sweep_model,
+                    &self.sweep_model,
                     "evaluated_response",
                     "Processed saved sweep model",
                 )
@@ -156,9 +161,9 @@ impl DataModel {
 
                 sweep_model.sweep_config.evaluate();
 
-                self.sweep_model = sweep_model.clone();
+                self.sweep_model = sweep_model;
                 self.serialize_sweep_model(
-                    &sweep_model,
+                    &self.sweep_model,
                     "evaluated_response",
                     "Processed sweep model",
                 )
@@ -176,7 +181,7 @@ impl DataModel {
         request_type: &str,
         additional_info: &str,
     ) -> String {
-        match serde_json::to_string(&json!({"sweep_model": sweep_model})) {
+        match serde_json::to_string(&SweepModelEnvelope { sweep_model }) {
             Ok(json_str) => {
                 let ipc_data = IpcData {
                     request_type: request_type.to_string(),
@@ -209,7 +214,30 @@ impl DataModel {
 
     pub fn reset_sweep_config(&mut self) -> String {
         self.sweep_model.sweep_config.reset();
-        let sweep_model_clone = self.sweep_model.clone();
-        self.serialize_sweep_model(&sweep_model_clone, "reset_response", "Sweep config reset")
+        self.serialize_sweep_model(&self.sweep_model, "reset_response", "Sweep config reset")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::DataModel;
+    use crate::back_end::ipc_data::IpcData;
+
+    #[test]
+    fn sweep_model_response_preserves_nested_ipc_shape() {
+        let data_model = DataModel::new();
+
+        let response = data_model.serialize_sweep_model(
+            &data_model.sweep_model,
+            "evaluated_response",
+            "Processed sweep model",
+        );
+
+        let ipc_data: IpcData = serde_json::from_str(&response).unwrap();
+        let inner: serde_json::Value = serde_json::from_str(&ipc_data.json_value).unwrap();
+        assert_eq!(ipc_data.request_type, "evaluated_response");
+        assert_eq!(ipc_data.additional_info, "Processed sweep model");
+        assert!(inner.get("sweep_model").is_some());
+        assert_eq!(inner.as_object().unwrap().len(), 1);
     }
 }

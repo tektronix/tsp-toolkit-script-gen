@@ -137,7 +137,7 @@ impl IndentEngine {
         false
     }
 
-    /// Adjust the indentation after a statement has been added to the output.  
+    /// Adjust the indentation after a statement has been added to the output.
     /// This simply uses a value computed in preprocess.
     pub fn post_process(&mut self) {
         self.indent.clone_from(&self.next_indent);

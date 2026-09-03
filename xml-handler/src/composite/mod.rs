@@ -12,6 +12,12 @@ use crate::group::{parse_include, ExternalFileResult, IncludeResult};
 use crate::snippet::Snippet;
 use crate::substitute::Substitute;
 
+#[derive(Debug, Clone)]
+pub struct SubstitutionScope {
+    pub substitutions: Vec<Substitute>,
+    pub parent: Option<Box<SubstitutionScope>>,
+}
+
 /// Represents the composite tag in the XML data.
 #[derive(Debug, Clone)]
 pub struct Composite {
@@ -30,8 +36,8 @@ pub struct Composite {
     pub substitutions: Vec<Substitute>,
     /// A composite can further contain more composites or snippets.
     pub sub_children: Vec<IncludeResult>,
-    /// The parent Composite, if any.
-    pub parent: Option<Box<Composite>>,
+    /// The inherited substitution scope, if any.
+    pub parent: Option<Box<SubstitutionScope>>,
 }
 
 impl Composite {
@@ -377,19 +383,134 @@ impl CommonChunk for Composite {
         script_buffer: &mut ScriptBuffer,
         val_replacement_map: &HashMap<String, String>,
     ) {
-        let parent_clone = self.clone();
+        let parent_scope = SubstitutionScope {
+            substitutions: self.substitutions.clone(),
+            parent: self.parent.clone(),
+        };
         for res in self.sub_children.iter_mut() {
             match res {
                 IncludeResult::Snippet(snippet) => {
-                    snippet.parent = Some(Box::new(parent_clone.clone()));
+                    snippet.parent = Some(Box::new(parent_scope.clone()));
                     snippet.to_script(script_buffer, val_replacement_map)
                 }
 
                 IncludeResult::Composite(composite) => {
-                    composite.parent = Some(Box::new(parent_clone.clone()));
+                    composite.parent = Some(Box::new(parent_scope.clone()));
                     composite.to_script(script_buffer, val_replacement_map)
                 }
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{CommonChunk, Composite};
+    use crate::group::IncludeResult;
+    use crate::resources::MP5000_SWEEP_XML;
+    use quick_xml::{events::Event, Reader};
+    use script_aggregator::script_buffer::ScriptBuffer;
+    use std::collections::HashMap;
+
+    fn parse_composite(xml: &str) -> Composite {
+        let mut reader = Reader::from_str(xml);
+        let mut buffer = Vec::new();
+
+        loop {
+            match reader.read_event_into(&mut buffer).unwrap() {
+                Event::Start(element) if element.name().as_ref() == b"composite" => {
+                    return Composite::parse_composite(&mut reader, element.attributes()).unwrap();
+                }
+                Event::Eof => panic!("composite element not found"),
+                _ => buffer.clear(),
+            }
+        }
+    }
+
+    fn find_repeated_composite<'a>(
+        children: &'a [IncludeResult],
+        repeat: &str,
+    ) -> Option<&'a Composite> {
+        for child in children {
+            if let IncludeResult::Composite(composite) = child {
+                if composite.repeat == repeat {
+                    return Some(composite);
+                }
+                if let Some(found) = find_repeated_composite(&composite.sub_children, repeat) {
+                    return Some(found);
+                }
+            }
+        }
+        None
+    }
+
+    #[test]
+    fn repeated_composite_applies_parent_substitutions_for_six_values() {
+        let mut composite = parse_composite(
+            r#"<composite repeat="ITEMS">
+                <substitute name="ITEMS:VALUE">%VALUE%</substitute>
+                <composite>
+                    <snippet>value=%VALUE%</snippet>
+                </composite>
+            </composite>"#,
+        );
+        let mut values = HashMap::from([(
+            "ITEMS".to_string(),
+            "item1,item2,item3,item4,item5,item6".to_string(),
+        )]);
+        for index in 1..=6 {
+            values.insert(format!("item{index}:VALUE"), index.to_string());
+        }
+        let mut script_buffer = ScriptBuffer::new();
+
+        composite.to_script(&mut script_buffer, &values);
+
+        assert_eq!(
+            script_buffer.to_string(),
+            "value=1\nvalue=2\nvalue=3\nvalue=4\nvalue=5\nvalue=6\n"
+        );
+
+        let IncludeResult::Composite(child) = &composite.sub_children[0] else {
+            panic!("expected nested composite");
+        };
+        let IncludeResult::Snippet(snippet) = &child.sub_children[0] else {
+            panic!("expected nested snippet");
+        };
+        let mut scope = snippet.parent.as_deref();
+        let mut scope_depth = 0;
+        while let Some(current_scope) = scope {
+            scope_depth += 1;
+            scope = current_scope.parent.as_deref();
+        }
+        assert_eq!(scope_depth, 2);
+    }
+
+    #[test]
+    fn production_sweep_composite_retains_only_substitution_scopes() {
+        let root = parse_composite(&MP5000_SWEEP_XML.to_string());
+        let mut sweep = find_repeated_composite(&root.sub_children, "SWEEP-DEVICE")
+            .expect("production sweep repeat not found")
+            .clone();
+        let mut values = HashMap::from([(
+            "SWEEP-DEVICE".to_string(),
+            "sweep1,sweep2,sweep3,sweep4,sweep5,sweep6".to_string(),
+        )]);
+        for index in 1..=6 {
+            values.insert(format!("sweep{index}:MODE"), "LIN".to_string());
+        }
+        let mut script_buffer = ScriptBuffer::new();
+
+        sweep.to_script(&mut script_buffer, &values);
+
+        assert!(!script_buffer.to_string().is_empty());
+        for child in &sweep.sub_children {
+            let parent = match child {
+                IncludeResult::Snippet(snippet) => snippet.parent.as_deref(),
+                IncludeResult::Composite(composite) => composite.parent.as_deref(),
+            }
+            .expect("child substitution scope not set");
+            assert_eq!(parent.substitutions.len(), sweep.substitutions.len());
+            assert!(parent.parent.is_none());
         }
     }
 }

@@ -8,7 +8,7 @@ use quick_xml::{events::Event, name::QName, Reader};
 use script_aggregator::script_buffer::ScriptBuffer;
 
 use crate::{
-    composite::{CommonChunk, Composite},
+    composite::{CommonChunk, SubstitutionScope},
     condition::Condition,
     error::{Result, XMLHandlerError},
     substitute::Substitute,
@@ -29,8 +29,8 @@ pub struct Snippet {
     pub substitutions: Vec<Substitute>,
     /// The conditions associated with the snippet.
     pub conditions: Vec<Condition>,
-    /// The parent Composite, if any.
-    pub parent: Option<Box<Composite>>,
+    /// The inherited substitution scope, if any.
+    pub parent: Option<Box<SubstitutionScope>>,
 }
 
 impl Snippet {
@@ -141,13 +141,13 @@ impl Snippet {
             temp_code_snippet = temp_code_snippet.replace(&sub.value, &to_val);
         }
 
-        let mut current_parent = self.parent.as_deref(); // Use as_deref to get Option<&Composite>
+        let mut current_parent = self.parent.as_deref();
         while let Some(parent) = current_parent {
             for sub in parent.substitutions.iter() {
-                let to_val = parent.lookup(val_replacement_map, &sub.name);
+                let to_val = self.lookup(val_replacement_map, &sub.name);
                 temp_code_snippet = temp_code_snippet.replace(&sub.value, &to_val);
             }
-            current_parent = parent.parent.as_deref(); // Use as_deref to get Option<&Composite>
+            current_parent = parent.parent.as_deref();
         }
 
         self.insert(script_buffer, temp_code_snippet);

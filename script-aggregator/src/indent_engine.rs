@@ -9,8 +9,8 @@ pub struct IndentEngine {
 
 impl IndentEngine {
     pub fn new(step: String) -> Self {
-        let step_size = step.chars().count() as u16;
-        IndentEngine {
+        let step_size = u16::try_from(step.chars().count()).unwrap_or(u16::MAX);
+        Self {
             indent: String::new(),
             next_indent: String::new(),
             step,
@@ -49,17 +49,17 @@ impl IndentEngine {
         }
         if !self.is_multi_line_comment {
             // Trim off comments
-            let mut trimmed = statement.to_string();
-            if let Some(index) = statement.find("--") {
-                trimmed = statement[..index].to_string();
-            }
+            let trimmed = statement.find("--").map_or_else(
+                || statement.to_string(),
+                |index| statement[..index].to_string(),
+            );
 
             // Combination statements don't affect the indent...
-            let has_do = self.find(&trimmed, "do");
-            let has_end = self.find(&trimmed, "end");
-            let has_repeat = self.find(&trimmed, "repeat");
-            let has_then = self.find(&trimmed, "then");
-            let has_until = self.find(&trimmed, "until");
+            let has_do = Self::find(&trimmed, "do");
+            let has_end = Self::find(&trimmed, "end");
+            let has_repeat = Self::find(&trimmed, "repeat");
+            let has_then = Self::find(&trimmed, "then");
+            let has_until = Self::find(&trimmed, "until");
 
             // A complete statement has no effect... Check for:
             //   [if] ... then ... [else...] end
@@ -69,8 +69,8 @@ impl IndentEngine {
             complete |= has_do && has_end;
             complete |= has_repeat && has_until;
             if !complete {
-                let has_else = self.find(&trimmed, "else");
-                let has_else_if = self.find(&trimmed, "elseif");
+                let has_else = Self::find(&trimmed, "else");
+                let has_else_if = Self::find(&trimmed, "elseif");
 
                 // These statements decrease the indent (before the statement is added) ...
                 let mut decrease = has_end;
@@ -84,7 +84,7 @@ impl IndentEngine {
 
                 // These statements increase the indent (after the statement is added) ...
                 self.next_indent.clone_from(&self.indent);
-                let mut increase = self.find(&trimmed, "function");
+                let mut increase = Self::find(&trimmed, "function");
                 increase |= has_do;
                 increase |= has_repeat;
                 increase |= has_else;
@@ -113,13 +113,13 @@ impl IndentEngine {
     ///
     /// * `true` if the keyword is found as a standalone word.
     /// * `false` otherwise.
-    fn find(&self, statement: &str, keyword: &str) -> bool {
+    fn find(statement: &str, keyword: &str) -> bool {
         if let Some(index) = statement.find(keyword) {
             if index > 0
                 && statement
                     .chars()
                     .nth(index - 1)
-                    .map_or(false, |c| c.is_alphanumeric())
+                    .is_some_and(char::is_alphanumeric)
             {
                 return false;
             }
@@ -128,7 +128,7 @@ impl IndentEngine {
                 && statement
                     .chars()
                     .nth(end_index)
-                    .map_or(false, |c| c.is_alphanumeric())
+                    .is_some_and(char::is_alphanumeric)
             {
                 return false;
             }

@@ -1,9 +1,8 @@
-use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::fmt::Display;
 
-lazy_static! {
-    static ref RESOURCE_MAP: HashMap<&'static str, &'static Resource> = {
+static RESOURCE_MAP: std::sync::LazyLock<HashMap<&'static str, &'static Resource>> =
+    std::sync::LazyLock::new(|| {
         let mut m = HashMap::new();
         m.insert("DEFAULT_FUNC_METADATA", &DEFAULT_FUNC_METADATA);
         m.insert("SWEEP_FUNC_METADATA", &SWEEP_FUNC_METADATA);
@@ -19,8 +18,7 @@ lazy_static! {
         m.insert("NO_STEP_FIXED_XML", &NO_STEP_FIXED_XML);
         m.insert("STEP_FIXED_XML", &STEP_FIXED_XML);
         m
-    };
-}
+    });
 
 use crate::VERSION;
 const VERSION_REPLACE: &str = "!<!<VERSION>!>!";
@@ -93,7 +91,7 @@ impl Display for Resource {
 
 impl Resource {
     /// Function to match an input string against all defined Resource constants
-    pub fn match_resource(input: &str) -> Option<&'static Resource> {
+    pub fn match_resource(input: &str) -> Option<&'static Self> {
         RESOURCE_MAP.get(input).copied()
     }
 }

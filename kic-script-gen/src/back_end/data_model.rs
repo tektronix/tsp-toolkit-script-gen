@@ -145,15 +145,13 @@ impl DataModel {
                 sweep_model.sweep_config.update_channel_devices();
                 let res: Vec<&str> = ipc_data.additional_info.split(',').collect();
                 if res[0] == "remove" {
-                    sweep_model.sweep_config.remove_channel(res[2].to_string());
+                    sweep_model.sweep_config.remove_channel(res[2]);
                 } else if res[0] == "add" {
-                    sweep_model.sweep_config.add_channel(res[1].to_string());
+                    sweep_model.sweep_config.add_channel(res[1]);
                 } else if res[0] == "update" {
-                    sweep_model.sweep_config.update_channel(
-                        res[1].to_string(),
-                        res[2].to_string(),
-                        res[3].to_string(),
-                    );
+                    sweep_model
+                        .sweep_config
+                        .update_channel(res[1], res[2], res[3]);
                 }
 
                 // remove unused and invalid channels

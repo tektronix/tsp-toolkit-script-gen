@@ -15,7 +15,7 @@ use crate::substitute::Substitute;
 #[derive(Debug, Clone)]
 pub struct SubstitutionScope {
     pub substitutions: Vec<Substitute>,
-    pub parent: Option<Box<SubstitutionScope>>,
+    pub parent: Option<Box<Self>>,
 }
 
 /// Represents the composite tag in the XML data.
@@ -41,7 +41,7 @@ pub struct Composite {
 }
 
 impl Composite {
-    fn new(
+    const fn new(
         name: String,
         type_: Option<String>,
         indent: i32,
@@ -50,7 +50,7 @@ impl Composite {
         substitutions: Vec<Substitute>,
         sub_children: Vec<IncludeResult>,
     ) -> Self {
-        Composite {
+        Self {
             name,
             type_,
             indent,
@@ -62,10 +62,14 @@ impl Composite {
         }
     }
 
+    /// Parse the XML found in the `reader` to a [`Composite`]
+    ///
+    /// # Errors
+    /// Errors may occur if parsing fails
     pub fn parse_composite<R: std::io::BufRead>(
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> Result<Composite> {
+    ) -> Result<Self> {
         let mut name = String::new();
         let mut type_: Option<String> = None;
         let mut indent = 0;
@@ -82,7 +86,7 @@ impl Composite {
             match attr.key {
                 QName(b"name") => name = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
                 QName(b"type") => {
-                    type_ = Some(String::from_utf8_lossy(attr.value.as_ref()).to_string())
+                    type_ = Some(String::from_utf8_lossy(attr.value.as_ref()).to_string());
                 }
                 QName(b"indent") => {
                     let attr_val = String::from_utf8_lossy(attr.value.as_ref()).to_string();
@@ -93,7 +97,7 @@ impl Composite {
                     }
                 }
                 QName(b"repeat") => {
-                    repeat = String::from_utf8_lossy(attr.value.as_ref()).to_string()
+                    repeat = String::from_utf8_lossy(attr.value.as_ref()).to_string();
                 }
                 _ => {}
             }
@@ -134,7 +138,7 @@ impl Composite {
                     sub_children.push(IncludeResult::Composite(res));
                 }
                 Ok(Event::End(e)) if e.name().as_ref() == b"composite" => {
-                    return Ok(Composite::new(
+                    return Ok(Self::new(
                         name,
                         type_,
                         indent,
@@ -204,7 +208,7 @@ pub trait CommonChunk {
             }
 
             if self.get_repeat().is_empty() {
-                self.evaluate(script_buffer, val_replacement_map)
+                self.evaluate(script_buffer, val_replacement_map);
             } else {
                 let repeat_val = self.get_repeat();
                 let active = repeat_val.to_owned() + ":";
@@ -335,29 +339,23 @@ pub trait CommonChunk {
     /// A string representing the looked-up value.
     fn lookup(&self, val_replacement_map: &HashMap<String, String>, symbol: &str) -> String {
         let index = symbol.find(':');
-        let mut temp = "".to_string();
 
-        if index.is_none() || (index.unwrap() + 1) == symbol.len() {
-            temp = symbol.to_string();
+        let temp = if index.is_none() || (index.unwrap() + 1) == symbol.len() {
+            symbol.to_string()
         } else {
-            let index = index.unwrap();
+            let index = index.unwrap_or_else(|| symbol.len() - 1);
             let scope = &symbol[..index];
 
-            if let Some(val_arr) = val_replacement_map.get(&(scope.to_string() + ":")) {
-                temp = val_arr.to_string();
-                temp += &symbol[index..];
-            } else {
-                //TODO: handle error
-            }
-        }
+            val_replacement_map
+                .get(&(scope.to_string() + ":"))
+                .map_or_else(String::new, |val_arr| {
+                    format!("{val_arr}{}", &symbol[index..])
+                })
+        };
 
-        match val_replacement_map.get(&temp) {
-            Some(val) => val.clone(),
-            None => {
-                //handle error
-                "".to_string()
-            }
-        }
+        val_replacement_map
+            .get(&temp)
+            .map_or_else(String::new, std::clone::Clone::clone)
     }
 }
 
@@ -387,16 +385,16 @@ impl CommonChunk for Composite {
             substitutions: self.substitutions.clone(),
             parent: self.parent.clone(),
         };
-        for res in self.sub_children.iter_mut() {
+        for res in &mut self.sub_children {
             match res {
                 IncludeResult::Snippet(snippet) => {
                     snippet.parent = Some(Box::new(parent_scope.clone()));
-                    snippet.to_script(script_buffer, val_replacement_map)
+                    snippet.to_script(script_buffer, val_replacement_map);
                 }
 
                 IncludeResult::Composite(composite) => {
                     composite.parent = Some(Box::new(parent_scope.clone()));
-                    composite.to_script(script_buffer, val_replacement_map)
+                    composite.to_script(script_buffer, val_replacement_map);
                 }
             }
         }
@@ -502,7 +500,7 @@ mod tests {
 
         sweep.to_script(&mut script_buffer, &values);
 
-        assert!(!script_buffer.to_string().is_empty());
+        assert_ne!(script_buffer.to_string(), "");
         for child in &sweep.sub_children {
             let parent = match child {
                 IncludeResult::Snippet(snippet) => snippet.parent.as_deref(),

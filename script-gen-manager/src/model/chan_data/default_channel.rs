@@ -30,10 +30,11 @@ pub struct CommonChanAttributes {
 }
 
 impl CommonChanAttributes {
+    #[must_use]
     pub fn new(chan_name: String, device: Device) -> Self {
         let device_id = &device.get_id();
 
-        CommonChanAttributes {
+        Self {
             uuid: Uuid::new_v4().to_string(),
             chan_name,
             source_function: ParameterString::new("source_function"),
@@ -45,7 +46,7 @@ impl CommonChanAttributes {
             sense_mode: None,
 
             device,
-            device_id: device_id.to_string(),
+            device_id: device_id.clone(),
         }
     }
 
@@ -56,7 +57,7 @@ impl CommonChanAttributes {
                     BaseMetadata::FUNCTION_VOLTAGE.to_string(),
                     BaseMetadata::FUNCTION_CURRENT.to_string(),
                 ];
-                self.sense_mode = self.initialize_sense_mode();
+                self.sense_mode = Some(Self::initialize_sense_mode());
                 self.source_limitv = Some(ParameterFloat::new(
                     "source_limitv",
                     20.0,
@@ -112,40 +113,41 @@ impl CommonChanAttributes {
     }
 
     fn set_source_range(&mut self, metadata: &MetadataEnum) {
-        self.source_range.unit = self.determine_units(&self.source_function.value);
-        if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
-            self.source_range.range = self.get_range(metadata, "source_meas.rangev");
+        self.source_range.unit = Self::determine_units(&self.source_function.value);
+        if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE {
+            self.source_range.range = Self::get_range(metadata, "source_meas.rangev");
         } else {
-            self.source_range.range = self.get_range(metadata, "source_meas.rangei");
+            self.source_range.range = Self::get_range(metadata, "source_meas.rangei");
         }
     }
 
     fn set_source_range_limits(&mut self, metadata: &MetadataEnum) {
-        let key = if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
+        let key = if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE {
             "source.levelv"
         } else {
             "source.leveli"
         };
 
-        if let Some((min, max)) = self.get_range_limits(metadata, key) {
+        if let Some((min, max)) = Self::get_range_limits(metadata, key) {
             self.source_range.set_min(min);
             self.source_range.set_max(max);
         }
     }
 
     fn set_overrange_scale(&mut self, metadata: &MetadataEnum) {
-        let scale = self.get_overrange_scale(metadata);
+        let scale = Self::get_overrange_scale(metadata);
         self.source_range.set_overrange_scale(scale);
     }
 
     fn set_source_range_value(&mut self) {
         if !self.source_range.range.contains(&self.source_range.value) {
-            let key = if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
+            let key = if self.source_function.value == BaseMetadata::FUNCTION_VOLTAGE {
                 "source_meas.range.defaultv"
             } else {
                 "source_meas.range.defaulti"
             };
-            if let Some(default_value) = self.get_range_defaults(&self.device.get_metadata(), key) {
+            if let Some(default_value) = Self::get_range_defaults(&self.device.get_metadata(), key)
+            {
                 self.source_range.value = default_value.to_string();
             }
         }
@@ -164,38 +166,39 @@ impl CommonChanAttributes {
     }
 
     fn set_meas_range(&mut self, metadata: &MetadataEnum) {
-        self.meas_range.unit = self.determine_units(&self.meas_function.value);
-        if self.meas_function.value == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
-            self.meas_range.range = self.get_range(metadata, "source_meas.rangev");
+        self.meas_range.unit = Self::determine_units(&self.meas_function.value);
+        if self.meas_function.value == BaseMetadata::FUNCTION_VOLTAGE {
+            self.meas_range.range = Self::get_range(metadata, "source_meas.rangev");
         } else {
-            self.meas_range.range = self.get_range(metadata, "source_meas.rangei");
+            self.meas_range.range = Self::get_range(metadata, "source_meas.rangei");
         }
     }
 
     fn set_meas_range_value(&mut self) {
         if !self.meas_range.range.contains(&self.meas_range.value) {
-            let key = if self.meas_function.value == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
+            let key = if self.meas_function.value == BaseMetadata::FUNCTION_VOLTAGE {
                 "source_meas.range.defaultv"
             } else {
                 "source_meas.range.defaulti"
             };
-            if let Some(default_value) = self.get_range_defaults(&self.device.get_metadata(), key) {
+            if let Some(default_value) = Self::get_range_defaults(&self.device.get_metadata(), key)
+            {
                 self.meas_range.value = default_value.to_string();
             }
         }
     }
 
-    fn determine_units(&self, function_name: &String) -> String {
-        if *function_name == BaseMetadata::FUNCTION_VOLTAGE.to_string() {
+    fn determine_units(function_name: &String) -> String {
+        if *function_name == BaseMetadata::FUNCTION_VOLTAGE {
             BaseMetadata::UNIT_VOLTS.to_string()
         } else {
             BaseMetadata::UNIT_AMPERES.to_string()
         }
     }
 
-    fn get_range(&self, metadata: &MetadataEnum, key: &str) -> Vec<String> {
+    fn get_range(metadata: &MetadataEnum, key: &str) -> Vec<String> {
         match metadata {
-            MetadataEnum::Base(base_metadata) => {
+            MetadataEnum::Base(_base_metadata) => {
                 // Handle base_metadata if needed
                 vec![]
             }
@@ -203,24 +206,24 @@ impl CommonChanAttributes {
                 .get_option(key)
                 .unwrap_or(&vec![])
                 .iter()
-                .map(|s| s.to_string())
+                .map(std::string::ToString::to_string)
                 .collect(),
             MetadataEnum::Msmu200(msmu200_metadata) => msmu200_metadata
                 .get_option(key)
                 .unwrap_or(&vec![])
                 .iter()
-                .map(|s| s.to_string())
+                .map(std::string::ToString::to_string)
                 .collect(),
             MetadataEnum::Mpsu50(mpsu50_metadata) => mpsu50_metadata
                 .get_option(key)
                 .unwrap_or(&vec![])
                 .iter()
-                .map(|s| s.to_string())
+                .map(std::string::ToString::to_string)
                 .collect(),
         }
     }
 
-    fn get_range_limits(&self, metadata: &MetadataEnum, key: &str) -> Option<(f64, f64)> {
+    fn get_range_limits(metadata: &MetadataEnum, key: &str) -> Option<(f64, f64)> {
         match metadata {
             MetadataEnum::Base(base_metadata) => base_metadata.get_range(key),
             MetadataEnum::Msmu60(msmu60_metadata) => msmu60_metadata.get_range(key),
@@ -229,7 +232,7 @@ impl CommonChanAttributes {
         }
     }
 
-    fn get_overrange_scale(&self, metadata: &MetadataEnum) -> f64 {
+    fn get_overrange_scale(metadata: &MetadataEnum) -> f64 {
         match metadata {
             MetadataEnum::Base(base_metadata) => base_metadata.get_overrange_scale(),
             MetadataEnum::Msmu60(msmu60_metadata) => msmu60_metadata.get_overrange_scale(),
@@ -238,7 +241,7 @@ impl CommonChanAttributes {
         }
     }
 
-    fn get_range_defaults(&self, metadata: &MetadataEnum, key: &str) -> Option<&'static str> {
+    fn get_range_defaults(metadata: &MetadataEnum, key: &str) -> Option<&'static str> {
         match metadata {
             MetadataEnum::Base(base_metadata) => base_metadata.get_default(key),
             MetadataEnum::Msmu60(msmu60_metadata) => msmu60_metadata.get_default(key),
@@ -247,6 +250,7 @@ impl CommonChanAttributes {
         }
     }
 
+    #[must_use]
     pub fn get_name_for(&self, key: &str) -> Option<&'static str> {
         let metadata = self.device.get_metadata();
         match metadata {
@@ -257,7 +261,8 @@ impl CommonChanAttributes {
         }
     }
 
-    pub fn get_region_map(&self, metadata: &MetadataEnum, key: &str) -> Option<RegionMapMetadata> {
+    #[must_use]
+    pub fn get_region_map(metadata: &MetadataEnum, key: &str) -> Option<RegionMapMetadata> {
         match metadata {
             MetadataEnum::Base(base_metadata) => base_metadata.get_region_map(key),
             MetadataEnum::Msmu60(msmu60_metadata) => msmu60_metadata.get_region_map(key),
@@ -267,24 +272,24 @@ impl CommonChanAttributes {
     }
 
     /// Initializes the `sense_mode` parameter for SMU devices.
-    fn initialize_sense_mode(&self) -> Option<ParameterString> {
+    fn initialize_sense_mode() -> ParameterString {
         let mut sense_mode = ParameterString::new("sense_mode");
         sense_mode.range = vec![
             BaseMetadata::SENSE_MODE_TWO_WIRE.to_string(),
             BaseMetadata::SENSE_MODE_FOUR_WIRE.to_string(),
         ];
         sense_mode.value = BaseMetadata::SENSE_MODE_TWO_WIRE.to_string();
-        Some(sense_mode)
+        sense_mode
     }
 
     pub fn validate_source_limits(&mut self, metadata: &MetadataEnum) {
         //This is the fixed min/max range
-        if let Some((min, max)) = self.get_range_limits(metadata, "source.limiti") {
+        if let Some((min, max)) = Self::get_range_limits(metadata, "source.limiti") {
             if let Some(ref mut limiti) = self.source_limiti {
                 limiti.value = Self::limit(limiti.value, min, max);
             }
         }
-        if let Some((min, max)) = self.get_range_limits(metadata, "source.limitv") {
+        if let Some((min, max)) = Self::get_range_limits(metadata, "source.limitv") {
             if let Some(ref mut limitv) = self.source_limitv {
                 limitv.value = Self::limit(limitv.value, min, max);
             }
@@ -312,7 +317,7 @@ impl CommonChanAttributes {
             };
         }
 
-        if let Some(region_map) = self.get_region_map(&self.device.metadata, source_range) {
+        if let Some(region_map) = Self::get_region_map(&self.device.metadata, source_range) {
             if stop_value.value.abs() > limit_value.abs() {
                 //Use the largest absolute value
                 limit_value = stop_value.value.abs();
@@ -342,14 +347,13 @@ impl CommonChanAttributes {
         }
     }
 
-    fn limit(mut value: f64, min: f64, max: f64) -> f64 {
+    fn limit(value: f64, min: f64, max: f64) -> f64 {
         if value >= min && value <= max {
-            return value;
+            value
         } else if value < min {
-            value = min
+            min
         } else {
-            value = max
+            max
         }
-        return value;
     }
 }

@@ -35,14 +35,14 @@ pub struct Snippet {
 
 impl Snippet {
     /// Function to create a new instance of [`Snippet`]
-    fn new(
+    const fn new(
         name: String,
         repeat: String,
         code_snippet: String,
         substitutions: Vec<Substitute>,
         conditions: Vec<Condition>,
     ) -> Self {
-        Snippet {
+        Self {
             name,
             repeat,
             indent: 0,
@@ -53,10 +53,14 @@ impl Snippet {
         }
     }
 
+    /// Parse the XML to be read from the `reader` and produce [`Snippet`]s
+    ///
+    /// # Errors
+    /// May return errors when parsing of the XML, Substitutions, Conditions, or Snippets fails.
     pub fn parse_snippet<R: std::io::BufRead>(
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> Result<Snippet> {
+    ) -> Result<Self> {
         let mut name = String::new();
         let mut repeat = String::new();
 
@@ -71,7 +75,7 @@ impl Snippet {
             match attr.key {
                 QName(b"name") => name = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
                 QName(b"repeat") => {
-                    repeat = String::from_utf8_lossy(attr.value.as_ref()).to_string()
+                    repeat = String::from_utf8_lossy(attr.value.as_ref()).to_string();
                 }
                 _ => {}
             }
@@ -94,7 +98,7 @@ impl Snippet {
                             // file.write_all(code_snippet.as_bytes())?;
                         }
                         Err(e) => {
-                            eprintln!("Error decoding text: {}", e);
+                            eprintln!("Error decoding text: {e}");
                             return Err(XMLHandlerError::ParseError { source: e });
                         }
                     }
@@ -106,7 +110,7 @@ impl Snippet {
                     conditions.push(Condition::parse_condition(reader, e.attributes())?);
                 }
                 Ok(Event::End(e)) if e.name().as_ref() == b"snippet" => {
-                    return Ok(Snippet::new(
+                    return Ok(Self::new(
                         name,
                         repeat,
                         code_snippet,
@@ -136,21 +140,21 @@ impl Snippet {
     ) {
         let mut temp_code_snippet = self.code_snippet.clone();
 
-        for sub in self.substitutions.iter() {
+        for sub in &self.substitutions {
             let to_val = self.lookup(val_replacement_map, &sub.name);
             temp_code_snippet = temp_code_snippet.replace(&sub.value, &to_val);
         }
 
         let mut current_parent = self.parent.as_deref();
         while let Some(parent) = current_parent {
-            for sub in parent.substitutions.iter() {
+            for sub in &parent.substitutions {
                 let to_val = self.lookup(val_replacement_map, &sub.name);
                 temp_code_snippet = temp_code_snippet.replace(&sub.value, &to_val);
             }
             current_parent = parent.parent.as_deref();
         }
 
-        self.insert(script_buffer, temp_code_snippet);
+        Self::insert(script_buffer, temp_code_snippet);
     }
 
     /// Inserts the given text into the script buffer.
@@ -162,7 +166,7 @@ impl Snippet {
     ///
     /// * `script_buffer` - A mutable reference to the script buffer.
     /// * `temp_code` - The text to be inserted into the script buffer.
-    fn insert(&self, script_buffer: &mut ScriptBuffer, temp_code: String) {
+    fn insert(script_buffer: &mut ScriptBuffer, temp_code: String) {
         // Create a cursor to read the string as bytes
         let cursor = Cursor::new(temp_code);
         let reader = io::BufReader::new(cursor);
@@ -171,11 +175,11 @@ impl Snippet {
         for line in reader.lines() {
             match line {
                 Ok(line) => {
-                    script_buffer.body_append(line);
+                    script_buffer.body_append(&line);
                 }
                 Err(e) => {
                     //TODO: Add error handling
-                    eprintln!("Error reading line: {}", e);
+                    eprintln!("Error reading line: {e}");
                 }
             }
         }

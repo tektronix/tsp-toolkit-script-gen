@@ -5,7 +5,7 @@ use crate::model::sweep_data::sweep_config::SweepConfig;
 use script_aggregator::script_buffer::ScriptBuffer;
 use xml_handler::group::Group;
 
-/// FinalizeModel is an aggregation of FunctionModel that represents the _Finalize() function of the script.
+/// [`FinalizeModel`] is an aggregation of [`FunctionModel`] that represents the `_Finalize()` function of the script.
 /// This is a mandatory function in the generated script.
 #[derive(Debug)]
 pub struct FinalizeModel {
@@ -46,7 +46,7 @@ impl FinalizeModel {
         "The function completes the script and places the instrument in a known state.";
 
     pub fn new(group: Group) -> Self {
-        FinalizeModel {
+        Self {
             type_: group.type_.clone(),
             description: Self::DESCRIPTION.to_string(),
             metadata: group,

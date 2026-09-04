@@ -1,3 +1,5 @@
+use std::num::ParseFloatError;
+
 use quick_xml::events::attributes;
 use thiserror::Error;
 
@@ -34,6 +36,10 @@ pub enum XMLHandlerError {
         /// The name of the file
         file_name: String,
     },
+
+    /// Error parsing a string to a float
+    #[error("error converting to a float from a string")]
+    ParseFloatError(#[from] ParseFloatError),
 }
 
 pub type Result<T> = std::result::Result<T, XMLHandlerError>;

@@ -22,13 +22,13 @@ pub struct Group {
 }
 
 impl Group {
-    fn new(
+    const fn new(
         id: String,
         type_: String,
         children: Vec<IncludeResult>,
         variable_list: Vec<Variable>,
     ) -> Self {
-        Group {
+        Self {
             id,
             type_,
             children,
@@ -56,7 +56,7 @@ impl Group {
     pub fn parse_group<R: std::io::BufRead>(
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> Result<Group> {
+    ) -> Result<Self> {
         let mut id = String::new();
         let mut type_ = String::new();
 
@@ -87,20 +87,20 @@ impl Group {
                 Ok(Event::Empty(e)) if e.name().as_ref() == b"include" => {
                     let res = parse_include(e.attributes());
                     match res {
-                        Ok(ExternalFileResult::Snippet(snippet)) => {
+                        Ok(ExternalFileResult::Snippet(_snippet)) => {
                             todo!();
                         }
                         Ok(ExternalFileResult::Composite(composite)) => {
                             children.push(IncludeResult::Composite(composite));
                         }
                         Ok(ExternalFileResult::Variables(vars)) => {
-                            variable_list = vars.variable_array
+                            variable_list = vars.variable_array;
                         }
                         _ => {}
                     }
                 }
                 Ok(Event::End(e)) if e.name().as_ref() == b"group" => {
-                    return Ok(Group::new(id, type_, children, variable_list));
+                    return Ok(Self::new(id, type_, children, variable_list));
                 }
 
                 _ => {}
@@ -124,18 +124,16 @@ impl Group {
 ///
 /// A `Result` which is:
 /// - `Ok(ExternalFileResult)` containing the parsed `ExternalFileResult (Snippet, Composite or Variables)` object
-/// if parsing is successful.
+///   if parsing is successful.
 /// - `Err(XMLHandlerError)` if there is an error during parsing.
 pub fn parse_include(
     attributes: quick_xml::events::attributes::Attributes,
 ) -> Result<ExternalFileResult> {
     let mut file_attr = String::new();
-    let mut snippet: Option<Snippet> = None;
-    let mut composite: Option<Composite> = None;
 
     for attr in attributes {
         let attr = attr?;
-        if let QName(b"path") = attr.key {
+        if attr.key == QName(b"path") {
             file_attr = String::from_utf8_lossy(attr.value.as_ref()).to_string();
         }
     }
@@ -155,15 +153,15 @@ pub fn parse_include(
                         return Err(XMLHandlerError::ParseError { source: e });
                     }
                     Ok(Event::Start(e)) if e.name().as_ref() == b"snippet" => {
-                        snippet = Some(Snippet::parse_snippet(&mut reader, e.attributes())?);
-                        return Ok(ExternalFileResult::Snippet(snippet.unwrap()));
+                        let snippet = Snippet::parse_snippet(&mut reader, e.attributes())?;
+                        return Ok(ExternalFileResult::Snippet(snippet));
                     }
                     Ok(Event::Start(e)) if e.name().as_ref() == b"composite" => {
-                        composite = Some(Composite::parse_composite(&mut reader, e.attributes())?);
-                        return Ok(ExternalFileResult::Composite(composite.unwrap()));
+                        let composite = Composite::parse_composite(&mut reader, e.attributes())?;
+                        return Ok(ExternalFileResult::Composite(composite));
                     }
                     Ok(Event::Start(e)) if e.name().as_ref() == b"variables" => {
-                        let variables = Variables::parse_variables(&mut reader, e.attributes())?;
+                        let variables = Variables::parse_variables(&mut reader, &e.attributes())?;
                         return Ok(ExternalFileResult::Variables(variables));
                     }
                     _ => (),
@@ -202,15 +200,16 @@ mod tests {
 
         loop {
             match reader.read_event_into(&mut buf) {
-                Ok(Event::Start(e)) => match e.name().as_ref() {
-                    b"group" => match Group::parse_group(&mut reader, e.attributes()) {
-                        Ok(group) => groups.push(group),
-                        Err(e) => {
-                            return Err(e);
+                Ok(Event::Start(e)) => {
+                    if e.name().as_ref() == b"group" {
+                        match Group::parse_group(&mut reader, e.attributes()) {
+                            Ok(group) => groups.push(group),
+                            Err(e) => {
+                                return Err(e);
+                            }
                         }
-                    },
-                    _ => (),
-                },
+                    }
+                }
                 Ok(Event::Eof) => break,
                 Err(e) => {
                     return Err(XMLHandlerError::ParseError { source: e });
@@ -232,7 +231,7 @@ mod tests {
                 assert_eq!(groups[0].id, "test_group");
                 assert_eq!(groups[0].type_, "example_type");
             }
-            Err(e) => assert!(false, "Test failed due to error: {}", e),
+            Err(e) => panic!("Test failed due to error: {e}"),
         }
     }
 
@@ -245,7 +244,7 @@ mod tests {
                 assert_eq!(groups[0].id, "test_group");
                 assert_eq!(groups[0].type_, "");
             }
-            Err(e) => assert!(false, "Test failed due to error: {}", e),
+            Err(e) => panic!("Test failed due to error: {e}"),
         }
     }
 
@@ -279,10 +278,10 @@ mod tests {
                     assert_eq!(composite.type_.as_deref(), Some("example_type"));
                 } else {
                     // Fail the test if the first child is not a composite
-                    assert!(false);
+                    panic!("First child was not a composite");
                 }
             }
-            Err(e) => assert!(false, "Test failed due to error: {}", e),
+            Err(e) => panic!("Test failed due to error: {e}"),
         }
     }
 
@@ -308,10 +307,10 @@ mod tests {
                     }
                 } else {
                     // Fail the test if the first child is not a composite
-                    assert!(false);
+                    panic!("First child was not a composite");
                 }
             }
-            Err(e) => assert!(false, "Test failed due to error: {}", e),
+            Err(e) => panic!("Test failed due to error: {e}"),
         }
     }
 
@@ -351,15 +350,15 @@ mod tests {
                             assert_eq!(snippet.conditions[0].value, format!("VALUE_{}", i + 1));
                         } else {
                             // Fail the test if the first child is not a snippet
-                            assert!(false);
+                            panic!("First child was not a snippet");
                         }
                     }
                 } else {
                     // Fail the test if the first child is not a composite
-                    assert!(false);
+                    panic!("First child was not a composite");
                 }
             }
-            Err(e) => assert!(false, "Test failed due to error: {}", e),
+            Err(e) => panic!("Test failed due to error: {e}"),
         }
     }
 }

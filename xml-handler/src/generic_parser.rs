@@ -33,13 +33,10 @@ pub fn parse_xml() -> Result<Vec<Group>> {
                 return Err(XMLHandlerError::ParseError { source: e });
             }
             Ok(Event::Eof) => break,
-            Ok(Event::Start(e)) => match e.name().as_ref() {
-                b"group" => {
-                    let group = Group::parse_group(&mut reader, e.attributes())?;
-                    groups.push(group);
-                }
-                _ => (),
-            },
+            Ok(Event::Start(e)) if e.name().as_ref() == b"group" => {
+                let group = Group::parse_group(&mut reader, e.attributes())?;
+                groups.push(group);
+            }
 
             _ => (),
         }

@@ -43,8 +43,9 @@ impl Default for SweepConfig {
 }
 
 impl SweepConfig {
+    #[must_use]
     pub fn new() -> Self {
-        SweepConfig {
+        Self {
             global_parameters: GlobalParameters::new(),
             bias_channels: Vec::new(),
             step_channels: Vec::new(),
@@ -69,12 +70,8 @@ impl SweepConfig {
                             let mut found = false;
                             for slot in slots.iter().filter(|slot| slot.module != "Empty") {
                                 for i in 1..=2 {
-                                    self.device_list.push(Device::new(
-                                        node_id.to_string(),
-                                        mainframe.to_string(),
-                                        slot,
-                                        i,
-                                    ));
+                                    self.device_list
+                                        .push(Device::new(node_id, mainframe, slot, i));
                                     is_device_found = true;
                                     found = true;
                                 }
@@ -103,12 +100,8 @@ impl SweepConfig {
                             let found = process_slots(&node.node_id, &node.mainframe, &node.slots);
                             if found {
                                 break;
-                            } else {
-                                println!(
-                                    "All modules are empty in node {}. Skipping.",
-                                    node.node_id
-                                );
                             }
+                            println!("All modules are empty in node {}. Skipping.", node.node_id);
                         }
                     } else {
                         println!("No nodes found in the system info.");
@@ -116,7 +109,7 @@ impl SweepConfig {
                 }
             }
         } else if let Err(e) = res {
-            println!("Error: {:#?}", e);
+            println!("Error: {e:#?}");
         }
 
         is_device_found
@@ -135,15 +128,13 @@ impl SweepConfig {
                 // Helper to process slots for a given node
                 let mut process =
                     |node_id: &str, mainframe: &str, slots: &Option<Vec<Slot>>| -> bool {
-                        if let Some(slots) = slots {
+                        slots.as_ref().is_some_and(|slots| {
                             let valid = slots.iter().any(|s| s.module != "Empty");
                             if valid {
                                 self.process_slots(node_id, mainframe, slots);
                             }
                             valid
-                        } else {
-                            false
-                        }
+                        })
                     };
 
                 // Try localnode first
@@ -165,7 +156,7 @@ impl SweepConfig {
                 found_any_valid_slots |= processed;
             }
         } else if let Err(e) = res {
-            println!("Error: {:#?}", e);
+            println!("Error: {e:#?}");
         }
 
         if !found_any_valid_slots {
@@ -235,8 +226,7 @@ impl SweepConfig {
 
             for channel in 1..=2 {
                 if !valid_channels.contains(&channel) {
-                    let new_device =
-                        Device::new(node_id.to_string(), mainframe.to_string(), slot, channel);
+                    let new_device = Device::new(node_id, mainframe, slot, channel);
                     self.device_list.push(new_device);
                     valid_channels.push(channel);
                 }
@@ -244,7 +234,7 @@ impl SweepConfig {
         }
     }
 
-    /// Updates the node info for the device and all related channels if the node_id has changed.
+    /// Updates the node info for the device and all related channels if the `node_id` has changed.
     fn update_device_and_related_channels_node(&mut self, device_idx: usize, new_node_id: &str) {
         let device = &mut self.device_list[device_idx];
         if device.node_id == new_node_id {
@@ -258,7 +248,7 @@ impl SweepConfig {
         // Helper closure to update device_id and device
         let update_channel = |chan_device_id: &mut String, chan_device: &mut Device| {
             if *chan_device_id == old_id {
-                *chan_device_id = new_id.clone();
+                chan_device_id.clone_from(&new_id);
                 *chan_device = updated_device.clone();
             }
         };
@@ -380,7 +370,7 @@ impl SweepConfig {
                 .device
                 .get_metadata();
             if let Some((min, max)) =
-                self.get_range_limits(&device_metadata, "source.step_to_sweep_delay")
+                Self::get_range_limits(&device_metadata, "source.step_to_sweep_delay")
             {
                 self.step_global_parameters
                     .step_to_sweep_delay
@@ -451,7 +441,7 @@ impl SweepConfig {
         }
     }
 
-    pub fn remove_channel(&mut self, chan_id: String) {
+    pub fn remove_channel(&mut self, chan_id: &str) {
         self.device_list.iter_mut().for_each(|device| {
             if device._id == chan_id {
                 device.in_use = false;
@@ -461,7 +451,7 @@ impl SweepConfig {
         self.check_bias_only_configuration();
     }
 
-    pub fn add_channel(&mut self, chan_type: String) {
+    pub fn add_channel(&mut self, chan_type: &str) {
         // Find the first device that is valid and not in use
         if let Some(device_index) = self
             .device_list
@@ -478,18 +468,18 @@ impl SweepConfig {
             if chan_type == "bias" {
                 self.add_bias(BiasChannel::new(
                     format!("bias{}", self.bias_channels.len() + 1),
-                    device.clone(),
+                    device,
                 ));
             } else if chan_type == "step" {
                 self.add_step(StepChannel::new(
                     format!("step{}", self.step_channels.len() + 1),
-                    device.clone(),
+                    device,
                     self.step_global_parameters.step_points.value,
                 ));
             } else if chan_type == "sweep" {
                 self.add_sweep(SweepChannel::new(
                     format!("sweep{}", self.sweep_channels.len() + 1),
-                    device.clone(),
+                    device,
                     self.sweep_global_parameters.sweep_points.value,
                 ));
             }
@@ -502,7 +492,7 @@ impl SweepConfig {
         }
     }
 
-    pub fn update_channel(&mut self, chan_type: String, old_chan_id: String, new_chan_id: String) {
+    pub fn update_channel(&mut self, chan_type: &str, old_chan_id: &str, new_chan_id: &str) {
         let new_device_idx = self.device_list.iter().position(|d| d._id == new_chan_id);
         let old_device_idx = self.device_list.iter().position(|d| d._id == old_chan_id);
 
@@ -524,10 +514,12 @@ impl SweepConfig {
                     {
                         let mut new_bias_channel = BiasChannel::new(
                             bias_channel.common_chan_attributes.chan_name.clone(),
-                            new_device.clone(),
+                            new_device,
                         );
-                        new_bias_channel.common_chan_attributes.uuid =
-                            bias_channel.common_chan_attributes.uuid.clone();
+                        new_bias_channel
+                            .common_chan_attributes
+                            .uuid
+                            .clone_from(&bias_channel.common_chan_attributes.uuid);
                         *bias_channel = new_bias_channel;
                     }
                 } else if chan_type == "step" {
@@ -540,17 +532,16 @@ impl SweepConfig {
                                 .common_chan_attributes
                                 .chan_name
                                 .clone(),
-                            new_device.clone(),
+                            new_device,
                             self.step_global_parameters.step_points.value,
                         );
                         new_step_channel
                             .start_stop_channel
                             .common_chan_attributes
-                            .uuid = step_channel
-                            .start_stop_channel
-                            .common_chan_attributes
                             .uuid
-                            .clone();
+                            .clone_from(
+                                &step_channel.start_stop_channel.common_chan_attributes.uuid,
+                            );
                         *step_channel = new_step_channel;
                     }
                 } else if chan_type == "sweep" {
@@ -563,17 +554,16 @@ impl SweepConfig {
                                 .common_chan_attributes
                                 .chan_name
                                 .clone(),
-                            new_device.clone(),
+                            new_device,
                             self.sweep_global_parameters.sweep_points.value,
                         );
                         new_sweep_channel
                             .start_stop_channel
                             .common_chan_attributes
-                            .uuid = sweep_channel
-                            .start_stop_channel
-                            .common_chan_attributes
                             .uuid
-                            .clone();
+                            .clone_from(
+                                &sweep_channel.start_stop_channel.common_chan_attributes.uuid,
+                            );
                         *sweep_channel = new_sweep_channel;
                     }
                 }
@@ -602,7 +592,7 @@ impl SweepConfig {
         }
     }
 
-    fn get_range_limits(&self, metadata: &MetadataEnum, key: &str) -> Option<(f64, f64)> {
+    fn get_range_limits(metadata: &MetadataEnum, key: &str) -> Option<(f64, f64)> {
         match metadata {
             MetadataEnum::Base(base_metadata) => base_metadata.get_range(key),
             MetadataEnum::Msmu60(msmu60_metadata) => msmu60_metadata.get_range(key),
@@ -612,6 +602,6 @@ impl SweepConfig {
     }
 
     pub fn reset(&mut self) {
-        *self = SweepConfig::new();
+        *self = Self::new();
     }
 }

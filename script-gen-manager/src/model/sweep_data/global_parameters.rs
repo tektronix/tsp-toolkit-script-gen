@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::sweep_timing_config::SweepTimingConfig;
 
-fn default_overhead_time() -> f64 {
+const fn default_overhead_time() -> f64 {
     78e-6
 }
 
@@ -17,7 +17,7 @@ pub struct GlobalParameters {
 
 impl Default for GlobalParameters {
     fn default() -> Self {
-        GlobalParameters {
+        Self {
             sweep_timing_config: SweepTimingConfig::new(),
             line_frequency: 60.0,
             overhead_time: 78e-6,
@@ -26,13 +26,14 @@ impl Default for GlobalParameters {
 }
 
 impl GlobalParameters {
+    #[must_use]
     pub fn new() -> Self {
-        GlobalParameters::default()
+        Self::default()
     }
     pub fn evaluate(&mut self) {
         self.sweep_timing_config.evaluate();
     }
-    pub fn set_line_frequency(&mut self, frequency: f64) {
+    pub const fn set_line_frequency(&mut self, frequency: f64) {
         self.line_frequency = frequency;
     }
 }

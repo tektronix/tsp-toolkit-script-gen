@@ -24,9 +24,9 @@ pub enum DeviceType {
 impl fmt::Display for DeviceType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DeviceType::Smu => write!(f, "smu"),
-            DeviceType::Psu => write!(f, "psu"),
-            DeviceType::Unknown => write!(f, "unknown"),
+            Self::Smu => write!(f, "smu"),
+            Self::Psu => write!(f, "psu"),
+            Self::Unknown => write!(f, "unknown"),
         }
     }
 }
@@ -88,7 +88,7 @@ impl<'de> Deserialize<'de> for Device {
             DeviceType::Unknown => MetadataEnum::Base(BaseMetadata::default()),
         };
 
-        Ok(Device {
+        Ok(Self {
             node_id: device_data.node_id,
             slot_id: device_data.slot_id,
             chan_num: device_data.chan_num,
@@ -108,7 +108,7 @@ impl<'de> Deserialize<'de> for Device {
 
 impl Default for Device {
     fn default() -> Self {
-        Device {
+        Self {
             node_id: String::new(),
             slot_id: String::new(),
             chan_num: 0,
@@ -139,18 +139,15 @@ impl Device {
     /// # Returns
     ///
     /// A new `Device` instance.
-    pub fn new(
-        mainframe_name: String,
-        mainframe_model: String,
-        slot: &Slot,
-        chan_num: i32,
-    ) -> Self {
+    #[must_use]
+    pub fn new(mainframe_name: &str, mainframe_model: &str, slot: &Slot, chan_num: i32) -> Self {
+        let _ = mainframe_model;
         let device_type = match MODEL_MAP.get(&slot.module) {
             Some(&"Smu") => DeviceType::Smu,
             Some(&"Psu") => DeviceType::Psu,
             _ => DeviceType::Unknown, // Handle unknown device types
         };
-        let (node_id, _id) = Device::parse_id(mainframe_name, slot, chan_num, &device_type);
+        let (node_id, _id) = Self::parse_id(mainframe_name, slot, chan_num, &device_type);
         let metadata = match device_type {
             DeviceType::Smu => {
                 if slot.module == "MSMU60-2" {
@@ -164,7 +161,7 @@ impl Device {
             DeviceType::Psu => MetadataEnum::Mpsu50(Mpsu50Metadata::new()),
             DeviceType::Unknown => MetadataEnum::Base(BaseMetadata::default()),
         };
-        Device {
+        Self {
             node_id,
             slot_id: slot.slot_id.clone(),
             chan_num,
@@ -192,16 +189,16 @@ impl Device {
     /// # Returns
     ///
     /// A tuple containing the node ID and ID.
-    /// e.g., if mainframe_name = "node[37]", slot.slot_id = slot[1], id = 1 and device_type = Smu
+    /// e.g., if `mainframe_name = "node[37]"`, `slot.slot_id = slot[1]`, `id = 1` and `device_type = Smu`
     /// the function returns ("node[37]", "node[37].slot[1].smu[1]").
     fn parse_id(
-        mainframe_name: String,
+        mainframe_name: &str,
         slot: &Slot,
         id: i32,
         device_type: &DeviceType,
     ) -> (String, String) {
-        let node_id = format!("{}", mainframe_name);
-        let chan_id = format!("{}[{}]", device_type, id);
+        let node_id = mainframe_name.to_string();
+        let chan_id = format!("{device_type}[{id}]");
         let _id = format!("{}.{}.{}", mainframe_name, slot.slot_id, chan_id);
 
         (node_id, _id)
@@ -212,6 +209,7 @@ impl Device {
     /// # Returns
     ///
     /// A string representing the ID.
+    #[must_use]
     pub fn get_id(&self) -> String {
         self._id.clone()
     }
@@ -221,6 +219,7 @@ impl Device {
     /// # Returns
     ///
     /// A string representing the node ID.
+    #[must_use]
     pub fn get_node_id(&self) -> String {
         self.node_id.clone()
     }
@@ -230,6 +229,7 @@ impl Device {
     /// # Returns
     ///
     /// A string representing the model number. If the model is not available, returns "Unknown Model".
+    #[must_use]
     pub fn get_model(&self) -> String {
         self.model.clone()
     }
@@ -239,11 +239,13 @@ impl Device {
     /// # Returns
     ///
     /// A string representing the firmware version. If the firmware version is not available, returns "Unknown Firmware Version".
+    #[must_use]
     pub fn get_fw_version(&self) -> String {
         self.fw_version.clone()
     }
 
     /// Returns metadata associated with this device type
+    #[must_use]
     pub fn get_metadata(&self) -> MetadataEnum {
         self.metadata.clone()
     }

@@ -1,7 +1,6 @@
 use std::{any::Any, collections::HashMap};
 
 use crate::{
-    device::DeviceType,
     instr_metadata::base_metadata::BaseMetadata,
     model::{
         chan_data::channel_range::ChannelRange,
@@ -16,7 +15,7 @@ use super::function::FunctionModel;
 use script_aggregator::script_buffer::ScriptBuffer;
 use xml_handler::group::Group;
 
-/// SweepModel is an aggregation of FunctionModel that represents the _Sweep() function of the script.
+/// [`SweepModel`] is an aggregation of [`FunctionModel`] that represents the `_Sweep()` function of the script.
 /// This function executes a nested step/sweep operation and is optional in the generated script.
 #[derive(Debug)]
 pub struct SweepModel {
@@ -52,7 +51,7 @@ impl FunctionModel for SweepModel {
 
     fn to_script(&mut self, sweep_config: &SweepConfig, script_buffer: &mut ScriptBuffer) {
         if sweep_config.step_channels.is_empty() && sweep_config.sweep_channels.is_empty() {
-            script_buffer.postamble_append(String::from(
+            script_buffer.postamble_append(&String::from(
                 "-- no sweep ... requires at least 1 step channel or 1 sweep channel",
             ));
         } else {
@@ -73,7 +72,7 @@ impl SweepModel {
     // const NEGATIVE_NUMBER_NEAR_ZERO: f64 = -1.0e-30;
 
     pub fn new(group: Group) -> Self {
-        SweepModel {
+        Self {
             type_: group.type_.clone(),
             description: Self::DESCRIPTION.to_string(),
             metadata: group,
@@ -84,8 +83,7 @@ impl SweepModel {
     }
 
     fn define_bias_channels(&mut self, bias_config: &SweepConfig) {
-        let mut index = 1;
-        for bias_channel in bias_config.bias_channels.iter() {
+        for (index, bias_channel) in (1..).zip(bias_config.bias_channels.iter()) {
             let instr_name = format!("bias{index}");
             self.attributes.bias_names.push(instr_name.clone());
 
@@ -95,7 +93,7 @@ impl SweepModel {
             );
 
             if let Some((node_idx, slot_idx, channel_idx)) =
-                self.extract_indices(&bias_channel.common_chan_attributes.device.get_id())
+                Self::extract_indices(&bias_channel.common_chan_attributes.device.get_id())
             {
                 self.val_replacement_map
                     .insert(instr_name.clone() + ":NODE-IDX", node_idx.to_string());
@@ -118,24 +116,23 @@ impl SweepModel {
                     .to_string(),
             );
 
-            let val = self
-                .get_function_value(&bias_channel.common_chan_attributes.source_function)
-                .clone();
+            let val =
+                Self::get_function_value(&bias_channel.common_chan_attributes.source_function)
+                    .clone();
             self.val_replacement_map
                 .insert(instr_name.clone() + ":SFUNCTION", val);
 
             self.set_source_range(
-                bias_channel.common_chan_attributes.source_range.clone(),
+                &bias_channel.common_chan_attributes.source_range.clone(),
                 &instr_name,
             );
 
             self.set_measure_range(
-                bias_channel.common_chan_attributes.meas_range.clone(),
+                &bias_channel.common_chan_attributes.meas_range.clone(),
                 &instr_name,
             );
 
-            let val = self
-                .get_function_value(&bias_channel.common_chan_attributes.meas_function)
+            let val = Self::get_function_value(&bias_channel.common_chan_attributes.meas_function)
                 .clone();
 
             self.val_replacement_map
@@ -183,41 +180,40 @@ impl SweepModel {
                 instr_name.clone() + ":BIAS",
                 self.format(bias_channel.bias.value),
             );
-
-            index += 1;
         }
 
         if !self.attributes.bias_names.is_empty() {
             self.val_replacement_map.insert(
                 String::from("BIAS-DEVICE"),
-                self.comma_separated_list(&self.attributes.bias_names),
+                Self::comma_separated_list(&self.attributes.bias_names),
             );
         }
     }
 
-    fn set_source_range(&mut self, channel_range: ChannelRange, instr_name: &String) {
-        let mut val = self.format_range(channel_range.clone());
-
-        if channel_range.is_range_auto() {
-            val = "CONSTANTS.AUTO".to_string();
-        }
+    fn set_source_range(&mut self, channel_range: &ChannelRange, instr_name: &str) {
+        let val = if channel_range.is_range_auto() {
+            "CONSTANTS.AUTO".to_string()
+        } else {
+            Self::format_range(channel_range.clone())
+        };
 
         self.val_replacement_map
-            .insert(instr_name.clone() + ":SRANGE", val);
+            .insert(format!("{instr_name}:SRANGE"), val);
     }
 
-    fn set_measure_range(&mut self, channel_range: ChannelRange, instr_name: &String) {
-        let mut val = self.format_range(channel_range.clone());
+    fn set_measure_range(&mut self, channel_range: &ChannelRange, instr_name: &str) {
+        let val = if channel_range.is_range_auto() {
+            "CONSTANTS.AUTO".to_string()
+        } else {
+            Self::format_range(channel_range.clone())
+        };
 
-        if channel_range.is_range_auto() {
-            val = "CONSTANTS.AUTO".to_string();
-        }
         self.val_replacement_map
-            .insert(instr_name.clone() + ":MRANGE", val);
+            .insert(format!("{instr_name}:MRANGE"), val);
     }
 
     //Returns the value used in the script
-    fn get_function_value(&mut self, source_function: &ParameterString) -> String {
+    fn get_function_value(source_function: &ParameterString) -> String {
         if source_function.value.to_lowercase() == BaseMetadata::FUNCTION_VOLTAGE.to_lowercase() {
             "FUNC_DC_VOLTAGE".to_string()
         } else if source_function.value.to_lowercase()
@@ -230,8 +226,7 @@ impl SweepModel {
     }
 
     fn define_step_channels(&mut self, step_config: &SweepConfig) {
-        let mut index = 1;
-        for step_channel in step_config.step_channels.iter() {
+        for (index, step_channel) in (1..).zip(step_config.step_channels.iter()) {
             let instr_name = format!("step{index}");
             self.attributes.step_names.push(instr_name.clone());
 
@@ -244,7 +239,7 @@ impl SweepModel {
                     .get_node_id(),
             );
 
-            if let Some((node_idx, slot_idx, channel_idx)) = self.extract_indices(
+            if let Some((node_idx, slot_idx, channel_idx)) = Self::extract_indices(
                 &step_channel
                     .start_stop_channel
                     .common_chan_attributes
@@ -277,19 +272,18 @@ impl SweepModel {
                     .to_string(),
             );
 
-            let val = self
-                .get_function_value(
-                    &step_channel
-                        .start_stop_channel
-                        .common_chan_attributes
-                        .source_function,
-                )
-                .clone();
+            let val = Self::get_function_value(
+                &step_channel
+                    .start_stop_channel
+                    .common_chan_attributes
+                    .source_function,
+            )
+            .clone();
             self.val_replacement_map
                 .insert(instr_name.clone() + ":SFUNCTION", val);
 
             self.set_source_range(
-                step_channel
+                &step_channel
                     .start_stop_channel
                     .common_chan_attributes
                     .source_range
@@ -298,7 +292,7 @@ impl SweepModel {
             );
 
             self.set_measure_range(
-                step_channel
+                &step_channel
                     .start_stop_channel
                     .common_chan_attributes
                     .meas_range
@@ -306,14 +300,13 @@ impl SweepModel {
                 &instr_name,
             );
 
-            let val = self
-                .get_function_value(
-                    &step_channel
-                        .start_stop_channel
-                        .common_chan_attributes
-                        .meas_function,
-                )
-                .clone();
+            let val = Self::get_function_value(
+                &step_channel
+                    .start_stop_channel
+                    .common_chan_attributes
+                    .meas_function,
+            )
+            .clone();
             self.val_replacement_map
                 .insert(instr_name.clone() + ":MFUNCTION", val);
 
@@ -389,27 +382,25 @@ impl SweepModel {
             self.process_list(
                 step_config.step_global_parameters.list_step,
                 &step_channel.start_stop_channel.list,
-                instr_name,
+                &instr_name,
                 step_config.step_global_parameters.step_points.value as usize,
             );
-
-            index += 1;
         }
 
-        let step_count = if !self.attributes.step_names.is_empty() {
+        let step_count = if self.attributes.step_names.is_empty() {
+            String::from("1")
+        } else {
             step_config
                 .step_global_parameters
                 .step_points
                 .value
                 .to_string()
-        } else {
-            String::from("1")
         };
 
-        let step_to_sweep_delay = if !self.attributes.step_names.is_empty() {
-            self.format(step_config.step_global_parameters.step_to_sweep_delay.value)
-        } else {
+        let step_to_sweep_delay = if self.attributes.step_names.is_empty() {
             String::from("0")
+        } else {
+            self.format(step_config.step_global_parameters.step_to_sweep_delay.value)
         };
 
         self.val_replacement_map
@@ -420,7 +411,7 @@ impl SweepModel {
         if !self.attributes.step_names.is_empty() {
             self.val_replacement_map.insert(
                 String::from("STEP-DEVICE"),
-                self.comma_separated_list(&self.attributes.step_names),
+                Self::comma_separated_list(&self.attributes.step_names),
             );
         }
     }
@@ -428,14 +419,12 @@ impl SweepModel {
     fn process_list(
         &mut self,
         is_list: bool,
-        list: &Vec<ParameterFloat>,
-        instr_name: String,
+        list: &[ParameterFloat],
+        instr_name: &str,
         len: usize, // Default length for list values
     ) {
         //Default value for list is nil
-        let mut list_values = "nil".to_string();
-
-        if is_list {
+        let list_values = if is_list {
             let mut new_list = list
                 .iter()
                 .map(|item| item.value.to_string())
@@ -445,15 +434,16 @@ impl SweepModel {
             }
 
             //Fill in list values
-            list_values = format!("{{ {} }}", new_list.join(", "));
-        }
+            format!("{{ {} }}", new_list.join(", "))
+        } else {
+            "nil".to_string()
+        };
         self.val_replacement_map
-            .insert(instr_name.clone() + ":LIST", list_values);
+            .insert(format!("{instr_name}:LIST"), list_values);
     }
 
     fn define_sweep_channels(&mut self, sweep_config: &SweepConfig) {
-        let mut index = 1;
-        for sweep_channel in sweep_config.sweep_channels.iter() {
+        for (index, sweep_channel) in (1..).zip(sweep_config.sweep_channels.iter()) {
             let instr_name = format!("sweep{index}");
             self.attributes.sweep_names.push(instr_name.clone());
 
@@ -466,7 +456,7 @@ impl SweepModel {
                     .get_node_id(),
             );
 
-            if let Some((node_idx, slot_idx, channel_idx)) = self.extract_indices(
+            if let Some((node_idx, slot_idx, channel_idx)) = Self::extract_indices(
                 &sweep_channel
                     .start_stop_channel
                     .common_chan_attributes
@@ -499,19 +489,18 @@ impl SweepModel {
                     .to_string(),
             );
 
-            let val = self
-                .get_function_value(
-                    &sweep_channel
-                        .start_stop_channel
-                        .common_chan_attributes
-                        .source_function,
-                )
-                .clone();
+            let val = Self::get_function_value(
+                &sweep_channel
+                    .start_stop_channel
+                    .common_chan_attributes
+                    .source_function,
+            )
+            .clone();
             self.val_replacement_map
                 .insert(instr_name.clone() + ":SFUNCTION", val);
 
             self.set_source_range(
-                sweep_channel
+                &sweep_channel
                     .start_stop_channel
                     .common_chan_attributes
                     .source_range
@@ -520,7 +509,7 @@ impl SweepModel {
             );
 
             self.set_measure_range(
-                sweep_channel
+                &sweep_channel
                     .start_stop_channel
                     .common_chan_attributes
                     .meas_range
@@ -528,14 +517,13 @@ impl SweepModel {
                 &instr_name,
             );
 
-            let val = self
-                .get_function_value(
-                    &sweep_channel
-                        .start_stop_channel
-                        .common_chan_attributes
-                        .meas_function,
-                )
-                .clone();
+            let val = Self::get_function_value(
+                &sweep_channel
+                    .start_stop_channel
+                    .common_chan_attributes
+                    .meas_function,
+            )
+            .clone();
             self.val_replacement_map
                 .insert(instr_name.clone() + ":MFUNCTION", val);
 
@@ -610,11 +598,9 @@ impl SweepModel {
             self.process_list(
                 sweep_config.sweep_global_parameters.list_sweep,
                 &sweep_channel.start_stop_channel.list,
-                instr_name,
+                &instr_name,
                 sweep_config.sweep_global_parameters.sweep_points.value as usize,
             );
-
-            index += 1;
         }
 
         self.val_replacement_map.insert(
@@ -628,7 +614,7 @@ impl SweepModel {
         if !self.attributes.sweep_names.is_empty() {
             self.val_replacement_map.insert(
                 String::from("SWEEP-DEVICE"),
-                self.comma_separated_list(&self.attributes.sweep_names),
+                Self::comma_separated_list(&self.attributes.sweep_names),
             );
         }
     }
@@ -740,7 +726,7 @@ impl SweepModel {
     /// # Returns
     ///
     /// A formatted string representing the list of values.
-    fn comma_separated_list(&self, list: &Vec<String>) -> String {
+    fn comma_separated_list(list: &Vec<String>) -> String {
         let mut buffer = String::new();
         for value in list {
             if !buffer.is_empty() {
@@ -759,21 +745,23 @@ impl SweepModel {
     /// # Returns
     /// A formatted string representing the range value. If the range is set to auto or follow limit,
     /// the original value is returned. Otherwise, the scaled value is formatted with 3 decimal places.
-    fn format_range(&self, range: ChannelRange) -> String {
-        let mut result = String::from("NaN");
-        if range.is_range_auto() || range.is_range_follow_limiti() {
-            result = range.value;
+    fn format_range(range: ChannelRange) -> String {
+        let result = if range.is_range_auto() || range.is_range_follow_limiti() {
+            range.value
         } else {
             let range_value = range.get_scaled_value();
-            if let Some(value) = range_value {
-                // Format with 3 decimal places, using scientific notation if needed
-                if value.abs() < 1e-3 || value.abs() >= 1e3 {
-                    result = format!("{:.3e}", value);
-                } else {
-                    result = format!("{:.3}", value);
-                }
-            }
-        }
+            range_value.map_or_else(
+                || "NaN".to_string(),
+                |value| {
+                    if value.abs() < 1e-3 || value.abs() >= 1e3 {
+                        format!("{value:.3e}")
+                    } else {
+                        format!("{value:.3}")
+                    }
+                },
+            )
+        };
+
         result
     }
 
@@ -813,7 +801,7 @@ impl SweepModel {
     ///     println!("Channel Index: {}", channel_idx); // Outputs: 1
     /// }
     /// ```
-    fn extract_indices(&self, input: &str) -> Option<(usize, usize, usize)> {
+    fn extract_indices(input: &str) -> Option<(usize, usize, usize)> {
         let mut numbers = Vec::new();
 
         // Check if the input starts with "localnode"
@@ -824,7 +812,7 @@ impl SweepModel {
         // Iterate through the string and extract numbers inside brackets
         let mut current_number = String::new();
         for c in input.chars() {
-            if c.is_digit(10) {
+            if c.is_ascii_digit() {
                 current_number.push(c);
             } else if c == ']' {
                 if let Ok(num) = current_number.parse::<usize>() {
@@ -852,8 +840,8 @@ pub struct SweepModelAttributes {
 }
 
 impl SweepModelAttributes {
-    pub fn new() -> Self {
-        SweepModelAttributes {
+    pub const fn new() -> Self {
+        Self {
             device_names: Vec::new(),
             step_names: Vec::new(),
             sweep_names: Vec::new(),

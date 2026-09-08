@@ -10,14 +10,14 @@
         : 'var(--vscode-editor-background)'
         }"
     >
-    <div class="plot-info" [ngStyle]="activeStyle">
+    <div class="plot-info" [ngStyle]="activeStyle" [attr.aria-label]="chanName">
       <p> {{ chanName }}</p>
       <span class="vertical-line"></span>
       <p> {{ deviceID }}</p>
       <!-- <span class="vertical-line"></span>
       <p> Model:<strong>{{ deviceID }}</strong></p> -->
     </div>
-    <div [id]="plotDivID" class="plot-graph">
+    <div [id]="plotDivID" class="plot-graph" [attr.aria-label]="plotDivID">
     </div>
   </div>
 </div>

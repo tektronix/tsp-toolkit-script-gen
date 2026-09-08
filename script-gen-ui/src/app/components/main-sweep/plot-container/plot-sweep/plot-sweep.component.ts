@@ -60,6 +60,7 @@ export class PlotSweepComponent
   plotWidth = this.windowWidth * 0.58;
 
   sweepDivID = '';
+  plotDivID = '';
 
   commonChanAttributes: CommonChanAttributes | undefined;
   chanName = 'Sweep1';
@@ -249,6 +250,7 @@ export class PlotSweepComponent
       this.listSweep = this.sweepChannel.start_stop_channel.list;
 
       this.sweepDivID = `plotDiv${this.sweepChannel.start_stop_channel.common_chan_attributes.uuid}`;
+      this.plotDivID = `plotDiv${this.sweepChannel.start_stop_channel.common_chan_attributes.chan_name}`;
       console.log('sweepDivID', this.sweepDivID);
     }
     this.plotData1.x = this.plotDataX;

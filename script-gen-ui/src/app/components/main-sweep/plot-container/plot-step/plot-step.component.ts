@@ -43,7 +43,7 @@ export class PlotStepComponent
   @Input() plotConfig: { staticPlot: boolean } | undefined;
   @Input() totalTimePerStep: number | undefined;
   totalTimePerStepConverted: string | undefined;
-
+  plotDivID = '';
 
   private _isActive = false;
 
@@ -249,6 +249,8 @@ export class PlotStepComponent
       this.stepPoints = this.stepGlobalParameters.step_points;
       this.stepToSweepDelay = this.stepGlobalParameters.step_to_sweep_delay;
       this.totalTimePerStepConverted = parseScientificInput(this.totalTimePerStep.toString(), 's');
+      this.plotDivID = `plotDiv${this.stepChannel.start_stop_channel.common_chan_attributes.chan_name}`;
+
     }
     this.plotData1.x = this.plotDataX;
     this.plotData1.line.color = this.color;

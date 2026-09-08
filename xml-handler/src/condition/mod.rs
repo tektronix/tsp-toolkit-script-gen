@@ -14,17 +14,21 @@ pub struct Condition {
 
 impl Condition {
     fn new(name: String, op: String, value: String) -> Self {
-        Condition {
+        Self {
             name,
             op: if op.is_empty() { "eq".to_string() } else { op },
             value,
         }
     }
 
+    /// Parse the XML from the provided `reader` to produce a [`Condition`]
+    ///
+    /// # Errors
+    /// Error may be produced if the parsing fails.
     pub fn parse_condition<R: std::io::BufRead>(
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> Result<Condition> {
+    ) -> Result<Self> {
         let mut name = String::new();
         let mut op = String::new();
         let mut value = String::new();
@@ -48,13 +52,13 @@ impl Condition {
             Ok(Event::Text(e)) => match e.unescape() {
                 Ok(text) => value = text.to_string(),
                 Err(e) => {
-                    eprintln!("Error reading condition value: {:?}", e);
+                    eprintln!("Error reading condition value: {e:?}");
                     return Err(XMLHandlerError::ParseError { source: e });
                 }
             },
             _ => (),
         }
 
-        Ok(Condition::new(name, op, value))
+        Ok(Self::new(name, op, value))
     }
 }

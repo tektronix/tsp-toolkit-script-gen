@@ -10,8 +10,9 @@ pub struct VoltageCurrentRegion {
 }
 
 impl VoltageCurrentRegion {
-    pub fn new(id: i32, v1: f64, i1: f64, v2: f64, i2: f64) -> Self {
-        VoltageCurrentRegion { id, v1, i1, v2, i2 }
+    #[must_use]
+    pub const fn new(id: i32, v1: f64, i1: f64, v2: f64, i2: f64) -> Self {
+        Self { id, v1, i1, v2, i2 }
     }
 }
 
@@ -23,8 +24,9 @@ pub struct RegionMapMetadata {
 }
 
 impl RegionMapMetadata {
-    pub fn new(exclude_v: Option<NumberLimit>, exclude_i: NumberLimit) -> Self {
-        RegionMapMetadata {
+    #[must_use]
+    pub const fn new(exclude_v: Option<NumberLimit>, exclude_i: NumberLimit) -> Self {
+        Self {
             exclude_v,
             exclude_i,
             regions: Vec::new(),
@@ -45,6 +47,7 @@ impl RegionMapMetadata {
     /// # Returns
     ///
     /// * `NumberLimit` - The least restrictive current limit for the specified voltage.
+    #[must_use]
     pub fn get_current_limit(&self, value: f64) -> NumberLimit {
         let mut first = true;
         let mut limit = NumberLimit::default();
@@ -75,6 +78,7 @@ impl RegionMapMetadata {
     /// # Returns
     ///
     /// * `NumberLimit` - The least restrictive voltage limit for the specified current.
+    #[must_use]
     pub fn get_voltage_limit(&self, value: f64) -> NumberLimit {
         let mut first = true;
         let mut limit = NumberLimit::default();
@@ -108,6 +112,7 @@ impl RegionMapMetadata {
     /// # Returns
     ///
     /// * `i32` - The region identifier, or -1 if not found.
+    #[must_use]
     pub fn find_region(&self, vpoint: f64, ipoint: f64) -> i32 {
         for region in &self.regions {
             if region.v1 <= vpoint

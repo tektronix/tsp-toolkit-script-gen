@@ -8,8 +8,9 @@ pub struct StepChannel {
 }
 
 impl StepChannel {
+    #[must_use]
     pub fn new(chan_name: String, device: Device, step_points: i32) -> Self {
-        let mut step_channel = StepChannel {
+        let mut step_channel = Self {
             start_stop_channel: StartStopChannel::new(chan_name, device),
         };
         step_channel.start_stop_channel.set_defaults(step_points);

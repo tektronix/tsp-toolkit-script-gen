@@ -14,8 +14,9 @@ pub struct ScriptModel {
 }
 
 impl ScriptModel {
+    #[must_use]
     pub fn new(catalog: Catalog) -> Self {
-        ScriptModel {
+        Self {
             catalog,
             chunks: Vec::new(), //Initialize with an empty vector
         }
@@ -40,11 +41,11 @@ impl ScriptModel {
     pub fn to_script(&mut self, sweep_config: &SweepConfig, file_path: &str) {
         let mut script_buffer = ScriptBuffer::new();
         script_buffer.set_auto_indent(true);
-        for chunk in self.chunks.iter_mut() {
+        for chunk in &mut self.chunks {
             chunk.to_script(sweep_config, &mut script_buffer);
         }
         //let file_path = "C:\\ScriptGen\\Snippet.txt";
-        println!("Writing script to file: {}", file_path);
+        println!("Writing script to file: {file_path}");
         let path = Path::new(file_path);
 
         // Check if file exists, if not, create the file and its parent directory if needed
@@ -52,7 +53,7 @@ impl ScriptModel {
             if let Some(parent) = path.parent() {
                 if !parent.exists() {
                     if let Err(e) = std::fs::create_dir_all(parent) {
-                        println!("Failed to create directory: {}", e);
+                        println!("Failed to create directory: {e}");
                         return;
                     }
                 }
@@ -62,11 +63,11 @@ impl ScriptModel {
         match File::create(file_path) {
             Ok(mut file_res) => {
                 if let Err(e) = file_res.write_all(script_buffer.to_string().as_bytes()) {
-                    println!("Error writing to file: {}", e);
+                    println!("Error writing to file: {e}");
                 }
             }
             Err(e) => {
-                println!("Error creating file: {}", e);
+                println!("Error creating file: {e}");
             }
         }
     }

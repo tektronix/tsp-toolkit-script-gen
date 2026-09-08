@@ -17,8 +17,9 @@ pub struct SweepTimingConfig {
 }
 
 impl SweepTimingConfig {
+    #[must_use]
     pub fn new() -> Self {
-        SweepTimingConfig {
+        Self {
             measure_count: ParameterInt::new("measureCount", 1),
             smu_timing: SmuTiming::new(),
             psu_timing: PsuTiming::new(),
@@ -28,6 +29,12 @@ impl SweepTimingConfig {
     pub fn evaluate(&mut self) {
         self.smu_timing.evaluate();
         self.psu_timing.evaluate();
+    }
+}
+
+impl Default for SweepTimingConfig {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -43,8 +50,9 @@ pub struct SmuTiming {
 }
 
 impl SmuTiming {
+    #[must_use]
     pub fn new() -> Self {
-        let mut smu_timing = SmuTiming {
+        let mut smu_timing = Self {
             nplc: ParameterFloat::new("nplc", 1.0, None),
             aperture: ParameterFloat::new(
                 "aperture",
@@ -136,6 +144,12 @@ impl SmuTiming {
     }
 }
 
+impl Default for SmuTiming {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PsuTiming {
     rate: ParameterString,
@@ -144,11 +158,12 @@ pub struct PsuTiming {
 }
 
 impl PsuTiming {
+    #[must_use]
     pub fn new() -> Self {
-        let mut psu_timing = PsuTiming {
+        let mut psu_timing = Self {
             rate: ParameterString::new("rate"),
-            rate_normal: 0.066667,
-            rate_fast: 0.0016667,
+            rate_normal: 0.066_667,
+            rate_fast: 0.001_666_7,
         };
         psu_timing.set_defaults();
         psu_timing
@@ -162,8 +177,14 @@ impl PsuTiming {
         self.rate.value = BaseMetadata::RATE_NORMAL.to_string();
     }
 
-    pub fn evaluate(&mut self) {
+    pub const fn evaluate(&mut self) {
         //let psu_limits = PsuTimingLimit::new();
         //TODO: verify if additional validation is needed
+    }
+}
+
+impl Default for PsuTiming {
+    fn default() -> Self {
+        Self::new()
     }
 }

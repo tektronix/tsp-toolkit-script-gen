@@ -11,10 +11,17 @@ pub struct SweepModel {
 }
 
 impl SweepModel {
+    #[must_use]
     pub fn new() -> Self {
-        SweepModel {
+        Self {
             sweep_config: SweepConfig::new(),
         }
+    }
+}
+
+impl Default for SweepModel {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

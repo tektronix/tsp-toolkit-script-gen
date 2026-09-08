@@ -17,8 +17,9 @@ pub struct ChannelRange {
 }
 
 impl ChannelRange {
-    pub fn new() -> Self {
-        ChannelRange {
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
             range: Vec::new(),
             value: String::new(),
             unit: String::new(),
@@ -28,15 +29,15 @@ impl ChannelRange {
         }
     }
 
-    pub fn set_min(&mut self, min: f64) {
+    pub const fn set_min(&mut self, min: f64) {
         self.min = min;
     }
 
-    pub fn set_max(&mut self, max: f64) {
+    pub const fn set_max(&mut self, max: f64) {
         self.max = max;
     }
 
-    pub fn set_overrange_scale(&mut self, scale: f64) {
+    pub const fn set_overrange_scale(&mut self, scale: f64) {
         self.overrange_scale = scale;
     }
 
@@ -60,16 +61,17 @@ impl ChannelRange {
             }
         }
         //TODO: error handling?
-        return result;
+        result
     }
 
+    #[must_use]
     pub fn get_scaled_value(&self) -> Option<f64> {
         // Extract the numeric part and the prefix+unit from the value string
         let mut numeric_part = String::new();
         let mut suffix_part = String::new();
 
         for c in self.value.chars() {
-            if c.is_digit(10) || c == '.' {
+            if c.is_ascii_digit() || c == '.' {
                 numeric_part.push(c);
             } else {
                 suffix_part.push(c);
@@ -83,7 +85,7 @@ impl ChannelRange {
         let numeric_value: f64 = numeric_part.parse().ok()?;
 
         // Extract the prefix (e.g., "m", "k")
-        let prefix = self.extract_prefix(&suffix_part);
+        let prefix = self.extract_prefix(suffix_part);
 
         // Determine the scaling factor based on the prefix
         let scaling_factor = match prefix.as_str() {
@@ -119,10 +121,12 @@ impl ChannelRange {
         res
     }
 
+    #[must_use]
     pub fn is_range_auto(&self) -> bool {
         self.value == BaseMetadata::AUTO_VALUE
     }
 
+    #[must_use]
     pub fn is_range_follow_limiti(&self) -> bool {
         self.value == BaseMetadata::RANGE_FOLLOW_LIMITI
     }
@@ -130,6 +134,6 @@ impl ChannelRange {
 
 impl Default for ChannelRange {
     fn default() -> Self {
-        ChannelRange::new()
+        Self::new()
     }
 }

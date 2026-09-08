@@ -16,9 +16,10 @@ pub enum StatusType {
 }
 
 impl StatusMsg {
+    #[must_use]
     pub fn new(status_type: StatusType, message: String) -> Self {
         let time_stamp = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
-        StatusMsg {
+        Self {
             status_type,
             message,
             time_stamp,

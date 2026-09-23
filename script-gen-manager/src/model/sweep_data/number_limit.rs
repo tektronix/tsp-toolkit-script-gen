@@ -3,14 +3,14 @@ pub struct NumberLimit {
     min: f64,
     max: f64,
     inclusion: bool,
-    sublimit: Option<Box<NumberLimit>>,
+    sublimit: Option<Box<Self>>,
 }
 
 impl NumberLimit {
-    /// Construct a NumberLimit with the default min and max values (all checks disabled).
-    /// Use set_min() and set_max() to set limit checks.
-    pub fn new(min: f64, max: f64, inclusion: bool, sublimit: Option<NumberLimit>) -> Self {
-        NumberLimit {
+    /// Construct a [`NumberLimit`] with the default min and max values (all checks disabled).
+    /// Use `set_min()` and `set_max()` to set limit checks.
+    pub fn new(min: f64, max: f64, inclusion: bool, sublimit: Option<Self>) -> Self {
+        Self {
             min,
             max,
             inclusion,
@@ -18,67 +18,72 @@ impl NumberLimit {
         }
     }
 
-    /// Set the minimum value which will be enforced by limit(). To
-    /// disable the minimum check, set the value to f64::NAN (the default).
-    pub fn set_min(&mut self, value: f64) {
+    /// Set the minimum value which will be enforced by `limit()`. To
+    /// disable the minimum check, set the value to [`f64::NAN`] (the default).
+    pub const fn set_min(&mut self, value: f64) {
         self.min = value;
     }
 
-    /// Get the minimum value which will be enforced by limit(). If the value
-    /// is set to f64::NAN (the default), the minimum check is disabled
-    pub fn get_min(&self) -> f64 {
+    /// Get the minimum value which will be enforced by `limit()`. If the value
+    /// is set to [`f64::NAN`] (the default), the minimum check is disabled
+    #[must_use]
+    pub const fn get_min(&self) -> f64 {
         self.min
     }
 
-    /// Set the maximum value which will be enforced by limit(). To
-    /// disable the maximum check, set the value to f64::NAN (the default).
-    pub fn set_max(&mut self, value: f64) {
+    /// Set the maximum value which will be enforced by `limit()`. To
+    /// disable the maximum check, set the value to [`f64::NAN`] (the default).
+    pub const fn set_max(&mut self, value: f64) {
         self.max = value;
     }
 
-    /// Get the maximum value which will be enforced by limit(). If the value
-    /// is set to f64::NAN (the default), the maximum check is disabled
-    pub fn get_max(&self) -> f64 {
+    /// Get the maximum value which will be enforced by `limit()`. If the value
+    /// is set to [`f64::NAN`] (the default), the maximum check is disabled
+    #[must_use]
+    pub const fn get_max(&self) -> f64 {
         self.max
     }
 
-    /// Set this NumberLimit as an inclusion limit (true) or an exclusion limit (false). An
-    /// inclusion limit means limit() will enforce min <= value && value <= max -- and both
-    /// min and max are optional (i.e. can be NAN). An exclusion limit means limit() will
+    /// Set this [`NumberLimit`] as an inclusion limit (true) or an exclusion limit (false). An
+    /// inclusion limit means `limit()` will enforce min <= value && value <= max -- and both
+    /// min and max are optional (i.e. can be NAN). An exclusion limit means `limit()` will
     /// enforce value <= min || max <= value -- and both min and max are required (i.e. cannot
     /// be NAN)
-    pub fn set_inclusion(&mut self, value: bool) {
+    pub const fn set_inclusion(&mut self, value: bool) {
         self.inclusion = value;
     }
 
-    /// Is this NumberLimit an inclusion limit (true) or an exclusion limit (false)? An
-    /// inclusion limit means limit() will enforce min <= value && value <= max -- and both
-    /// min and max are optional (i.e. can be NAN). An exclusion limit means limit() will
+    /// Is this [`NumberLimit`] an inclusion limit (true) or an exclusion limit (false)? An
+    /// inclusion limit means `limit()` will enforce min <= value && value <= max -- and both
+    /// min and max are optional (i.e. can be NAN). An exclusion limit means `limit()` will
     /// enforce value <= min || max <= value -- and both min and max are required (i.e. cannot
     /// be NAN)
-    pub fn is_inclusion(&self) -> bool {
+    #[must_use]
+    pub const fn is_inclusion(&self) -> bool {
         self.inclusion
     }
 
-    /// Set the sublimit. limit() will apply the limits defined by min, max, and inclusion
-    /// then call sublimit.limit() (i.e. the value is recursively limited).
-    pub fn set_sublimit(&mut self, value: NumberLimit) {
+    /// Set the sublimit. `limit()` will apply the limits defined by min, max, and inclusion
+    /// then call `sublimit.limit()` (i.e. the value is recursively limited).
+    pub fn set_sublimit(&mut self, value: Self) {
         self.sublimit = Some(Box::new(value));
     }
 
-    /// Get the sublimit. limit() will apply the limits defined by min, max, and inclusion
-    /// then call sublimit.limit() (i.e. the value is recursively limited).
-    pub fn get_sublimit(&self) -> Option<&NumberLimit> {
+    /// Get the sublimit. `limit()` will apply the limits defined by min, max, and inclusion
+    /// then call `sublimit.limit()` (i.e. the value is recursively limited).
+    #[must_use]
+    pub fn get_sublimit(&self) -> Option<&Self> {
         self.sublimit.as_deref()
     }
 
     /// Apply the optional min, max, and sublimit values to the specified value and return the
     /// limited value (i.e. min if value < min, max if value > max, ...). If sublimit is defined
     /// the value is recursively limited (i.e. sublimit is applied and if sublimit has a sublimit
-    /// it is applied...). The value is limited by this instance of NumberLimit and all nested
-    /// NumberLimit instances (an "and" operation) so to define a complex region define one
+    /// it is applied...). The value is limited by this instance of [`NumberLimit`] and all nested
+    /// [`NumberLimit`] instances (an "and" operation) so to define a complex region define one
     /// inclusion limit that covers the entire range and add one or more exclusion limits to
     /// "carve out" pieces of that range and nest them.
+    #[must_use]
     pub fn limit(&self, value: f64) -> f64 {
         let mut result = value;
 
@@ -104,29 +109,29 @@ impl NumberLimit {
         }
 
         // Recursively apply sublimit and return the value
-        if let Some(ref sublimit) = self.sublimit {
-            sublimit.limit(result)
-        } else {
-            result
-        }
+        self.sublimit
+            .as_ref()
+            .map_or(result, |sublimit| sublimit.limit(result))
     }
 
     /// Apply the optional min, max, and sublimit values to the specified value and return the
     /// limited value (i.e. min if value < min, max if value > max, ...). If sublimit is defined
     /// the value is recursively limited (i.e. sublimit is applied and if sublimit has a sublimit
-    /// it is applied...). The value is limited by this instance of NumberLimit and all nested
-    /// NumberLimit instances (an "and" operation) so to define a complex region define one
+    /// it is applied...). The value is limited by this instance of [`NumberLimit`] and all nested
+    /// [`NumberLimit`] instances (an "and" operation) so to define a complex region define one
     /// inclusion limit that covers the entire range and add one or more exclusion limits to
     /// "carve out" pieces of that range and nest them.
+    #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn limit_int(&self, value: i32) -> i32 {
-        let result = self.limit(value as f64);
+        let result = self.limit(f64::from(value));
         result as i32
     }
 }
 
 impl Default for NumberLimit {
     fn default() -> Self {
-        NumberLimit::new(f64::NAN, f64::NAN, true, None)
+        Self::new(f64::NAN, f64::NAN, true, None)
     }
 }
 
@@ -136,9 +141,10 @@ pub struct CommonTimingLimit {
 }
 
 impl CommonTimingLimit {
+    #[must_use]
     pub fn new() -> Self {
         //TODO: verify if limit values are correct
-        CommonTimingLimit {
+        Self {
             measure_count_limits: NumberLimit::new(1.0, 60000.0, true, None),
         }
     }
@@ -146,7 +152,7 @@ impl CommonTimingLimit {
 
 impl Default for CommonTimingLimit {
     fn default() -> Self {
-        CommonTimingLimit::new()
+        Self::new()
     }
 }
 
@@ -159,9 +165,10 @@ pub struct SmuTimingLimit {
 }
 
 impl SmuTimingLimit {
+    #[must_use]
     pub fn new() -> Self {
         //TODO: verify if limit values are correct
-        SmuTimingLimit {
+        Self {
             nplc_limits: NumberLimit::new(5e-5, 30.0, true, None),
             aperture_limits: NumberLimit::new(1e-6, 500e-3, true, None),
             source_delay_limits: NumberLimit::new(0.0, 4294.0, true, None),
@@ -172,7 +179,7 @@ impl SmuTimingLimit {
 
 impl Default for SmuTimingLimit {
     fn default() -> Self {
-        SmuTimingLimit::new()
+        Self::new()
     }
 }
 
@@ -182,14 +189,15 @@ pub struct PsuTimingLimit {
 }
 
 impl PsuTimingLimit {
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         //TODO: verify if limit values are correct
-        PsuTimingLimit {}
+        Self {}
     }
 }
 
 impl Default for PsuTimingLimit {
     fn default() -> Self {
-        PsuTimingLimit::new()
+        Self::new()
     }
 }

@@ -64,6 +64,7 @@ impl BaseMetadata {
     pub const UNIT_AMPERES: &'static str = "A";
     pub const UNIT_SECONDS: &'static str = "s";
 
+    #[must_use]
     pub fn new() -> Self {
         let mut options = HashMap::new();
         let ranges = HashMap::new();
@@ -75,17 +76,13 @@ impl BaseMetadata {
         //timing: source or measure delay type
         options.insert(
             "timing.delay.type",
-            vec![
-                BaseMetadata::OFF_VALUE,
-                BaseMetadata::AUTO_VALUE,
-                BaseMetadata::USER_DEFINED_VALUE,
-            ],
+            vec![Self::OFF_VALUE, Self::AUTO_VALUE, Self::USER_DEFINED_VALUE],
         );
 
         names.insert("sense=Two-wire", "SENSE_2WIRE");
         names.insert("sense=Four-wire", "SENSE_4WIRE");
 
-        BaseMetadata {
+        Self {
             options,
             ranges,
             defaults,
@@ -111,7 +108,7 @@ impl BaseMetadata {
         self.region_maps.insert(key, region_map_metadata);
     }
 
-    pub fn add_overrange_scale(&mut self, scale: f64) {
+    pub const fn add_overrange_scale(&mut self, scale: f64) {
         self.overrange_scale = scale;
     }
 }
@@ -124,15 +121,15 @@ impl Metadata for BaseMetadata {
 
     /// Retrieves a range based on the provided key.
     fn get_range(&self, key: &str) -> Option<(f64, f64)> {
-        self.ranges.get(key).cloned()
+        self.ranges.get(key).copied()
     }
 
     fn get_default(&self, key: &str) -> Option<&'static str> {
-        self.defaults.get(key).cloned()
+        self.defaults.get(key).copied()
     }
 
     fn get_name(&self, key: &str) -> Option<&'static str> {
-        self.names.get(key).cloned()
+        self.names.get(key).copied()
     }
 
     fn get_region_map(&self, key: &str) -> Option<RegionMapMetadata> {
@@ -147,6 +144,6 @@ impl Metadata for BaseMetadata {
 impl Default for BaseMetadata {
     /// Provides a default instance of `BaseMetadata`.
     fn default() -> Self {
-        BaseMetadata::new()
+        Self::new()
     }
 }

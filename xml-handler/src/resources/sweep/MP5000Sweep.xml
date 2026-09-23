@@ -237,7 +237,7 @@
                             end
                             return
                         else
-                            events = table.remove(events, 1)
+                            table.remove(events, 1)
                             local next = {}
                             local remainder = {}
                             for i, v in ipairs(events) do

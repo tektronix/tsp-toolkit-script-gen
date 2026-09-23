@@ -56,6 +56,7 @@ pub struct Msmu200Metadata {
 }
 
 impl Msmu200Metadata {
+    #[must_use]
     pub fn new() -> Self {
         let mut base = BaseMetadata::new();
         // Add additional key-value pairs for MSMU200Metadata
@@ -98,7 +99,7 @@ impl Msmu200Metadata {
         base.add_region_map(CURRENT_10_MA, inner_region.clone());
         base.add_region_map(CURRENT_100_MA, inner_region.clone());
 
-        let mut outer_region = RegionMapMetadata::new(exclude_v.clone(), exclude_i.clone());
+        let mut outer_region = RegionMapMetadata::new(exclude_v, exclude_i);
         outer_region.add_region(
             1,
             -20.2 - EPSILON,
@@ -116,10 +117,16 @@ impl Msmu200Metadata {
 
         base.add_overrange_scale(1.01);
 
-        Msmu200Metadata {
+        Self {
             base,
             // Initialize additional properties
         }
+    }
+}
+
+impl Default for Msmu200Metadata {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

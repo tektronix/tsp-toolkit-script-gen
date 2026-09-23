@@ -7,7 +7,7 @@ use crate::model::sweep_data::sweep_config::SweepConfig;
 
 use super::function::FunctionModel;
 
-/// InitializeModel is an aggregation of FunctionModel that represents the _Intialize() function of the script.
+/// [`InitializeModel`] is an aggregation of [`FunctionModel`] that represents the `_Intialize()` function of the script.
 /// This is a mandatory function in the generated script.
 #[derive(Debug)]
 pub struct InitializeModel {
@@ -48,7 +48,7 @@ impl FunctionModel for InitializeModel {
         self.val_replacement_map
             .insert(String::from("INCLUDE-SRCVALS"), String::from("1"));
 
-        for child in self.metadata.children.iter_mut() {
+        for child in &mut self.metadata.children {
             if let xml_handler::group::IncludeResult::Composite(comp) = child {
                 // aux chunk
                 if comp.type_.is_some() {
@@ -59,7 +59,7 @@ impl FunctionModel for InitializeModel {
                     comp.to_script(&mut temp, &self.val_replacement_map);
                     temp.change_indent(-ScriptBuffer::DEFAULT_INDENT);
 
-                    script_buffer.preamble_append(temp.to_string());
+                    script_buffer.preamble_append(&temp.to_string());
                 }
             }
         }
@@ -77,7 +77,7 @@ impl InitializeModel {
     Then, it initializes members used to keep track of reading buffer storage.  ";
 
     pub fn new(group: Group) -> Self {
-        InitializeModel {
+        Self {
             type_: group.type_.clone(),
             description: Self::DESCRIPTION.to_string(),
             metadata: group,

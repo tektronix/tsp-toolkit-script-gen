@@ -31,6 +31,6 @@ pub enum MetadataEnum {
 
 impl Default for MetadataEnum {
     fn default() -> Self {
-        MetadataEnum::Base(BaseMetadata::default())
+        Self::Base(BaseMetadata::default())
     }
 }

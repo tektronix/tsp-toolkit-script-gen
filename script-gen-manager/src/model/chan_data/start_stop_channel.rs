@@ -19,8 +19,9 @@ pub struct StartStopChannel {
 }
 
 impl StartStopChannel {
+    #[must_use]
     pub fn new(chan_name: String, device: Device) -> Self {
-        StartStopChannel {
+        Self {
             common_chan_attributes: CommonChanAttributes::new(chan_name, device),
             start: ParameterFloat::new("start", 0.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
             stop: ParameterFloat::new("stop", 1.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
@@ -49,7 +50,7 @@ impl StartStopChannel {
 
         for i in 0..num_points {
             let pf = ParameterFloat::new(
-                &format!("list_{}", i),
+                &format!("list_{i}"),
                 0.0,
                 Some(BaseMetadata::UNIT_VOLTS.to_string()),
             );
@@ -57,6 +58,8 @@ impl StartStopChannel {
         }
     }
 
+    /// # Panics
+    /// May panic if any of the values in this list are not comparable. This is an unexpected situation
     pub fn evaluate(&mut self, list_size: usize, is_list_enabled: bool) {
         self.common_chan_attributes.evaluate();
         self.determine_start_value();
@@ -112,7 +115,7 @@ impl StartStopChannel {
             }
         }
 
-        for (_, pf) in self.list.iter_mut().enumerate() {
+        for pf in &mut self.list {
             if let Some(start_unit) = &pf.unit {
                 if start_unit == &self.common_chan_attributes.source_range.unit {
                     pf.value = self.common_chan_attributes.source_range.limit(pf.value);
@@ -142,7 +145,7 @@ impl StartStopChannel {
             println!("start.unit is None");
         }
 
-        if self.style.value == BaseMetadata::STYLE_LOG.to_string() {
+        if self.style.value == BaseMetadata::STYLE_LOG {
             // start and stop must be on the same side of asymptote (0)
             if self.start.value >= BaseMetadata::MIN_LOG_VALUE {
                 if self.stop.value < 0.0 {
@@ -158,9 +161,9 @@ impl StartStopChannel {
                 // start == asymptote (0.0)
                 // move start toward stop a little to get it off asymptote (0.0)
                 if self.stop.value > 0.0 {
-                    self.start.value = BaseMetadata::MIN_LOG_VALUE
+                    self.start.value = BaseMetadata::MIN_LOG_VALUE;
                 } else {
-                    self.start.value = -BaseMetadata::MIN_LOG_VALUE
+                    self.start.value = -BaseMetadata::MIN_LOG_VALUE;
                 }
             }
         }
@@ -183,7 +186,7 @@ impl StartStopChannel {
             println!("bias.unit is None");
         }
 
-        if self.style.value == BaseMetadata::STYLE_LOG.to_string() {
+        if self.style.value == BaseMetadata::STYLE_LOG {
             // Start and stop must be on the same side of asymptote (0)
             if self.stop.value >= BaseMetadata::MIN_LOG_VALUE {
                 if self.start.value < 0.0 {

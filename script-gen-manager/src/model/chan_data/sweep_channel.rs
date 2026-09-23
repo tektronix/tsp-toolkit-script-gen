@@ -9,8 +9,9 @@ pub struct SweepChannel {
 }
 
 impl SweepChannel {
+    #[must_use]
     pub fn new(chan_name: String, device: Device, sweep_points: i32) -> Self {
-        let mut step_channel = SweepChannel {
+        let mut step_channel = Self {
             start_stop_channel: StartStopChannel::new(chan_name, device),
         };
 

@@ -13,8 +13,9 @@ pub struct StepGlobalParameters {
 }
 
 impl StepGlobalParameters {
+    #[must_use]
     pub fn new() -> Self {
-        StepGlobalParameters {
+        Self {
             step_points: ParameterInt::new("step_points", 10),
             step_to_sweep_delay: ParameterFloat::new(
                 "step_to_sweep_delay",
@@ -26,6 +27,12 @@ impl StepGlobalParameters {
     }
 }
 
+impl Default for StepGlobalParameters {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SweepGlobalParameters {
     pub sweep_points: ParameterInt,
@@ -33,10 +40,17 @@ pub struct SweepGlobalParameters {
 }
 
 impl SweepGlobalParameters {
+    #[must_use]
     pub fn new() -> Self {
-        SweepGlobalParameters {
+        Self {
             sweep_points: ParameterInt::new("sweep_points", 10),
             list_sweep: false,
         }
+    }
+}
+
+impl Default for SweepGlobalParameters {
+    fn default() -> Self {
+        Self::new()
     }
 }

@@ -11,6 +11,7 @@ pub struct Mpsu50Metadata {
 }
 
 impl Mpsu50Metadata {
+    #[must_use]
     pub fn new() -> Self {
         let mut base = BaseMetadata::new();
         // Add additional key-value pairs for Mpsu50Metadata
@@ -66,12 +67,13 @@ impl Mpsu50Metadata {
 
         base.add_overrange_scale(1.002);
 
-        Mpsu50Metadata {
+        Self {
             base,
             // Initialize additional properties
         }
     }
 
+    #[allow(clippy::while_float)]
     fn add_1st_quadrant_curved_region(
         voltage_start: f64,
         voltage_max: f64,
@@ -91,6 +93,7 @@ impl Mpsu50Metadata {
         }
     }
 
+    #[allow(clippy::while_float)]
     fn add_3rd_quadrant_curved_region(
         voltage_start: f64,
         voltage_max: f64,
@@ -108,6 +111,12 @@ impl Mpsu50Metadata {
             region_map_metadata.add_region(1, v2, i2, v1, current);
             v1 += step;
         }
+    }
+}
+
+impl Default for Mpsu50Metadata {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

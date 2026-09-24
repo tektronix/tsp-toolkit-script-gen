@@ -25,8 +25,8 @@ pub struct Constraint {
 }
 
 impl Reference {
-    fn new(id: String, default: String, useall: String, value: String) -> Self {
-        Reference {
+    const fn new(id: String, default: String, useall: String, value: String) -> Self {
+        Self {
             id,
             default,
             useall,
@@ -34,9 +34,13 @@ impl Reference {
         }
     }
 
+    /// Parse the provided `attributes` into a [`Reference`]
+    ///
+    /// # Errors
+    /// Parsing may fail
     pub fn parse_reference_attr_only(
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> Result<Reference> {
+    ) -> Result<Self> {
         let mut id = String::new();
         let default = String::new();
         let useall = String::new();
@@ -44,18 +48,22 @@ impl Reference {
 
         for attr in attributes {
             let attr = attr?;
-            if let QName(b"id") = attr.key {
+            if attr.key == QName(b"id") {
                 id = String::from_utf8_lossy(attr.value.as_ref()).to_string();
             }
         }
 
-        Ok(Reference::new(id, default, useall, value))
+        Ok(Self::new(id, default, useall, value))
     }
 
+    /// Parse the XML provided in the `reader` and produce a [`Reference`]
+    ///
+    /// # Errors
+    /// Parsing may fail
     pub fn parse_reference<R: std::io::BufRead>(
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> Result<Reference> {
+    ) -> Result<Self> {
         let mut buf: Vec<u8> = Vec::new();
 
         let mut id = String::new();
@@ -68,7 +76,7 @@ impl Reference {
             match attr.key {
                 QName(b"id") => id = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
                 QName(b"useall") => {
-                    useall = String::from_utf8_lossy(attr.value.as_ref()).to_string()
+                    useall = String::from_utf8_lossy(attr.value.as_ref()).to_string();
                 }
                 QName(b"value") => value = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
                 _ => {}
@@ -84,7 +92,7 @@ impl Reference {
                 Ok(Event::Text(e)) => match e.unescape() {
                     Ok(text) => default = text.to_string(),
                     Err(e) => {
-                        eprintln!("Error reading default reference value: {:?}", e);
+                        eprintln!("Error reading default reference value: {e:?}");
                         return Err(XMLHandlerError::ParseError { source: e });
                     }
                 },
@@ -95,19 +103,25 @@ impl Reference {
             }
         }
 
-        Ok(Reference::new(id, default, useall, value))
+        Ok(Self::new(id, default, useall, value))
     }
 }
 
 impl Constraint {
-    pub fn new(min: f64, max: f64) -> Self {
-        Constraint { min, max }
+    #[must_use]
+    pub const fn new(min: f64, max: f64) -> Self {
+        Self { min, max }
     }
 
+    /// Parse the XML from the provided `reader` and produce a [`Constraint`]
+    ///
+    /// # Errors
+    /// Parsing may produce errors
     pub fn parse_constraint<R: std::io::BufRead>(
         reader: &mut Reader<R>,
-        attributes: quick_xml::events::attributes::Attributes,
-    ) -> Result<Constraint> {
+        attributes: &quick_xml::events::attributes::Attributes,
+    ) -> Result<Self> {
+        let _ = attributes;
         let mut buf: Vec<u8> = Vec::new();
 
         let mut min: f64 = 0.0;
@@ -127,9 +141,9 @@ impl Constraint {
                             return Err(XMLHandlerError::ParseError { source: e });
                         }
                         Ok(Event::Text(e)) => match e.unescape() {
-                            Ok(text) => min = text.parse().unwrap(),
+                            Ok(text) => min = text.parse()?,
                             Err(e) => {
-                                eprintln!("Error reading min constraint value: {:?}", e);
+                                eprintln!("Error reading min constraint value: {e:?}");
                                 return Err(XMLHandlerError::ParseError { source: e });
                             }
                         },
@@ -144,9 +158,9 @@ impl Constraint {
                             return Err(XMLHandlerError::ParseError { source: e });
                         }
                         Ok(Event::Text(e)) => match e.unescape() {
-                            Ok(text) => max = text.parse().unwrap(),
+                            Ok(text) => max = text.parse()?,
                             Err(e) => {
-                                eprintln!("Error reading max constraint value: {:?}", e);
+                                eprintln!("Error reading max constraint value: {e:?}");
                                 return Err(XMLHandlerError::ParseError { source: e });
                             }
                         },
@@ -161,6 +175,6 @@ impl Constraint {
             }
         }
 
-        Ok(Constraint::new(min, max))
+        Ok(Self::new(min, max))
     }
 }

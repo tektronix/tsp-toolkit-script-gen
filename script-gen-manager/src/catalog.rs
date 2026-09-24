@@ -10,8 +10,9 @@ pub struct Catalog {
 }
 
 impl Catalog {
+    #[must_use]
     pub fn new() -> Self {
-        Catalog {
+        Self {
             function_metadata_map: HashMap::new(),
         }
     }
@@ -20,16 +21,19 @@ impl Catalog {
     ///
     /// This method updates the `function_metadata_map` with the parsed XML data.
     pub fn refresh_function_metadata(&mut self) {
-        match generic_parser::parse_xml() {
-            Ok(res) => {
-                for item in res {
-                    self.function_metadata_map.insert(item.type_.clone(), item);
-                }
+        if let Ok(res) = generic_parser::parse_xml() {
+            for item in res {
+                self.function_metadata_map.insert(item.type_.clone(), item);
             }
-            Err(e) => {
-                //eprintln!("Error: {:?}", e);
-                //return Err(e.into());
-            }
+        } else {
+            //eprintln!("Error: {:?}", e);
+            //return Err(e.into());
         }
+    }
+}
+
+impl Default for Catalog {
+    fn default() -> Self {
+        Self::new()
     }
 }

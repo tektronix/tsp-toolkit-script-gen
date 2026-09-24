@@ -12,14 +12,18 @@ pub struct Substitute {
 
 impl Substitute {
     /// Function to create a new instance of [`Substitute`]
-    fn new(name: String, value: String) -> Self {
-        Substitute { name, value }
+    const fn new(name: String, value: String) -> Self {
+        Self { name, value }
     }
 
+    /// Parse the XML in the `reader` and produce a [`Substitute`].
+    ///
+    /// # Errors
+    /// Parsing errors may occur
     pub fn parse_substitute<R: std::io::BufRead>(
         reader: &mut Reader<R>,
         attributes: quick_xml::events::attributes::Attributes,
-    ) -> Result<Substitute> {
+    ) -> Result<Self> {
         let mut name = String::new();
         let mut value = String::new();
 
@@ -27,10 +31,8 @@ impl Substitute {
 
         for attr in attributes {
             let attr = attr?;
-            match attr.key {
-                QName(b"name") => name = String::from_utf8_lossy(attr.value.as_ref()).to_string(),
-                //QName(b"value") => value = String::from_utf8(attr.value.into_owned()).unwrap(),
-                _ => {}
+            if attr.key == QName(b"name") {
+                name = String::from_utf8_lossy(attr.value.as_ref()).to_string();
             }
         }
 
@@ -44,7 +46,7 @@ impl Substitute {
                 match e.unescape() {
                     Ok(text) => value = text.to_string(),
                     Err(e) => {
-                        eprintln!("Error reading substitute value: {:?}", e);
+                        eprintln!("Error reading substitute value: {e:?}");
                         return Err(XMLHandlerError::ParseError { source: e });
                     }
                 }
@@ -52,6 +54,6 @@ impl Substitute {
             _ => (),
         }
 
-        Ok(Substitute::new(name, value))
+        Ok(Self::new(name, value))
     }
 }

@@ -35,10 +35,10 @@ pub trait FunctionModel: Send + Sync {
         let mut returnval = String::with_capacity(100);
 
         for token in descriptor.lines() {
-            if !first {
-                returnval.push('\n');
-            } else {
+            if first {
                 first = false;
+            } else {
+                returnval.push('\n');
             }
             returnval.push_str("-- ");
             returnval.push_str(token);
@@ -56,25 +56,21 @@ pub trait FunctionModel: Send + Sync {
     /// * `script_buffer` - A mutable reference to the script buffer.
     fn start_chunk(&self, script_buffer: &mut ScriptBuffer) {
         script_buffer.body_append(
-            "----------------------------------------------------------------------------"
-                .to_owned(),
+            "----------------------------------------------------------------------------",
         );
-        script_buffer.body_append(format!(
+        script_buffer.body_append(&format!(
             "-- START OF {} SEGMENT ... do not modify this section ",
             self.get_type().to_uppercase()
         ));
         script_buffer.body_append(
-            "----------------------------------------------------------------------------"
-                .to_owned(),
+            "----------------------------------------------------------------------------",
         );
         script_buffer.body_append(
-            "--=========================================================================="
-                .to_owned(),
+            "--==========================================================================",
         );
-        script_buffer.body_append(self.to_lua_comment(self.get_description()));
+        script_buffer.body_append(&self.to_lua_comment(self.get_description()));
         script_buffer.body_append(
-            "--=========================================================================="
-                .to_owned(),
+            "--==========================================================================",
         );
     }
 
@@ -87,18 +83,16 @@ pub trait FunctionModel: Send + Sync {
     /// * `script_buffer` - A mutable reference to the script buffer.
     fn finish_chunk(&self, script_buffer: &mut ScriptBuffer) {
         script_buffer.body_append(
-            "----------------------------------------------------------------------------"
-                .to_owned(),
+            "----------------------------------------------------------------------------",
         );
-        script_buffer.body_append(format!(
+        script_buffer.body_append(&format!(
             "-- END OF {} SEGMENT ... do not modify code after this point",
             self.get_type().to_uppercase()
         ));
         script_buffer.body_append(
-            "----------------------------------------------------------------------------\n"
-                .to_owned(),
+            "----------------------------------------------------------------------------\n",
         );
-        script_buffer.body_append("".to_owned());
+        script_buffer.body_append("");
     }
 
     /// Builds the function model script and appends it to the script buffer.
@@ -114,7 +108,7 @@ pub trait FunctionModel: Send + Sync {
         let val_replacement_map = self.get_val_replacement_map();
 
         let mut metadata = metadata.clone();
-        for child in metadata.children.iter_mut() {
+        for child in &mut metadata.children {
             if let xml_handler::group::IncludeResult::Composite(comp) = child {
                 //not aux type
                 if comp.type_.is_none() {
@@ -139,9 +133,9 @@ pub trait FunctionModel: Send + Sync {
     fn format(&self, value: f64) -> String {
         let temp = value.abs();
         if temp > 0.0 && !(0.1..=1000.0).contains(&temp) {
-            format!("{:e}", value) // Scientific notation
+            format!("{value:e}") // Scientific notation
         } else {
-            format!("{}", value) // Default notation
+            format!("{value}") // Default notation
         }
     }
 }

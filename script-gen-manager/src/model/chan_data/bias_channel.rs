@@ -13,8 +13,9 @@ pub struct BiasChannel {
 }
 
 impl BiasChannel {
+    #[must_use]
     pub fn new(chan_name: String, device: Device) -> Self {
-        let mut bias_channel = BiasChannel {
+        let mut bias_channel = Self {
             common_chan_attributes: CommonChanAttributes::new(chan_name, device),
             bias: ParameterFloat::new("bias", 0.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
         };

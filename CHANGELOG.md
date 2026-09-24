@@ -16,6 +16,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
     Security -- in case of vulnerabilities.
 -->
 
+## [0.1.5]
+
 ## [0.1.1]
 
 ### Security
@@ -23,6 +25,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 
 <!-- Version Comparison Links -->
-[Unreleased]: https://github.com/tektronix/tsp-toolkit/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/tektronix/tsp-toolkit/compare/v0.1.5...HEAD
+[0.1.5]: https://github.com/tektronix/tsp-toolkit/compare/v0.1.1...v0.1.5
 [0.1.1]: https://github.com/tektronix/tsp-toolkit/releases/tag/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/tektronix/tsp-toolkit/releases/tag/v0.1.0

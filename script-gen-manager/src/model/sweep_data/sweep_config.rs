@@ -355,7 +355,18 @@ impl SweepConfig {
     pub fn evaluate(&mut self) {
         self.update_channel_devices();
         self.global_parameters.evaluate();
-        self.step_global_parameters.step_points.limit(1, 60000);
+
+        // Only one step channel can ever exist, so once it is removed the step count is one.
+        let minimum_step_points = if self.step_channels.is_empty() {
+            self.step_global_parameters.step_points.value = 1;
+            1
+        } else {
+            2
+        };
+
+        self.step_global_parameters
+            .step_points
+            .limit(minimum_step_points, 60000);
         self.sweep_global_parameters.sweep_points.limit(2, 60000);
         self.global_parameters
             .sweep_timing_config
@@ -471,6 +482,9 @@ impl SweepConfig {
                     device,
                 ));
             } else if chan_type == "step" {
+                if self.step_channels.is_empty() {
+                    self.step_global_parameters.step_points.value = 10;
+                }
                 self.add_step(StepChannel::new(
                     format!("step{}", self.step_channels.len() + 1),
                     device,

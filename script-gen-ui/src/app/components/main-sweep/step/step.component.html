@@ -155,7 +155,11 @@
         [options]="style.range"
         *ngIf="style"
         name="style"
+<<<<<<< HEAD
         [automationID]="!selectedDeviceOption?.isValid || listStep ? 'Style-Disabled' : 'style'"
+=======
+        automationID="!selectedDeviceOption?.isValid || listStep ? 'Style-Disabled' : 'style'"
+>>>>>>> release/v0.1.6
         (toggleOptionChange)="submitStepData()"
         [disabled]="!selectedDeviceOption?.isValid || listStep"
       ></app-input-toggle>

@@ -155,7 +155,7 @@
         [options]="style.range"
         *ngIf="style"
         name="style"
-        automationID="style"
+        automationID="!selectedDeviceOption?.isValid || listStep ? 'Style-Disabled' : 'style'"
         (toggleOptionChange)="submitStepData()"
         [disabled]="!selectedDeviceOption?.isValid || listStep"
       ></app-input-toggle>
@@ -182,7 +182,7 @@
         <button
           class="timing"
           [class.stepList-open]="showStepList"
-          [attr.aria-label]="'EditStepList'"
+          [attr.aria-label]="!selectedDeviceOption?.isValid || !listStep ?'EditStepList-Disabled':'EditStepList'"
           (click)="showStepListPopup()"
           [disabled]="!selectedDeviceOption?.isValid || !listStep"
         >

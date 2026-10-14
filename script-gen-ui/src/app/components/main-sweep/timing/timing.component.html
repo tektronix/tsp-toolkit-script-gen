@@ -77,6 +77,7 @@
       <div [ngClass]="{ disabled: sourceAutoDelay?.value !== 'OFF' }">
         <app-input-plain
           automationID="SourceDelay"
+          [disabled]="sourceAutoDelay?.value !== 'OFF'"
           [(ngModel)]="sourceDelay.value"
           [label]="'Source Delay'"
           [unit]="sourceDelay.unit"
@@ -101,6 +102,7 @@
       <div [ngClass]="{ disabled: measureAutoDelay?.value !== 'OFF' }">
         <app-input-plain
           automationID="MeasureDelay"
+          [disabled]="measureAutoDelay?.value !== 'OFF'"
           [(ngModel)]="measureDelay.value"
           [label]="'Measure Delay'"
           [unit]="measureDelay.unit"

@@ -15,17 +15,32 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
     Fixed -- for any bug fixes.
     Security -- in case of vulnerabilities.
 -->
+## [0.1.7]
+
+## [0.1.6]
 
 ## [0.1.5]
+
+## [0.1.4]
+
+## [0.1.3]
+
+## [0.1.2]
 
 ## [0.1.1]
 
 ### Security
 - Updated 3rd-party dependencies
 
+## [0.1.0]
 
 <!-- Version Comparison Links -->
-[Unreleased]: https://github.com/tektronix/tsp-toolkit/compare/v0.1.5...HEAD
-[0.1.5]: https://github.com/tektronix/tsp-toolkit/compare/v0.1.1...v0.1.5
-[0.1.1]: https://github.com/tektronix/tsp-toolkit/releases/tag/v0.1.0...v0.1.1
+[Unreleased]: https://github.com/tektronix/tsp-toolkit/compare/v0.1.7...HEAD
+[0.1.7]: https://github.com/tektronix/tsp-toolkit/releases/tag/v0.1.7
+[0.1.6]: https://github.com/tektronix/tsp-toolkit/releases/tag/v0.1.6
+[0.1.5]: https://github.com/tektronix/tsp-toolkit/releases/tag/v0.1.5
+[0.1.4]: https://github.com/tektronix/tsp-toolkit/releases/tag/v0.1.4
+[0.1.3]: https://github.com/tektronix/tsp-toolkit/releases/tag/v0.1.3
+[0.1.2]: https://github.com/tektronix/tsp-toolkit/releases/tag/v0.1.2
+[0.1.1]: https://github.com/tektronix/tsp-toolkit/releases/tag/v0.1.1
 [0.1.0]: https://github.com/tektronix/tsp-toolkit/releases/tag/v0.1.0

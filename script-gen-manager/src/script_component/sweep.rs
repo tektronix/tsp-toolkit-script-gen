@@ -369,23 +369,6 @@ impl SweepModel {
     /// - Iterates through the input string and extracts numeric values enclosed in square brackets (`[...]`).
     /// - Parses the extracted numbers into `usize` values.
     /// - Ensures that exactly three numbers are found; otherwise, returns `None`.
-    ///
-    /// # Example
-    /// ```rust
-    /// let input1 = "node[37].slot[1].smu[1]";
-    /// if let Some((node_idx, slot_idx, channel_idx)) = sweep_model.extract_indices(input1) {
-    ///     println!("Node Index: {}", node_idx); // Outputs: 37
-    ///     println!("Slot Index: {}", slot_idx); // Outputs: 1
-    ///     println!("Channel Index: {}", channel_idx); // Outputs: 1
-    /// }
-    ///
-    /// let input2 = "localnode.slot[1].smu[1]";
-    /// if let Some((node_idx, slot_idx, channel_idx)) = sweep_model.extract_indices(input2) {
-    ///     println!("Node Index: {}", node_idx); // Outputs: 0
-    ///     println!("Slot Index: {}", slot_idx); // Outputs: 1
-    ///     println!("Channel Index: {}", channel_idx); // Outputs: 1
-    /// }
-    /// ```
     fn extract_indices(input: &str) -> Option<(usize, usize, usize)> {
         let mut numbers = Vec::new();
 
@@ -413,5 +396,35 @@ impl SweepModel {
         } else {
             None
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SweepModel;
+
+    #[test]
+    fn extract_indices_from_remote_node() {
+        assert_eq!(
+            SweepModel::extract_indices("node[37].slot[1].smu[1]"),
+            Some((37, 1, 1))
+        );
+    }
+
+    #[test]
+    fn extract_indices_from_localnode() {
+        assert_eq!(
+            SweepModel::extract_indices("localnode.slot[2].psu[2]"),
+            Some((0, 2, 2))
+        );
+    }
+
+    #[test]
+    fn extract_indices_requires_three_indices() {
+        assert_eq!(SweepModel::extract_indices("localnode.slot[1]"), None);
+        assert_eq!(
+            SweepModel::extract_indices("node[1].slot[2].smu[1].x[4]"),
+            None
+        );
     }
 }

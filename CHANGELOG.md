@@ -15,6 +15,11 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
     Fixed -- for any bug fixes.
     Security -- in case of vulnerabilities.
 -->
+## [Unreleased]
+
+### Changed
+- Script templates are now Handlebars templates organized in YAML files
+
 ## [0.1.7]
 
 ## [0.1.6]

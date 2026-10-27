@@ -68,6 +68,10 @@ fn render(name: &str, config: &SweepConfig) -> String {
 }
 
 fn check(name: &str, actual: &str) {
+    assert!(
+        !actual.contains('\r'),
+        "generated script for '{name}' must use \\n line endings"
+    );
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("tests")
         .join("expected")
@@ -79,6 +83,11 @@ fn check(name: &str, actual: &str) {
     }
     let expected = std::fs::read_to_string(&path)
         .unwrap_or_else(|e| panic!("could not read {}: {e}", path.display()));
+    assert!(
+        !expected.contains('\r'),
+        "{} must use \\n line endings (see .gitattributes)",
+        path.display()
+    );
     assert!(
         expected == actual,
         "generated script for '{name}' does not match {}",

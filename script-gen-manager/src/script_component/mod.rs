@@ -27,6 +27,18 @@ mod tests {
         script_buffer.to_string()
     }
 
+    fn check(actual: &str, expected: &str) {
+        assert!(
+            !actual.contains('\r'),
+            "generated script must use \\n line endings"
+        );
+        assert!(
+            !expected.contains('\r'),
+            "expected script must use \\n line endings (see .gitattributes)"
+        );
+        assert_eq!(actual, expected);
+    }
+
     fn template(type_: &str) -> FunctionTemplate {
         script_templates::load_templates()
             .unwrap()
@@ -38,27 +50,27 @@ mod tests {
     #[test]
     fn initialize() {
         let mut model = InitializeModel::new(template("Initialize"));
-        assert_eq!(
-            render(&mut model),
-            include_str!("../../tests/expected/initialize.tsp")
+        check(
+            &render(&mut model),
+            include_str!("../../tests/expected/initialize.tsp"),
         );
     }
 
     #[test]
     fn finalize() {
         let mut model = FinalizeModel::new(template("Finalize"));
-        assert_eq!(
-            render(&mut model),
-            include_str!("../../tests/expected/finalize.tsp")
+        check(
+            &render(&mut model),
+            include_str!("../../tests/expected/finalize.tsp"),
         );
     }
 
     #[test]
     fn data_report() {
         let mut model = DataReportModel::new(template("DataReport"));
-        assert_eq!(
-            render(&mut model),
-            include_str!("../../tests/expected/data_report.tsp")
+        check(
+            &render(&mut model),
+            include_str!("../../tests/expected/data_report.tsp"),
         );
     }
 }

@@ -1,7 +1,8 @@
 use std::any::Any;
 
 use script_aggregator::script_buffer::ScriptBuffer;
-use xml_handler::composite::CommonChunk;
+use script_templates::{error::Result, FunctionTemplate};
+use serde::Serialize;
 
 use crate::model::sweep_data::sweep_config::SweepConfig;
 
@@ -11,12 +12,17 @@ pub trait FunctionModel: Send + Sync {
     fn get_type(&self) -> &str;
     /// Returns the description of the function model.
     fn get_description(&self) -> &str;
-    /// Returns the value replacement map containing the key-value pairs used for substitution.
-    fn get_val_replacement_map(&self) -> &std::collections::HashMap<String, String>;
-    /// Returns the metadata (parsed Group information) of the function model.
-    fn get_metadata(&self) -> &xml_handler::group::Group;
+    /// Returns the template used to render the function model.
+    fn get_template(&self) -> &FunctionTemplate;
     /// Converts the function model to a script.
-    fn to_script(&mut self, sweep_config: &SweepConfig, script_buffer: &mut ScriptBuffer);
+    ///
+    /// # Errors
+    /// Returns an error if the function's template could not be rendered.
+    fn to_script(
+        &mut self,
+        sweep_config: &SweepConfig,
+        script_buffer: &mut ScriptBuffer,
+    ) -> Result<()>;
 
     /// Converts a description string into a Lua comment format.
     ///
@@ -95,27 +101,25 @@ pub trait FunctionModel: Send + Sync {
         script_buffer.body_append("");
     }
 
-    /// Builds the function model script and appends it to the script buffer.
-    ///
-    /// This method generates a unique function name, appends the start chunk, processes the metadata,
-    /// and appends the end chunk to the script buffer.
+    /// Renders the function model template and appends it to the script buffer.
     ///
     /// # Arguments
     ///
     /// * `script_buffer` - A mutable reference to the script buffer.
-    fn build(&mut self, script_buffer: &mut ScriptBuffer) {
-        let metadata = self.get_metadata();
-        let val_replacement_map = self.get_val_replacement_map();
-
-        let mut metadata = metadata.clone();
-        for child in &mut metadata.children {
-            if let xml_handler::group::IncludeResult::Composite(comp) = child {
-                //not aux type
-                if comp.type_.is_none() {
-                    comp.to_script(script_buffer, val_replacement_map);
-                }
-            }
+    /// * `context` - The values referenced by the template.
+    ///
+    /// # Errors
+    /// Returns an error if the template could not be rendered with `context`.
+    fn build<T: Serialize>(&self, script_buffer: &mut ScriptBuffer, context: &T) -> Result<()>
+    where
+        Self: Sized,
+    {
+        let code = self.get_template().render_body(context)?;
+        // Insert one line at a time so the target script uses the correct EOL sequence.
+        for line in code.lines() {
+            script_buffer.body_append(line);
         }
+        Ok(())
     }
 
     /// Formats a floating-point value.

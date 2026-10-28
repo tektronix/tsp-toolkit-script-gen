@@ -42,7 +42,10 @@ impl ScriptModel {
         let mut script_buffer = ScriptBuffer::new();
         script_buffer.set_auto_indent(true);
         for chunk in &mut self.chunks {
-            chunk.to_script(sweep_config, &mut script_buffer);
+            if let Err(e) = chunk.to_script(sweep_config, &mut script_buffer) {
+                println!("Error generating {} script: {e}", chunk.get_type());
+                return;
+            }
         }
         //let file_path = "C:\\ScriptGen\\Snippet.txt";
         println!("Writing script to file: {file_path}");

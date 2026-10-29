@@ -219,13 +219,17 @@ body: |
 
       {{/each}}
       print("Resetting channels...")
-      {{#each channels}}
-      {{name}}.ch.reset()
-      {{/each}}
+      -- Reset the TSP-Link and timer triggers for each node
       {{#each nodes}}
       for i = 1, 3 do {{this}}.tsplink.trigger[i].reset() end
       for i = 1, 4 do {{this}}.trigger.timer[i].reset() end
       {{/each}}
+      {{#each channels}}
+      {{name}}.ch.reset()
+      {{/each}}
+
+      -- Abort any trigger models that may be running
+      -- Only one abort per slot is necessary, so not all channels need to be listed here.
       {{#each channels}}
       {{#if first_in_slot}}
       {{name}}.tm.abort()

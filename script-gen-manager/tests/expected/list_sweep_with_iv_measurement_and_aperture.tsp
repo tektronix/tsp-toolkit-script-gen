@@ -23,9 +23,13 @@ function Sweep()
     sweep1.block_id = sweep1.slot_id .. sweep1.ch_id
     
     print("Resetting channels...")
-    sweep1.ch.reset()
+    -- Reset the TSP-Link and timer triggers for each node
     for i = 1, 3 do localnode.tsplink.trigger[i].reset() end
     for i = 1, 4 do localnode.trigger.timer[i].reset() end
+    sweep1.ch.reset()
+    
+    -- Abort any trigger models that may be running
+    -- Only one abort per slot is necessary, so not all channels need to be listed here.
     sweep1.tm.abort()
     
     print("Configuring channels...")

@@ -19,6 +19,12 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ### Changed
 - Script templates are now Handlebars templates organized in YAML files
+- The sweep script now configures each channel directly instead of including a generic
+  channel-configuration library, making generated scripts much shorter
+
+### Fixed
+- Waiting on more than two other channels of the same role no longer skips one of them
+- Measurement buffers of MPSU channels are now referenced correctly in generated scripts
 
 ## [0.1.7]
 

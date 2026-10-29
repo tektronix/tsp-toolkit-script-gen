@@ -1,1477 +1,313 @@
-# Handlebars template for the _Sweep() segment of the generated script.
+# Handlebars template for the Sweep() segment of the generated script.
+#
+# The values that are known when the script is generated (channel locations, event IDs, loop
+# counts, etc.) are resolved by `SweepModel` in script-gen-manager, so this template emits
+# straight-line TSP code for each channel. The output is re-indented when it is added to the
+# script, so indentation here is only for readability.
+#
+# Each channel is a table holding its slot, channel and trigger model:
+#   bias1.slot_id, bias1.slot, bias1.ch_id, bias1.ch, bias1.tm, bias1.tm_name
+# and the prefix of its trigger-model block names, bias1.block_id.
 id: SWEEP
 type: Sweep
 partials:
-  measure_buffers: |
-    {{#if (eq mfunction "FUNC_DC_CURRENT")}}
-        {
-            buffer = {{node}}.slot[{{slot_idx}}].{{model_type}}[{{channel_idx}}].defbuffer1,
-            type = CONSTANTS.FUNC_DC_CURRENT
-        },
+  # Defines the table for a channel.
+  define: |
+    local {{name}} = { slot_id = {{slot_idx}}, ch_id = {{channel_idx}} }
+    {{name}}.slot = {{node}}.slot[{{name}}.slot_id]
+    {{#if first_in_slot}}
+    if {{name}}.slot.model ~= "{{model}}" then error("Expected {{model}} in slot " .. {{name}}.slot_id .. " but found " .. {{name}}.slot.model .. ". Please check your configuration.") end
     {{/if}}
-    {{#if (eq mfunction "FUNC_DC_VOLTAGE")}}
-        {
-            buffer = {{node}}.slot[{{slot_idx}}].{{model_type}}[{{channel_idx}}].defbuffer1,
-            type = CONSTANTS.FUNC_DC_VOLTAGE
-        },
+    {{name}}.ch = {{name}}.slot.{{channel_type}}[{{name}}.ch_id]
+    {{name}}.tm = {{name}}.slot.trigger.model
+    {{name}}.tm_name = "{{node}}" .. {{name}}.slot_id .. {{name}}.ch_id .. " {{role_title}} Trigger Model"
+    {{name}}.block_id = {{name}}.slot_id .. {{name}}.ch_id
+
+  # Configures the source and measure settings of a channel.
+  configure: |
+    -- {{name}}
+    {{#if sense}}
+    {{name}}.ch.sense = {{name}}.ch.{{sense}}
     {{/if}}
-    {{#if (eq mfunction "FUNC_DC_IV_COMBINED")}}
-        {
-            buffer = {{node}}.slot[{{slot_idx}}].{{model_type}}[{{channel_idx}}].defbuffer1,
-            type = CONSTANTS.FUNC_DC_CURRENT
-        },
-        {
-            buffer = {{node}}.slot[{{slot_idx}}].{{model_type}}[{{channel_idx}}].defbuffer2,
-            type = CONSTANTS.FUNC_DC_VOLTAGE
-        },
+    {{#if source_func}}
+    {{name}}.ch.source.func = {{name}}.slot.smu.{{source_func}}
     {{/if}}
+    {{#if source_unit}}
+    {{#if level}}
+    {{name}}.ch.source.level{{source_unit}} = {{level}}
+    {{/if}}
+    {{#if list}}
+    {{name}}.ch.trigger.source.list{{source_unit}}({{list}})
+    {{/if}}
+    {{#if sweep}}
+    {{name}}.ch.trigger.source.{{sweep.kind}}{{source_unit}}({{sweep.start}}, {{sweep.stop}}, {{sweep.count}})
+    {{/if}}
+    {{/if}}
+    {{#if source_autorange}}
+    {{name}}.ch.source.autorange{{source_unit}} = {{name}}.slot.smu.ON
+    {{/if}}
+    {{#if source_range}}
+    {{name}}.ch.source.range{{source_unit}} = {{source_range}}
+    {{/if}}
+    {{#if limiti}}
+    {{name}}.ch.source.limiti = {{limiti}}
+    {{/if}}
+    {{#if limitv}}
+    {{name}}.ch.source.limitv = {{limitv}}
+    {{/if}}
+    {{#if is_smu}}
+    {{#if @root.source_delay}}
+    {{name}}.ch.source.delay = source_delay
+    {{/if}}
+    {{#if @root.nplc}}
+    {{name}}.ch.measure.nplc = nplc
+    {{/if}}
+    {{#if @root.aperture}}
+    {{name}}.ch.measure.aperture = aperture
+    {{/if}}
+    {{/if}}
+    {{#if measure_autorange}}
+    {{name}}.ch.measure.autorange{{measure_unit}} = {{name}}.slot.smu.ON
+    {{/if}}
+    {{#if measure_range}}
+    {{name}}.ch.measure.range{{measure_unit}} = {{measure_range}}
+    {{/if}}
+    {{name}}.ch.measure.count = measure_count
+    {{#if is_smu}}
+    {{#if @root.measure_delay}}
+    {{name}}.ch.measure.delay = measure_delay
+    {{/if}}
+    {{/if}}
+    {{name}}.ch.trigger.measure.{{measure_func}}({{name}}.ch.defbuffer1{{#if (eq measure_func "iv")}}, {{name}}.ch.defbuffer2{{/if}})
+
+  # A notify event of a channel, given its number.
+  event: |
+    {{#if id}}
+    local {{event}} = {{channel}}.tm.EVENT_NOTIFY{{id}}
+    {{else}}
+    local {{event}} = nil
+    {{/if}}
+
+  # A wait block for one or more events, in the trigger model of `channel`.
+  wait: |
+    {{channel}}.tm.addblock.wait({{channel}}.tm_name, {{channel}}.block_id .. "{{block}}", {{first}}{{#each rest}}{{#if @first}}, {{../../channel}}.tm.CLEAR_NEVER, {{../../channel}}.tm.WAIT_AND{{/if}}, {{this}}{{/each}})
+
+  bias_trigger_model: |
+    {{#each source_waits}}
+    {{> wait channel=../name}}
+    {{/each}}
+    {{name}}.tm.addblock.notify({{name}}.tm_name, {{name}}.block_id .. "_bias_notify", {{source_event}})
+    {{#if @root.sweep_source}}
+    {{name}}.tm.addblock.wait({{name}}.tm_name, {{name}}.block_id .. "_wait_sweep", {{@root.sweep_source}}, {{name}}.tm.CLEAR_NEVER)
+    {{else}}
+    {{name}}.tm.addblock.wait({{name}}.tm_name, {{name}}.block_id .. "_wait_step", {{@root.step_source}}, {{name}}.tm.CLEAR_NEVER)
+    {{/if}}
+    {{name}}.tm.addblock.measure({{name}}.tm_name, {{name}}.block_id .. "_bias_measure", {{name}}.ch_id)
+    {{#each measure_waits}}
+    {{> wait channel=../name}}
+    {{/each}}
+    {{name}}.tm.addblock.notify({{name}}.tm_name, {{name}}.block_id .. "_bias_meas_notify", {{measure_event}})
+    {{#if @root.sweep_measure}}
+    {{name}}.tm.addblock.wait({{name}}.tm_name, {{name}}.block_id .. "_bias_wait_sweep_meas", {{@root.sweep_measure}}, {{name}}.tm.CLEAR_NEVER)
+    {{/if}}
+    {{#if @root.step_measure}}
+    {{name}}.tm.addblock.wait({{name}}.tm_name, {{name}}.block_id .. "_bias_wait_step_meas", {{@root.step_measure}}, {{name}}.tm.CLEAR_NEVER)
+    {{name}}.tm.addblock.branch.counter({{name}}.tm_name, {{name}}.block_id .. "_loop", {{name}}.block_id .. "_bias_notify", {{@root.total_count}})
+    {{else}}
+    {{name}}.tm.addblock.branch.counter({{name}}.tm_name, {{name}}.block_id .. "_loop", {{name}}.block_id .. "_wait_sweep", {{@root.total_count}})
+    {{/if}}
+
+  step_trigger_model: |
+    {{#if @root.bias_source}}
+    {{name}}.tm.addblock.wait({{name}}.tm_name, {{name}}.block_id .. "_step_wait_bias", {{@root.bias_source}}, {{name}}.tm.CLEAR_NEVER)
+    {{/if}}
+    {{name}}.tm.addblock.source.action.step({{name}}.tm_name, {{name}}.block_id .. "_step_step", {{name}}.ch_id)
+    {{#each source_waits}}
+    {{> wait channel=../name}}
+    {{/each}}
+    {{#if @root.sweep_source}}
+    {{name}}.tm.addblock.delay.constant({{name}}.tm_name, {{name}}.block_id .. "_step_delay_sweep", stepToSweepDelay)
+    {{/if}}
+    {{name}}.tm.addblock.notify({{name}}.tm_name, {{name}}.block_id .. "_step_done", {{source_event}})
+    {{#if @root.sweep_source}}
+    {{name}}.tm.addblock.wait({{name}}.tm_name, {{name}}.block_id .. "_step_wait_sweep", {{@root.sweep_source}}, {{name}}.tm.CLEAR_NEVER)
+    {{/if}}
+    {{name}}.tm.addblock.measure({{name}}.tm_name, {{name}}.block_id .. "_step_measure", {{name}}.ch_id)
+    {{#each measure_waits}}
+    {{> wait channel=../name}}
+    {{/each}}
+    {{name}}.tm.addblock.notify({{name}}.tm_name, {{name}}.block_id .. "_step_meas done", {{measure_event}})
+    {{#each dependency_waits}}
+    {{> wait channel=../name}}
+    {{/each}}
+    {{#if @root.sweep_source}}
+    {{name}}.tm.addblock.branch.counter({{name}}.tm_name, {{name}}.block_id .. "_step_inner_loop", {{name}}.block_id .. "_step_wait_sweep", {{@root.sweep_count}})
+    {{/if}}
+    {{#if @root.bias_source}}
+    {{name}}.tm.addblock.branch.counter({{name}}.tm_name, {{name}}.block_id .. "_step_outer_loop", {{name}}.block_id .. "_step_wait_bias", {{@root.step_count}})
+    {{else}}
+    {{name}}.tm.addblock.branch.counter({{name}}.tm_name, {{name}}.block_id .. "_step_outer_loop", {{name}}.block_id .. "_step_step", {{@root.step_count}})
+    {{/if}}
+    {{name}}.tm.addblock.notify({{name}}.tm_name, {{name}}.block_id .. "_final_notify", {{source_event}})
+
+  sweep_trigger_model: |
+    {{#if @root.bias_source}}
+    {{name}}.tm.addblock.wait({{name}}.tm_name, {{name}}.block_id .. "_sweep_wait_bias", {{@root.bias_source}}, {{name}}.tm.CLEAR_NEVER)
+    {{/if}}
+    {{#if @root.step_source}}
+    {{name}}.tm.addblock.wait({{name}}.tm_name, {{name}}.block_id .. "_sweep_wait_step", {{@root.step_source}}, {{name}}.tm.CLEAR_NEVER)
+    {{/if}}
+    {{name}}.tm.addblock.source.action.step({{name}}.tm_name, {{name}}.block_id .. "_sweep_step", {{name}}.ch_id)
+    {{#each source_waits}}
+    {{> wait channel=../name}}
+    {{/each}}
+    {{name}}.tm.addblock.notify({{name}}.tm_name, {{name}}.block_id .. "_sweep_done", {{source_event}})
+    {{name}}.tm.addblock.measure({{name}}.tm_name, {{name}}.block_id .. "_sweep_measure", {{name}}.ch_id)
+    {{#each measure_waits}}
+    {{> wait channel=../name}}
+    {{/each}}
+    {{name}}.tm.addblock.notify({{name}}.tm_name, "{{node}}sweep_measure_done", {{measure_event}})
+    {{#each dependency_waits}}
+    {{> wait channel=../name}}
+    {{/each}}
+    {{name}}.tm.addblock.branch.counter({{name}}.tm_name, {{name}}.block_id .. "_sweep_inner_loop", {{name}}.block_id .. "_sweep_step", {{@root.sweep_count}})
+    {{#if @root.step_source}}
+    {{name}}.tm.addblock.branch.counter({{name}}.tm_name, {{name}}.block_id .. "_sweep_outer_loop", {{name}}.block_id .. "_sweep_wait_step", {{@root.step_count}})
+    {{/if}}
+
+  initiate: |
+    {{name}}.tm.initiate({{name}}.tm_name)
 body: |
-  ----------------------------------------------------------------------------
-  -- START OF SWEEP SEGMENT ... do not modify this section
-  ----------------------------------------------------------------------------
-  --------------------------------------------------------------------------------
-  -- DO NOT EDIT! Scroll to end of file to find editable portion -----------------
-  --------------------------------------------------------------------------------
-  --#region Util
-
-  CONSTANTS = {
-      UNDEFINED = nil,
-      AUTO = "AUTO",
-      localnode = 0,
-      SENSE_2WIRE = 0,
-      SENSE_4WIRE = 1,
-      FUNC_DC_VOLTAGE = 2,
-      FUNC_DC_CURRENT = 3,
-      FUNC_DC_IV_COMBINED = 4,
-      FUNC_DC_OHMS = 5,
-      FUNC_DC_POWER = 6,
-      FILTER_MOVING_AVG = 7,
-      FILTER_MEDIAN = 8,
-      RATE_FAST = 9,
-      RATE_NORMAL = 10,
-  }
-
-
-  ---@class NodesDef
-  ---@field biases Device[]
-  ---@field steps Device[]
-  ---@field sweeps Device[]
-
-  ---@class CountedValueRange
-  ---@field start number The start value of the sweep
-  ---@field stop number The stop value of the sweep
-  ---@field count number the number of steps to take in the sweep
-
-  ---@class LogValues
-  ---@field log CountedValueRange The range the log sweep should encompass
-
-  ---@class LinearValues
-  ---@field linear CountedValueRange The range the linear sweep should encompass
-
-  ---@class ListValues
-  ---@field list number[] The list of values for this list sweep
-
-  ---@class ScalarValue
-  ---@field scalar number The value to source
-
-  ---@class Source
-  ---@field values ScalarValue | LogValues | LinearValues | ListValues The value or values to source
-  ---@field range number | "AUTO" The range to use, or Auto
-  ---@field limiti number The current limit
-  ---@field limitv number | nil The voltage limit
-  ---@field delay number The time to delay before sourcing
-  ---@field func `self.slot.smu.FUNC_DC_VOLTAGE` | `self.slot.smu.FUNC_DC_CURRENT`
-
-  ---@class Buffer
-  ---@field buffer any An alias to the actual buffer
-  ---@field type `CONSTANTS.FUNC_DC_VOLTAGE` | `CONSTANTS.FUNC_DC_CURRENT` | `CONSTANTS.FUNC_DC_OHMS` | `CONSTANTS.FUNC_DC_POWER`
-
-  ---@class Measure
-  ---@field nplc number | nil
-  ---@field aperture number | nil
-  ---@field rate `CONSTANTS.RATE_FAST` | `CONSTANTS.RATE_NORMAL` | nil
-  ---@field range number | "AUTO" The range to use, or Auto
-  -- ---@field autozero boolean Whether autozero should be turned on or not
-  ---@field count integer The number of measurments to take
-  -- ---@field filter_enable boolean Whether to enable the filter or not
-  ---@field filter_type any | nil The type of measure filter to use
-  ---@field delay number | nil The time to delay before measuring
-  ---@field func `CONSTANTS.FUNC_DC_CURRENT` | `CONSTANTS.FUNC_DC_VOLTAGE` | `CONSTANTS.FUNC_DC_OHMS` | `CONSTANTS.FUNC_DC_POWER` | `CONSTANTS.FUNC_DC_IV_COMBINED`
-  ---@field buffers Buffer[] The buffers to read into.
-
-  ---@class DeviceDetails
-  ---@field node_idx integer The index of the TSP Link node in which the device is found, 0 for `localnode`
-  ---@field slot_idx integer The index of the slot in which the device is found.
-  ---@field channel_idx integer The index of the channel of the device.
-  ---@field model string this should be set to `node[x].slot[x].model`
-  ---@field sense `CONSTANTS.SENSE_2WIRE` | `CONSTANTS.SENSE_4WIRE` The sense mode of the device
-  ---@field source Source The desired source configuration of the device
-  ---@field measure Measure The desired measure configuration of the device
-
-  ---@class Device
-  ---@field node_name string The string version of `self.node`
-  ---@field node_idx integer The index of the TSP Link node in which the device is found, 0 for `localnode`
-  ---@field node any Computed value: An alias to `node[self.node_idx]` or `localnode`, if `self.node_idx` is `0`
-  ---@field slot_idx integer The index of the slot in which the device is found
-  ---@field slot any Computed value: An alias to `self.node.slot[self.slot_idx]`
-  ---@field channel_idx integer The index of the channel of the device
-  ---@field channel any Computed value: An alias to `self.slot.smu[self.channel_idx]` or `self.slot.psu[self.channel_idx]`, depending on `self.model`
-  ---@field model string The model string of the device. Found with `self.slot.model`.
-  ---@field event_source number The event this channel uses to signal source-action completion.
-  ---@field event_measure number The event this channel uses to signal measure-action completion.
-  ---@field trigger_model string|nil The name of the trigger model
-  ---@field sense `CONSTANTS.SENSE_2WIRE` | `CONSTANTS.SENSE_4WIRE` The sense mode of the device
-  ---@field source Source The source configuration of the device
-  ---@field measure Measure The measure configuration of the device
-  ---@field reset fun(self: Device) The function used to reset the device
-  ---@field config fun(self: Device) The function used to configure the device settings
-  ---@field trigger_model_setup fun(self: Device, bias_source_event: any, bias_measure_event: any, step_source_event: any, step_measure_event: any, sweep_source_event: any, sweep_measure_event: any, other_common_source_events: any[] | nil, other_common_measure_events: any[] | nil) The function used to set up the trigger model
-  ---@field trigger_model_initiate fun(self: Device) The function used to initiate the trigger model
-  ---@field turn_on fun(self:Device) The function used to turn on the source output of the device
-  ---@field turn_off fun(self:Device) The function used to turn off the source output of the device
-
-  ---@class Model
-  ---@field common nil | ModelComponent The model component used for all all device roles
-  ---@field bias nil | ModelComponent The model component used for only "bias" device roles
-  ---@field step nil | ModelComponent The model component used for only "step" device roles
-  ---@field sweep nil | ModelComponent The model component used for only "sweep" device roles
-
-  ---@class ModelComponent
-  ---@field reset fun(self: Device) The function used to reset the device
-  ---@field config fun(self: Device) The function used to configure the device settings
-  ---@field trigger_model_setup fun(self: Device, bias_source_event: any | nil, bias_measure_event: any| nil, step_source_event: any | nil, step_measure_event: any | nil, sweep_source_event: any | nil, sweep_measure_event: any | nil, bias_source_complete_events: any[] | nil, bias_measure_complete_events: any[] | nil) The function used to set up the trigger model
-  ---@field trigger_model_initiate fun(self: Device) The function used to initiate the trigger model
-
-  UTILITY = {
-      TOTAL_COUNT = 0,
-      STEP_COUNT = 0,
-      SWEEP_COUNT = 0,
-      ---@type table<any, {event_id: number, used: boolean}>
-      event_ids = {},
-      init_slot_event_ids = function(slot, event_numbers)
-          -- make sure we only add these once.
-          if UTILITY.event_ids[slot] == nil then
-              UTILITY.event_ids[slot] = {}
-              for k, v in ipairs(event_numbers) do
-                  table.insert(UTILITY.event_ids[slot],
-                      { event_id = slot.trigger.model["EVENT_NOTIFY" .. v], used = false })
-              end
-          end
-      end,
-      --- Get a slot event id
-      ---@param slot any
-      ---@return number | nil
-      get_slot_event_id = function(slot)
-          if not UTILITY.event_ids[slot] then
-              error("Event ids for given slot were not initialized")
-              return nil
-          end
-          for k, v in ipairs(UTILITY.event_ids[slot]) do
-              if not v.used then
-                  v.used = true
-                  return v.event_id
-              end
-          end
-          error("No event ids were available for the given slot")
-          return nil
-      end,
-
-      DEFAULT_MODEL = function(device) end,
-      --- Get a default model component that has an empty implementation for all necessary functions.
-      ---@return ModelComponent
-      DEFAULT_COMPONENT = function()
-          return {
-              --- Default is to do nothing
-              ---@param self Device
-              reset = function(self)
-              end,
-              --- Default is to do nothing
-              ---@param self Device
-              config = function(self)
-              end,
-              --- Default is to do nothing
-              ---@param self Device
-              trigger_model_setup = function(self)
-              end,
-              --- Default is to do nothing
-              ---@param self Device
-              trigger_model_initiate = function(self)
-              end,
-          }
-      end,
-
-      ---Insert the given `value` in the give table `t` and return the value
-      ---@param t table
-      ---@param value any
-      --
-      ---@return any value
-      insert = function(t, value)
-          table.insert(t, value)
-          return value
-      end,
-
-      make_waitall = function(tm, model, block_name, events)
-          local single_make_waitall = function(tm, model, block_name, events)
-              if table.getn(events) == 1 then
-                  if events[1] ~= nil then
-                      tm.addblock.wait(model, block_name, events[1])
-                  end
-                  return nil
-              elseif table.getn(events) > 1 then
-                  local first = events[1]
-                  if table.getn(events) == 2 then
-                      local second = events[2]
-                      if second ~= nil then
-                          tm.addblock.wait(model, block_name, first, tm.CLEAR_NEVER, tm.WAIT_AND,
-                              second)
-                      else
-                          tm.addblock.wait(model, block_name, first)
-                      end
-                      return
-                  else
-                      table.remove(events, 1)
-                      local next = {}
-                      local remainder = {}
-                      for i, v in ipairs(events) do
-                          if i > 1 and v ~= nil then
-                              table.insert(next, v)
-                          elseif i > 4 then
-                              table.insert(remainder, v)
-                          end
-                      end
-                      tm.addblock.wait(model, block_name, first, tm.CLEAR_NEVER, tm.WAIT_AND, unpack(next))
-                      return remainder
-                  end
-              end
-          end
-          local non_nil_events = {}
-          -- Filter out any `nil` items from the events.
-          for i, v in ipairs(events) do
-              if v ~= nil then table.insert(non_nil_events, v) end
-          end
-          local iteration = 1
-          ---@type table|nil
-          local remaining = non_nil_events
-          while remaining ~= nil and table.getn(remaining) > 0 do
-              remaining = single_make_waitall(tm, model, block_name .. iteration, remaining)
-              iteration = iteration + 1
-          end
-      end,
-
-      ---Functions for the MSMU module for MP5000-series mainframes
-      ---@return Model
-      MSMU = function()
-          return {
-              common = {
-                  --- Resets this MSMU
-                  ---@param self Device
-                  reset = function(self)
-                      self.channel.reset()
-                      self.node.tsplink.trigger[1].reset()
-                      self.node.tsplink.trigger[2].reset()
-                      self.node.tsplink.trigger[3].reset()
-                      self.node.trigger.timer[1].reset()
-                      self.node.trigger.timer[2].reset()
-                      self.node.trigger.timer[3].reset()
-                      self.node.trigger.timer[4].reset()
-                      self.slot.trigger.model.abort()
-                      self.slot.trigger.model.delete(self.node_name .. " Bias Trigger Model")
-                      self.slot.trigger.model.delete(self.node_name .. " Step Trigger Model")
-                      self.slot.trigger.model.delete(self.node_name .. " Sweep Trigger Model")
-                  end,
-                  --- Configures this MSMU
-                  ---@param self Device
-                  config = function(self)
-                      UTILITY.init_slot_event_ids(self.slot, { 1, 2, 3, 4, 5, 6, 7, 8 })
-                      -- Sense setting --
-                      if self.sense == CONSTANTS.SENSE_2WIRE then
-                          self.channel.sense = self.channel.SENSE_2WIRE
-                      elseif self.sense == CONSTANTS.SENSE_4WIRE then
-                          self.channel.sense = self.channel.SENSE_4WIRE
-                      end
-
-                      local event_source_id = UTILITY.get_slot_event_id(self.slot)
-                      if event_source_id then
-                          self.event_source = event_source_id
-                      else
-                          error("Unable to assign event source ID to channel: all event IDs for slot[" ..
-                              self.slot_idx .. "] have been consumed.")
-                          exit()
-                      end
-
-                      local event_measure_id = UTILITY.get_slot_event_id(self.slot)
-                      if event_measure_id then
-                          self.event_measure = event_measure_id
-                      else
-                          error("Unable to assign event measure ID to channel: all event IDs for slot[" ..
-                              self.slot_idx .. "] have been consumed.")
-                          exit()
-                      end
-
-
-                      -- Source Settings --
-                      -- func, level/list/log/linear
-                      if self.source.values.scalar ~= nil then
-                          if self.source.func == CONSTANTS.FUNC_DC_VOLTAGE then
-                              self.channel.source.func = self.slot.smu.FUNC_DC_VOLTAGE
-                              self.channel.source.levelv = self.source.values.scalar
-                          elseif self.source.func == CONSTANTS.FUNC_DC_CURRENT then
-                              self.channel.source.func = self.slot.smu.FUNC_DC_CURRENT
-                              self.channel.source.leveli = self.source.values.scalar
-                          end
-                      elseif self.source.values.list ~= nil then
-                          if self.source.func == CONSTANTS.FUNC_DC_VOLTAGE then
-                              self.channel.source.func = self.slot.smu.FUNC_DC_VOLTAGE
-                              self.channel.trigger.source.listv(self.source.values.list)
-                          elseif self.source.func == CONSTANTS.FUNC_DC_CURRENT then
-                              self.channel.source.func = self.slot.smu.FUNC_DC_CURRENT
-                              self.channel.trigger.source.listi(self.source.values.list)
-                          end
-                      elseif self.source.values.log ~= nil then
-                          if self.source.func == CONSTANTS.FUNC_DC_VOLTAGE then
-                              self.channel.source.func = self.slot.smu.FUNC_DC_VOLTAGE
-                              local log = self.source.values.log
-                              self.channel.trigger.source.logv(log.start, log.stop, log.count)
-                          elseif self.source.func == CONSTANTS.FUNC_DC_CURRENT then
-                              self.channel.source.func = self.slot.smu.FUNC_DC_CURRENT
-                              local log = self.source.values.log
-                              self.channel.trigger.source.logi(log.start, log.stop, log.count)
-                          end
-                      elseif self.source.values.linear ~= nil then
-                          if self.source.func == CONSTANTS.FUNC_DC_VOLTAGE then
-                              self.channel.source.func = self.slot.smu.FUNC_DC_VOLTAGE
-                              local lin = self.source.values.linear
-                              self.channel.trigger.source.linearv(lin.start, lin.stop, lin.count)
-                          elseif self.source.func == CONSTANTS.FUNC_DC_CURRENT then
-                              self.channel.source.func = self.slot.smu.FUNC_DC_CURRENT
-                              local lin = self.source.values.linear
-                              self.channel.trigger.source.lineari(lin.start, lin.stop, lin.count)
-                          end
-                      end
-                      -- range
-                      if self.source.range == CONSTANTS.AUTO then
-                          if self.source.func == CONSTANTS.FUNC_DC_VOLTAGE then
-                              self.channel.source.autorangev = self.slot.smu.ON
-                          elseif self.source.func == CONSTANTS.FUNC_DC_CURRENT then
-                              self.channel.source.autorangei = self.slot.smu.ON
-                          end
-                      else
-                          if self.source.func == CONSTANTS.FUNC_DC_VOLTAGE then
-                              self.channel.source.rangev = self.source.range
-                          elseif self.source.func == CONSTANTS.FUNC_DC_CURRENT then
-                              self.channel.source.rangei = self.source.range
-                          end
-                      end
-                      -- limiti
-                      self.channel.source.limiti = self.source.limiti
-                      -- limitv
-                      self.channel.source.limitv = self.source.limitv
-                      -- delay
-                      self.channel.source.delay = self.source.delay
-
-                      -- Measure Settings --
-                      -- nplc
-                      if self.measure.nplc ~= nil then
-                          self.channel.measure.nplc = self.measure.nplc
-                      elseif self.measure.aperture ~= nil then
-                          self.channel.measure.aperture = self.measure.aperture
-                      end
-                      -- range
-                      if self.measure.range == CONSTANTS.AUTO then
-                          if self.measure.func == CONSTANTS.FUNC_DC_VOLTAGE then
-                              self.channel.measure.autorangev = self.slot.smu.ON
-                          elseif self.measure.func == CONSTANTS.FUNC_DC_CURRENT then
-                              self.channel.measure.autorangei = self.slot.smu.ON
-                          end
-                      else
-                          if self.measure.func == CONSTANTS.FUNC_DC_VOLTAGE then
-                              self.channel.measure.rangev = self.measure.range
-                          elseif self.measure.func == CONSTANTS.FUNC_DC_CURRENT then
-                              self.channel.measure.rangei = self.measure.range
-                          end
-                      end
-                      -- count
-                      self.channel.measure.count = self.measure.count
-                      -- TODO: filter_enable
-                      -- TODO: filter_type
-                      -- delay
-                      if self.measure.delay ~= nil then
-                          self.channel.measure.delay = self.measure.delay
-                      end
-                      -- func, buffers
-                      if self.measure.func == CONSTANTS.FUNC_DC_IV_COMBINED then
-                          local bufferi, bufferv = nil, nil
-                          for _, x in ipairs(self.measure.buffers) do
-                              if x.type == CONSTANTS.FUNC_DC_VOLTAGE then
-                                  bufferv = x.buffer
-                              elseif x.type == CONSTANTS.FUNC_DC_CURRENT then
-                                  bufferi = x.buffer
-                              end
-                          end
-                          self.channel.trigger.measure.iv(bufferi, bufferv)
-                      elseif self.measure.func == CONSTANTS.FUNC_DC_CURRENT then
-                          self.channel.trigger.measure.i(self.measure.buffers[1].buffer)
-                      elseif self.measure.func == CONSTANTS.FUNC_DC_VOLTAGE then
-                          self.channel.trigger.measure.v(self.measure.buffers[1].buffer)
-                      end
-                  end,
-
-                  --- Initiate this trigger model
-                  ---@param self Device
-                  trigger_model_initiate = function(self)
-                      if self.trigger_model then
-                          self.slot.trigger.model.initiate(self.trigger_model)
-                      end
-                  end,
-
-                  turn_on = function(self)
-                      self.channel.source.output = 1
-                  end,
-
-                  turn_off = function(self)
-                      self.channel.source.output = 0
-                  end,
-              },
-              bias = {
-                  --- Configure the trigger model for a Bias
-                  ---@param self Device
-                  ---@param bias_source_event nil Unused
-                  ---@param bias_measure_event nil Unused
-                  ---@param step_source_event any | nil The event ID associated with all the steps completing source actions (only one)
-                  ---@param step_measure_event any | nil The event ID associated with all the steps completing measure actions (only one)
-                  ---@param sweep_source_event any | nil The event ID associated with all the sweep steps completing source actions (only one)
-                  ---@param sweep_measure_event any | nil The event ID associated with all the sweep steps completing measure actions (only one)
-                  ---@param bias_source_complete_events any[] | nil The event ID(s) associated with all other bias source-action steps completing. Should only be passed to one bias channel.
-                  ---@param bias_measure_complete_events any[] | nil The event ID(s) associated with all other bias measure-action steps completing. Should only be passed to one bias channel.
-                  trigger_model_setup = function(self, bias_source_event, bias_measure_event, step_source_event,
-                                                 step_measure_event, sweep_source_event, sweep_measure_event,
-                                                 bias_source_complete_events, bias_measure_complete_events)
-                      local tm_add = self.slot.trigger.model.addblock
-                      local block = {
-                          bias = self.slot_idx .. self.channel_idx .. "_bias",
-                          waitall_bias = self.slot_idx .. self.channel_idx .. "_waitall_bias_",
-                          bias_notify = self.slot_idx .. self.channel_idx .. "_bias_notify",
-                          wait_prop = self.slot_idx .. self.channel_idx .. "_wait_prop",
-                          wait_sweep = self.slot_idx .. self.channel_idx .. "_wait_sweep",
-                          wait_step = self.slot_idx .. self.channel_idx .. "_wait_step",
-                          waitall_sweep = self.slot_idx .. self.channel_idx .. "_waitall_sweep",
-                          measure = self.slot_idx .. self.channel_idx .. "_bias_measure",
-                          waitall_bias_meas = self.slot_idx .. self.channel_idx .. "_waitall_bias_meas_",
-                          meas_notify = self.slot_idx .. self.channel_idx .. "_bias_meas_notify",
-                          wait_sweep_meas = self.slot_idx .. self.channel_idx .. "_bias_wait_sweep_meas",
-                          wait_step_meas = self.slot_idx .. self.channel_idx .. "_bias_wait_step_meas",
-                          loop = self.slot_idx .. self.channel_idx .. "_loop",
-
-                      }
-                      self.trigger_model = self.node_name .. self.slot_idx .. self.channel_idx .. " Bias Trigger Model"
-                      self.slot.trigger.model.delete(self.trigger_model)
-                      self.slot.trigger.model.create(self.trigger_model)
-                      --tm_add.source.action.bias(self.trigger_model, block.bias, self.channel_idx)
-
-                      if bias_source_complete_events then
-                          --Add an optional wait for other sweep events only on the first bias-instrument
-                          UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                              block.waitall_bias,
-                              bias_source_complete_events)
-                      end
-
-                      -- Notify other channels that the bias is complete.
-                      tm_add.notify(self.trigger_model, block.bias_notify, self.event_source)
-
-                      -- Wait for the primary sweeper and/or stepper to complete
-                      if sweep_source_event ~= nil then
-                          tm_add.wait(self.trigger_model, block.wait_sweep, sweep_source_event,
-                              self.slot.trigger.model.CLEAR_NEVER)
-                      elseif step_source_event ~= nil then
-                          tm_add.wait(self.trigger_model, block.wait_step, step_source_event,
-                              self.slot.trigger.model.CLEAR_NEVER)
-                      end
-
-                      -- Measure using the configured number of measurements.
-                      tm_add.measure(self.trigger_model, block.measure, self.channel_idx)
-
-                      -- Wait for other bias-instrument measurements to complete
-                      if bias_measure_complete_events then
-                          -- Add an optional wait for other sweep events only on the first bias-instrument
-                          UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                              block.waitall_bias_meas,
-                              bias_measure_complete_events)
-                      end
-
-                      -- Notify other channels that this channel's measurements are complete
-                      tm_add.notify(self.trigger_model, block.meas_notify,
-                          self.event_measure)
-
-                      -- Wait on primary step and sweep measure completion
-                      if sweep_measure_event ~= nil then
-                          tm_add.wait(self.trigger_model, block.wait_sweep_meas, sweep_measure_event,
-                              self.slot.trigger.model.CLEAR_NEVER)
-                      end
-                      if step_measure_event ~= nil then
-                          tm_add.wait(self.trigger_model, block.wait_step_meas, step_measure_event,
-                              self.slot.trigger.model.CLEAR_NEVER)
-                      end
-
-                      -- Loop back to `bias_wait_sweep_block` until all iterations are complete
-                      if step_measure_event ~= nil then
-                          tm_add.branch.counter(self.trigger_model, block.loop,
-                              block.bias_notify,
-                              UTILITY.TOTAL_COUNT)
-                      elseif sweep_measure_event ~= nil then
-                          tm_add.branch.counter(self.trigger_model, block.loop,
-                              block.wait_sweep,
-                              UTILITY.TOTAL_COUNT)
-                      end
-                  end,
-              },
-              step = {
-                  --- Configure the trigger model for a Step
-                  ---@param self Device
-                  ---@param bias_source_event any|nil The event ID associated with all the biases completing source actions (only one)
-                  ---@param bias_measure_event any | nil The event ID associated with all the biases completing measure actions (only one)
-                  ---@param step_source_event nil Unused
-                  ---@param step_measure_event nil Unused
-                  ---@param sweep_source_event any | nil The event ID associated with all the sweep steps completing source actions (only one)
-                  ---@param sweep_measure_event any | nil The event ID associated with all the sweep steps completing measure actions (only one)
-                  ---@param step_source_complete_events any[] | nil The event ID(s) associated with all other source-action steps completing. Should only be passed to one bias channel.
-                  ---@param step_measure_complete_events any[] | nil The event ID(s) associated with all other measure-action steps completing. Should only be passed to one bias channel.
-                  trigger_model_setup = function(self, bias_source_event, bias_measure_event, step_source_event,
-                                                 step_measure_event, sweep_source_event, sweep_measure_event,
-                                                 step_source_complete_events, step_measure_complete_events)
-                      local tm_add = self.slot.trigger.model.addblock
-                      local block = {
-                          wait_bias = self.slot_idx .. self.channel_idx .. "_step_wait_bias",
-                          step = self.slot_idx .. self.channel_idx .. "_step_step",
-                          waitall_steps = self.slot_idx .. self.channel_idx .. "_step_waitall_",
-                          step_notify = self.slot_idx .. self.channel_idx .. "_step_done",
-                          delay_sweep = self.slot_idx .. self.channel_idx .. "_step_delay_sweep",
-                          wait_sweep = self.slot_idx .. self.channel_idx .. "_step_wait_sweep",
-                          measure = self.slot_idx .. self.channel_idx .. "_step_measure",
-                          waitall_step_meas = self.slot_idx .. self.channel_idx .. "_step_other_measure_waitall_",
-                          meas_notify = self.slot_idx .. self.channel_idx .. "_step_meas done",
-                          waitall_sweep_bias_meas = self.slot_idx .. self.channel_idx .. "_step_wait_sweep_bias_meas",
-                          inner_loop = self.slot_idx .. self.channel_idx .. "_step_inner_loop",
-                          outer_loop = self.slot_idx .. self.channel_idx .. "_step_outer_loop",
-                          final_notify = self.slot_idx .. self.channel_idx .. "_final_notify",
-                      }
-                      self.trigger_model = self.node_name .. self.slot_idx .. self.channel_idx .. " Step Trigger Model"
-                      self.slot.trigger.model.delete(self.trigger_model)
-                      self.slot.trigger.model.create(self.trigger_model)
-
-                      -- Wait for the bias channel to start sourcing
-                      if bias_source_event ~= nil then
-                          tm_add.wait(self.trigger_model, block.wait_bias, bias_source_event,
-                              self.slot.trigger.model.CLEAR_NEVER)
-                      end
-
-                      -- Step to the next source value
-                      tm_add.source.action.step(self.trigger_model, block.step, self.channel_idx)
-
-                      if step_source_complete_events ~= nil and table.getn(step_source_complete_events) > 0 then
-                          -- Add an optional wait for other sweep events only on the first stepper
-                          UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                              block.waitall_steps,
-                              step_source_complete_events)
-                      end
-
-                      -- Adding step-to-sweep-delay    --
-                      if sweep_source_event ~= nil then
-                          tm_add.delay.constant(self.trigger_model, block.delay_sweep, stepToSweepDelay)
-                      end
-
-                      -- Notify other channels that the steppers are done stepping
-                      tm_add.notify(self.trigger_model, block.step_notify, self.event_source)
-
-                      -- Wait for the sweeper to finish moving to the next source value
-                      if sweep_source_event ~= nil then
-                          tm_add.wait(self.trigger_model, block.wait_sweep, sweep_source_event,
-                              self.slot.trigger.model.CLEAR_NEVER)
-                      end
-
-                      -- Measure using the configured number of measurements
-                      tm_add.measure(self.trigger_model, block.measure, self.channel_idx)
-
-                      -- wait for all other steppers to finish measuring
-                      if step_measure_complete_events ~= nil and table.getn(step_measure_complete_events) > 0 then
-                          -- Add an optional wait for other sweep events only on the first stepper
-                          UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                              block.waitall_step_meas,
-                              step_measure_complete_events)
-                      end
-
-                      -- notify other channels that measurments have completed for the step channels
-                      tm_add.notify(self.trigger_model, block.meas_notify,
-                          self.event_measure)
-
-                      -- wait for bias and sweep measurements to complete
-                      local sweep_bias_measure_events = {}
-                      if sweep_measure_event ~= nil then
-                          table.insert(sweep_bias_measure_events, sweep_measure_event)
-                      end
-                      if bias_measure_event ~= nil then
-                          table.insert(sweep_bias_measure_events, bias_measure_event)
-                      end
-                      UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model, block.waitall_sweep_bias_meas,
-                          sweep_bias_measure_events)
-
-                      -- Loop back to `step_wait_sweep_block` for the number of sweeper steps
-                      if sweep_source_event ~= nil then
-                          tm_add.branch.counter(self.trigger_model, block.inner_loop,
-                              block.wait_sweep,
-                              UTILITY.SWEEP_COUNT)
-                      end
-
-                      -- Loop back to `step_block` for the number of stepper steps
-                      if bias_source_event then
-                          tm_add.branch.counter(self.trigger_model, block.outer_loop, block.wait_bias,
-                              UTILITY.STEP_COUNT)
-                      else
-                          tm_add.branch.counter(self.trigger_model, block.outer_loop, block.step,
-                              UTILITY.STEP_COUNT)
-                      end
-
-                      tm_add.notify(self.trigger_model, block.final_notify, self.event_source)
-                  end,
-              },
-
-              sweep = {
-                  --- Configure the trigger model for a Step
-                  ---@param self Device
-                  ---@param bias_source_event any|nil The event ID associated with all the biases completing source actions (only one)
-                  ---@param bias_measure_event any | nil The event ID associated with all the biases completing measure actions (only one)
-                  ---@param step_source_event any | nil The event ID associated with all the steps completing source actions (only one)
-                  ---@param step_measure_event any | nil The event ID associated with all the steps completing measure actions (only one)
-                  ---@param sweep_source_event nil Unused
-                  ---@param sweep_measure_event nil Unused
-                  ---@param sweep_source_complete_events any
-                  ---@param sweep_measure_complete_events any
-                  trigger_model_setup = function(self, bias_source_event, bias_measure_event, step_source_event,
-                                                 step_measure_event, sweep_source_event, sweep_measure_event,
-                                                 sweep_source_complete_events, sweep_measure_complete_events)
-                      local tm_add = self.slot.trigger.model.addblock
-                      local block = {
-                          wait_bias = self.slot_idx .. self.channel_idx .. "_sweep_wait_bias",
-                          wait_step = self.slot_idx .. self.channel_idx .. "_sweep_wait_step",
-                          step = self.slot_idx .. self.channel_idx .. "_sweep_step",
-                          waitall_sweeps = self.slot_idx .. self.channel_idx .. "_sweep_waitall_",
-                          step_notify = self.slot_idx .. self.channel_idx .. "_sweep_done",
-                          measure = self.slot_idx .. self.channel_idx .. "_sweep_measure",
-                          waitall_sweep_meas = self.slot_idx .. self.channel_idx .. "_sweep_other_measure_waitall_",
-                          meas_notify = self.slot_idx .. self.channel_idx .. "_sweep_meas done",
-                          inner_loop = self.slot_idx .. self.channel_idx .. "_sweep_inner_loop",
-                          outer_loop = self.slot_idx .. self.channel_idx .. "_sweep_outer_loop",
-                          final_notify = self.slot_idx .. self.channel_idx .. "_final_notify",
-                      }
-                      self.trigger_model = self.node_name .. self.slot_idx .. self.channel_idx .. " Sweep Trigger Model"
-                      self.slot.trigger.model.delete(self.trigger_model)
-                      self.slot.trigger.model.create(self.trigger_model)
-
-                      if bias_source_event ~= nil then
-                          tm_add.wait(self.trigger_model, block.wait_bias, bias_source_event,
-                              self.slot.trigger.model.CLEAR_NEVER)
-                      end
-
-                      if step_source_event ~= nil then
-                          tm_add.wait(self.trigger_model, block.wait_step, step_source_event,
-                              self.slot.trigger.model.CLEAR_NEVER)
-                      end
-
-                      tm_add.source.action.step(self.trigger_model, block.step, self
-                          .channel_idx)
-
-                      if sweep_source_complete_events then
-                          -- Add an optional wait for other sweep events only on the first sweeper
-                          UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                              block.waitall_sweeps,
-                              sweep_source_complete_events)
-                      end
-
-                      tm_add.notify(self.trigger_model, block.step_notify, self.event_source)
-
-                      tm_add.measure(self.trigger_model, block.measure, self.channel_idx)
-
-                      if sweep_measure_complete_events then
-                          -- Add an optional wait for other sweep events only on the first sweeper
-                          UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                              block.waitall_sweep_meas,
-                              sweep_measure_complete_events)
-                      end
-
-                      local sweep_measure_done_notify_block = self.node_name .. "sweep_measure_done"
-                      tm_add.notify(self.trigger_model, sweep_measure_done_notify_block,
-                          self.event_measure)
-
-                      local step_bias_measure_events = {}
-                      if step_measure_event ~= nil then
-                          table.insert(step_bias_measure_events, step_measure_event)
-                      end
-                      if bias_measure_event ~= nil then
-                          table.insert(step_bias_measure_events, bias_measure_event)
-                      end
-                      UTILITY.make_waitall(self.slot.trigger.model, self.trigger_model,
-                          block.meas_notify,
-                          step_bias_measure_events)
-
-
-                      tm_add.branch.counter(self.trigger_model, block.inner_loop, block.step,
-                          UTILITY.SWEEP_COUNT)
-
-                      if step_source_event ~= nil then
-                          tm_add.branch.counter(self.trigger_model, block.outer_loop,
-                              block.wait_step,
-                              UTILITY.STEP_COUNT)
-                      end
-                  end,
-
-              }
-          }
-      end,
-
-      ---Functions for MPSU modules for MP5000-series mainframes
-      ---@return Model
-      MPSU = function()
-          return {
-              common = {
-                  --- Resets this MPSU
-                  ---@param self Device
-                  reset = function(self)
-                      self.channel.reset()
-                      self.node.tsplink.trigger[1].reset()
-                      self.node.tsplink.trigger[2].reset()
-                      self.node.tsplink.trigger[3].reset()
-                      self.node.trigger.timer[1].reset()
-                      self.node.trigger.timer[2].reset()
-                      self.node.trigger.timer[3].reset()
-                      self.node.trigger.timer[4].reset()
-                      self.slot.trigger.model.abort()
-                  end,
-                  --- Configures this MPSU
-                  ---@param self Device
-                  config = function(self)
-                      UTILITY.init_slot_event_ids(self.slot, { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 })
-
-                      local event_source_id = UTILITY.get_slot_event_id(self.slot)
-                      if event_source_id then
-                          self.event_source = event_source_id
-                      else
-                          error("Unable to assign event source ID to channel: all event IDs for slot[" ..
-                              self.slot_idx .. "] have been consumed.")
-                          exit()
-                      end
-
-                      local event_measure_id = UTILITY.get_slot_event_id(self.slot)
-                      if event_measure_id then
-                          self.event_measure = event_measure_id
-                      else
-                          error("Unable to assign event measure ID to channel: all event IDs for slot[" ..
-                              self.slot_idx .. "] have been consumed.")
-                          exit()
-                      end
-
-
-                      -- Source Settings --
-                      -- func, level/list/log/linear
-                      if self.source.values.scalar ~= nil then
-                          self.channel.source.levelv = self.source.values.scalar
-                      elseif self.source.values.list ~= nil then
-                          self.channel.trigger.source.listv(self.source.values.list)
-                      elseif self.source.values.log ~= nil then
-                          local log = self.source.values.log
-                          self.channel.trigger.source.logv(log.start, log.stop, log.count)
-                      elseif self.source.values.linear ~= nil then
-                          local lin = self.source.values.linear
-                          self.channel.trigger.source.linearv(lin.start, lin.stop, lin.count)
-                      end
-                      -- limiti
-                      self.channel.source.limiti = self.source.limiti
-
-                      -- Measure Settings --
-                      -- nplc
-                      if self.measure.rate ~= nil then
-                          if self.measure.rate == CONSTANTS.RATE_FAST then
-                              self.channel.measure.rate = self.channel.RATE_FAST
-                          elseif self.measure.rate == CONSTANTS.RATE_NORMAL then
-                              self.channel.measure.rate = self.channel.RATE_NORMAL
-                          end
-                      end
-
-                      -- MPSUs have no range settings
-
-                      -- count
-                      self.channel.measure.count = self.measure.count
-                      -- TODO: filter_enable
-                      -- TODO: filter_type
-                      -- func, buffers
-                      if self.measure.func == CONSTANTS.FUNC_DC_IV_COMBINED then
-                          local bufferi, bufferv = nil, nil
-                          for _, x in ipairs(self.measure.buffers) do
-                              if x.type == CONSTANTS.FUNC_DC_VOLTAGE then
-                                  bufferv = x.buffer
-                              elseif x.type == CONSTANTS.FUNC_DC_CURRENT then
-                                  bufferi = x.buffer
-                              end
-                          end
-
-                          self.channel.trigger.measure.iv(bufferi, bufferv)
-                      elseif self.measure.func == CONSTANTS.FUNC_DC_CURRENT then
-                          self.channel.trigger.measure.i(self.measure.buffers[1].buffer)
-                      elseif self.measure.func == CONSTANTS.FUNC_DC_VOLTAGE then
-                          self.channel.trigger.measure.v(self.measure.buffers[1].buffer)
-                      end
-                  end,
-
-                  --- Initiate this trigger model
-                  ---@param self Device
-                  trigger_model_initiate = function(self)
-                      if self.trigger_model then
-                          self.slot.trigger.model.initiate(self.trigger_model)
-                      end
-                  end,
-
-                  turn_on = function(self)
-                      self.channel.source.output = 1
-                  end,
-
-                  turn_off = function(self)
-                      self.channel.source.output = 0
-                  end,
-              },
-              bias = {
-                  --- Configure the trigger model for a Bias
-                  ---@param self Device
-                  ---@param bias_source_event nil Unused
-                  ---@param bias_measure_event nil Unused
-                  ---@param step_source_event any | nil The event ID associated with all the steps completing source actions (only one)
-                  ---@param step_measure_event any | nil The event ID associated with all the steps completing measure actions (only one)
-                  ---@param sweep_source_event any | nil The event ID associated with all the sweep steps completing source actions (only one)
-                  ---@param sweep_measure_event any | nil The event ID associated with all the sweep steps completing measure actions (only one)
-                  ---@param bias_source_complete_events any[] | nil The event ID(s) associated with all other bias source-action steps completing. Should only be passed to one bias channel.
-                  ---@param bias_measure_complete_events any[] | nil The event ID(s) associated with all other bias measure-action steps completing. Should only be passed to one bias channel.
-                  trigger_model_setup = function(self, bias_source_event, bias_measure_event, step_source_event,
-                                                 step_measure_event, sweep_source_event, sweep_measure_event,
-                                                 bias_source_complete_events, bias_measure_complete_events)
-                      UTILITY.MSMU().bias.trigger_model_setup(self, bias_source_event, bias_measure_event,
-                          step_source_event, step_measure_event, sweep_source_event, sweep_measure_event,
-                          bias_source_complete_events, bias_measure_complete_events)
-                  end,
-              },
-              step = {
-                  --- Configure the trigger model for a Step
-                  ---@param self Device
-                  ---@param bias_source_event any|nil The event ID associated with all the biases completing source actions (only one)
-                  ---@param bias_measure_event any | nil The event ID associated with all the biases completing measure actions (only one)
-                  ---@param step_source_event nil Unused
-                  ---@param step_measure_event nil Unused
-                  ---@param sweep_source_event any | nil The event ID associated with all the sweep steps completing source actions (only one)
-                  ---@param sweep_measure_event any | nil The event ID associated with all the sweep steps completing measure actions (only one)
-                  ---@param step_source_complete_events any[] | nil The event ID(s) associated with all other source-action steps completing. Should only be passed to one bias channel.
-                  ---@param step_measure_complete_events any[] | nil The event ID(s) associated with all other measure-action steps completing. Should only be passed to one bias channel.
-                  trigger_model_setup = function(self, bias_source_event, bias_measure_event, step_source_event,
-                                                 step_measure_event, sweep_source_event, sweep_measure_event,
-                                                 step_source_complete_events, step_measure_complete_events)
-                      UTILITY.MSMU().step.trigger_model_setup(self, bias_source_event, bias_measure_event,
-                          step_source_event, step_measure_event, sweep_source_event, sweep_measure_event,
-                          step_source_complete_events, step_measure_complete_events)
-                  end,
-              },
-
-              sweep = {
-                  --- Configure the trigger model for a Step
-                  ---@param self Device
-                  ---@param bias_source_event any|nil The event ID associated with all the biases completing source actions (only one)
-                  ---@param bias_measure_event any | nil The event ID associated with all the biases completing measure actions (only one)
-                  ---@param step_source_event any | nil The event ID associated with all the steps completing source actions (only one)
-                  ---@param step_measure_event any | nil The event ID associated with all the steps completing measure actions (only one)
-                  ---@param sweep_source_event nil Unused
-                  ---@param sweep_measure_event nil Unused
-                  ---@param sweep_source_complete_events any
-                  ---@param sweep_measure_complete_events any
-                  trigger_model_setup = function(self, bias_source_event, bias_measure_event, step_source_event,
-                                                 step_measure_event, sweep_source_event, sweep_measure_event,
-                                                 sweep_source_complete_events, sweep_measure_complete_events)
-                      UTILITY.MSMU().sweep.trigger_model_setup(self, bias_source_event, bias_measure_event,
-                          step_source_event, step_measure_event, sweep_source_event, sweep_measure_event,
-                          sweep_source_complete_events, sweep_measure_complete_events)
-                  end,
-
-              },
-          }
-      end,
-
-      ---Gets the proper model implementation based on the model string of the device
-      ---@param device DeviceDetails
-      ---@return Model | nil, "smu" | "psu" | nil
-      get_model_from_device = function(device)
-          if string.find(device.model, "MSMU") ~= nil then
-              return UTILITY.MSMU(), "smu"
-          end
-          if string.find(device.model, "MPSU") ~= nil then
-              return UTILITY.MPSU(), "psu"
-          end
-          return nil, nil
-      end,
-
-      ---comment
-      ---@param details DeviceDetails The details of the given device
-      ---@param role "bias" | "step" | "sweep" The role the given device should take
-      ---@return Device
-      makedevice = function(details, role)
-          local mt = {}
-          -- get the proper model from the given device
-          local model, ty = UTILITY.get_model_from_device(details)
-
-          -- if the model couldn't be determined, throw an error
-          if model == nil then error([[Unable to determine device model]], 2) end
-          -- get the default component to ensure the proper functions are implemented
-          mt.functions = UTILITY.DEFAULT_COMPONENT()
-          -- if they are defined, set the common functions
-          if model.common ~= nil then
-              for k, f in pairs(model.common) do
-                  mt.functions[k] = f
-              end
-          end
-          -- Replace any common functions with those specifically implemented for being an instrument with the given role
-          if model[role] ~= nil then
-              for k, f in pairs(model[role]) do
-                  mt.functions[k] = f
-              end
-          end
-
-          -- __index is called when trying to access members of this object.
-          mt.__index = function(self, k)
-              -- when accessing functions, check the `functions` table
-              return mt.functions[k]
-          end
-          -- This should be a read-only table. Error if there is a call to set something new on the table.
-          --mt.__newindex = function() error([[Cannot modify read-only table]], 2) end
-          -- TODO Is it really necessary to make this read-only? If so, this doesn't work as is.
-
-          -- Set this metatable with the new functions on the given device
-          local device = setmetatable(details, mt) --[[@as Device]]
-
-          -- Compute the values
-          if details.node_idx == 0 then
-              device.node_name = "localnode"
-              device.node = localnode
-          elseif details.node_idx > 0 and details.node_idx <= 63 then
-              device.node_name = "node[" .. device.node_idx .. "]"
-              device.node = node[device.node_idx] -- This may be shown as undefined, that is ok
-          else
-              error("The given node index '" .. device.node_idx .. "' is not a valid node index")
-          end
-
-          device.slot = device.node.slot[device.slot_idx]
-
-          if ty == "smu" then
-              device.channel = device.slot.smu[device.channel_idx]
-          elseif ty == "psu" then
-              device.channel = device.slot.psu[device.channel_idx]
-          else
-              error("Unable to determine type of device")
-          end
-
-              if details.model ~= device.slot.model then
-                  error(
-                      "The actual model of the given slot '" ..
-                      device.slot.model ..
-                      "' does not match the expected model '" ..
-                      details.model ..
-                      "'. Please check your configuration."
-                  )
-              end
-          return device
-      end,
-
-      ---Create a new bias device using the given device
-      ---@param details DeviceDetails
-      ---@return Device
-      makebias = function(details)
-          return UTILITY.makedevice(details, "bias")
-      end,
-
-      ---Create a new step device using the given device
-      ---@param details DeviceDetails
-      ---@return Device
-      makestep = function(details)
-          return UTILITY.makedevice(details, "step")
-      end,
-
-      ---Create a new sweep device using the given device
-      ---@param details DeviceDetails
-      ---@return Device
-      makesweep = function(details)
-          return UTILITY.makedevice(details, "sweep")
-      end
-  }
-
-  ---Initialize data such as the number of sweep steps per step, number of steps, and total number of points
-  ---@param nodes NodesDef
-  local function Init(nodes)
-      UTILITY.event_ids = {}
-      local is_step = false
-      local is_sweep = false
-      if nodes.steps and nodes.steps[1] then
-          is_step = true
-          local step = nodes.steps[1]
-          if step.source.values.linear then
-              UTILITY.STEP_COUNT = step.source.values.linear.count
-          elseif step.source.values.log then
-              UTILITY.STEP_COUNT = step.source.values.log.count
-          elseif step.source.values.list then
-              UTILITY.STEP_COUNT = table.getn(step.source.values.list)
-          elseif step.source.values.scalar then
-              UTILITY.STEP_COUNT = 1
-          end
-      end
-
-      if nodes.sweeps and nodes.sweeps[1] then
-          is_sweep = true
-          local sweep = nodes.sweeps[1]
-          if sweep.source.values.linear then
-              UTILITY.SWEEP_COUNT = sweep.source.values.linear.count
-          elseif sweep.source.values.log then
-              UTILITY.SWEEP_COUNT = sweep.source.values.log.count
-          elseif sweep.source.values.list then
-              UTILITY.SWEEP_COUNT = table.getn(sweep.source.values.list)
-          elseif sweep.source.values.scalar then
-              UTILITY.SWEEP_COUNT = 1
-          end
-      end
-
-      if is_step and is_sweep then
-          UTILITY.TOTAL_COUNT = UTILITY.SWEEP_COUNT * UTILITY.STEP_COUNT
-      elseif is_step and not is_sweep then
-          UTILITY.TOTAL_COUNT = UTILITY.STEP_COUNT
-      elseif not is_step and is_sweep then
-          UTILITY.TOTAL_COUNT = UTILITY.SWEEP_COUNT
-      end
-  end
-
-  ---Resets all components that may be used in the test
-  ---@param nodes NodesDef
-  local Reset                 = function(nodes)
-      for _, n in ipairs(nodes.biases) do
-          n:reset()
-      end
-
-      for _, n in ipairs(nodes.steps) do
-          n:reset()
-      end
-
-      for _, n in ipairs(nodes.sweeps) do
-          n:reset()
-      end
-  end
-
-  --- The function configures all the initial settings for the channel.
-  ---@param nodes any
-  local ConfigureChannels     = function(nodes)
-      for _, n in ipairs(nodes.biases) do
-          n:config()
-      end
-
-      for _, n in ipairs(nodes.steps) do
-          n:config()
-      end
-
-      for _, n in ipairs(nodes.sweeps) do
-          n:config()
-      end
-  end
-
-  ---This function configures the trigger line interaction between the channels
-  ---@param nodes NodesDef
-  local ConfigureTriggerModel = function(nodes)
-      -- If there are one or more bias channels, get the event ID of the first
-      local bias_source_event = nil
-      local bias_measure_event = nil
-      if nodes.biases[1] and nodes.biases[1].event_source then
-          bias_source_event = nodes.biases[1].event_source
-      end
-      if nodes.biases[1] and nodes.biases[1].event_measure then
-          bias_measure_event = nodes.biases[1].event_measure
-      end
-
-      -- If there are one or more step channels, get the event ID of the first
-      local step_source_event = nil
-      local step_measure_event = nil
-      if nodes.steps[1] and nodes.steps[1].event_source then
-          step_source_event = nodes.steps[1].event_source
-      end
-      if nodes.steps[1] and nodes.steps[1].event_measure then
-          step_measure_event = nodes.steps[1].event_measure
-      end
-
-      -- If there are one or more sweepers, get the event ID of the first
-      local sweep_source_event = nil
-      local sweep_measure_event = nil
-      if nodes.sweeps[1] and nodes.sweeps[1].event_source then
-          sweep_source_event = nodes.sweeps[1].event_source
-      end
-      if nodes.sweeps[1] and nodes.sweeps[1].event_measure then
-          sweep_measure_event = nodes.sweeps[1].event_measure
-      end
-
-      for i, n in ipairs(nodes.biases) do
-          -- get all the completion events for all other bias channels
-          local bias_source_complete_events = nil
-          local bias_measure_complete_events = nil
-          if i == 1 then
-              for j, o in ipairs(nodes.biases) do
-                  if j ~= 1 then
-                      -- If there are any other bias channels besides the first one...
-                      if bias_source_complete_events == nil then
-                          bias_source_complete_events = {}
-                      end
-                      if bias_measure_complete_events == nil then
-                          bias_measure_complete_events = {}
-                      end
-                      -- ... create the table and insert the Event ID
-                      table.insert(bias_source_complete_events, o.event_source)
-                      table.insert(bias_measure_complete_events, o.event_measure)
-                  end
-              end
-          end
-
-          n:trigger_model_setup(bias_source_event, bias_measure_event, step_source_event, step_measure_event,
-              sweep_source_event, sweep_measure_event, bias_source_complete_events, bias_measure_complete_events)
-      end
-
-      for i, n in ipairs(nodes.steps) do
-          -- get all the completion events for all other stepper channels
-          local step_source_complete_events = nil
-          local step_measure_complete_events = nil
-          if i == 1 then
-              for j, o in ipairs(nodes.steps) do
-                  if j ~= 1 then
-                      -- If there are any other stepper channels besides the first one...
-                      if step_source_complete_events == nil then
-                          step_source_complete_events = {}
-                      end
-                      if step_measure_complete_events == nil then
-                          step_measure_complete_events = {}
-                      end
-                      -- ... create the table and insert the Event ID
-                      table.insert(step_source_complete_events, o.event_source)
-                      table.insert(step_measure_complete_events, o.event_measure)
-                  end
-              end
-          end
-
-          n:trigger_model_setup(bias_source_event, bias_measure_event, step_source_event, step_measure_event,
-              sweep_source_event, sweep_measure_event, step_source_complete_events, step_measure_complete_events)
-      end
-
-      for i, n in ipairs(nodes.sweeps) do
-          -- get all the completion events for all other sweeper channels
-          local sweep_source_complete_events = nil
-          local sweep_measure_complete_events = nil
-          if i == 1 then
-              for j, o in ipairs(nodes.sweeps) do
-                  if j ~= 1 then
-                      -- If there are any other sweeper channels besides the first one...
-                      if sweep_source_complete_events == nil then
-                          sweep_source_complete_events = {}
-                      end
-
-                      if sweep_measure_complete_events == nil then
-                          sweep_measure_complete_events = {}
-                      end
-                      -- ... create the table and insert the Event ID
-                      table.insert(sweep_source_complete_events, o.event_source)
-                      table.insert(sweep_measure_complete_events, o.event_measure)
-                  end
-              end
-          end
-
-          n:trigger_model_setup(bias_source_event, bias_measure_event, step_source_event, step_measure_event,
-              sweep_source_event, sweep_measure_event, sweep_source_complete_events, sweep_measure_complete_events)
-      end
-  end
-
-  ---This function turns on the output on all channels
-  ---@param nodes NodesDef
-  local TurnOnChannels        = function(nodes)
-      for _, n in ipairs(nodes.biases) do
-          n:turn_on()
-      end
-
-      for _, n in ipairs(nodes.steps) do
-          n:turn_on()
-      end
-
-      for _, n in ipairs(nodes.sweeps) do
-          n:turn_on()
-      end
-  end
-
-  ---This function initiates the trigger models on all channels
-  ---@param nodes NodesDef
-  local InitiateTriggerModels = function(nodes)
-      for _, n in ipairs(nodes.sweeps) do
-          n:trigger_model_initiate()
-      end
-
-      for _, n in ipairs(nodes.steps) do
-          n:trigger_model_initiate()
-      end
-
-      for _, n in ipairs(nodes.biases) do
-          n:trigger_model_initiate()
-      end
-  end
-
-  ---This function turns off the output on all channels
-  ---@param nodes NodesDef
-  local TurnOffChannels       = function(nodes)
-      for _, n in ipairs(nodes.biases) do
-          n:turn_off()
-      end
-
-      for _, n in ipairs(nodes.steps) do
-          n:turn_off()
-      end
-
-      for _, n in ipairs(nodes.sweeps) do
-          n:turn_off()
-      end
-  end
-
-  ---Print the results of the trigger model to a CSV table
-  ---@param nodes NodesDef
-  local PrintResults          = function(nodes)
-      local function iv_to_string(t)
-          if t == CONSTANTS.FUNC_DC_CURRENT then
-              return "CURRENT"
-          end
-          if t == CONSTANTS.FUNC_DC_VOLTAGE then
-              return "VOLTAGE"
-          end
-      end
-
-      --- Print the given buffers as a CSV table using the given string heading
-      ---@param buffers {heading: string, buffer: bufferVar}[] An array of buffers with the associated heading for the column
-      local function print_table_from_buffers(buffers)
-          if buffers[1] == nil or buffers[1].buffer == nil then
-              print("NO DATA")
-          end
-
-          for row = 0, buffers[1].buffer.n do
-              local row_string = ""
-              for column_num, column in ipairs(buffers) do
-                  if row == 0 then
-                      if column_num == 1 then
-                          row_string = row_string .. "Reading Number"
-                      end
-                      row_string = row_string .. "," .. column.heading
-                  else
-                      if column_num == 1 then
-                          row_string = row_string .. row
-                      end
-                      row_string = row_string .. "," .. column.buffer.readings[row]
-                  end
-              end
-              print(row_string)
-          end
-      end
-
-      ---@type {heading: string, buffer:bufferVar}[]
-      local buffers = {}
-
-      for i, n in ipairs(nodes.biases) do
-          for _, buf in ipairs(n.measure.buffers) do
-              table.insert(buffers, { heading = "bias[" .. i .. "]." .. iv_to_string(buf.type), buffer = buf.buffer })
-          end
-      end
-
-      for i, n in ipairs(nodes.steps) do
-          for _, buf in ipairs(n.measure.buffers) do
-              table.insert(buffers, { heading = "step[" .. i .. "]." .. iv_to_string(buf.type), buffer = buf.buffer })
-          end
-      end
-
-      for i, n in ipairs(nodes.sweeps) do
-          for _, buf in ipairs(n.measure.buffers) do
-              table.insert(buffers, { heading = "sweep[" .. i .. "]." .. iv_to_string(buf.type), buffer = buf.buffer })
-          end
-      end
-
-      print_table_from_buffers(buffers)
-  end
-
-
-  --#endregion Util
-
   --==========================================================================
-  -- Configures a sweeping test.
+  -- Runs the IV Characterization sweep as configured in the IV
+  -- characterization script generation tool.
+  --
+  -- WARNING: Edits made to this file will be lost if changes are made in
+  --          the IV Characterization Script Generation tool. Be sure to
+  --          rename this script before making code changes to prevent
+  --          accidental overwrites.
   --==========================================================================
-  function _Sweep()
-      --------------------------------------------------------------------------------
-      -- Test start: Edit after this point -------------------------------------------
-      --------------------------------------------------------------------------------
-
-      local errorTag         = "[{error}]"
-
-      local numberOfSteps    = {{step_count}}
+  function Sweep()
+      {{#each errors}}
+      error("{{this}}")
+      {{/each}}
+      {{#if step_points}}
+      local numberOfSteps    = {{step_points}}
+      {{/if}}
+      {{#if sweep_points}}
       local numberOfSweeps   = {{sweep_points}}
-
-      stepToSweepDelay = {{step_to_sweep_delay}}
-
+      {{/if}}
+      {{#if step_to_sweep_delay}}
+      local stepToSweepDelay = {{step_to_sweep_delay}}
+      {{/if}}
+      {{#if nplc}}
       local nplc             = {{nplc}}
-
+      {{/if}}
+      {{#if aperture}}
       local aperture         = {{aperture}}
-
+      {{/if}}
+      {{#if source_delay}}
       local source_delay     = {{source_delay}}
+      {{/if}}
+      {{#if measure_delay}}
       local measure_delay    = {{measure_delay}}
+      {{/if}}
       local measure_count    = {{measure_count}}
 
+      {{#each channels}}
+      {{> define}}
 
-
-      ---@type NodesDef
-      local nodes = {
-          biases = {},
-          steps = {},
-          sweeps = {},
-      }
-  {{#each bias_devices}}
-      UTILITY.insert(nodes.biases, UTILITY.makebias({
-          node_idx = {{node_idx}},
-          slot_idx = {{slot_idx}},
-          channel_idx = {{channel_idx}},
-          model = "{{model}}",
-          sense = CONSTANTS.{{sense}}, -- must be SENSE_2WIRE or SENSE_4WIRE
-          source = {
-              values = { scalar = {{bias}} },
-              range = {{srange}},
-              limiti = {{limiti}},
-              limitv = {{limitv}},
-              delay = source_delay,
-              func = CONSTANTS.{{sfunction}}, -- must be FUNC_DC_CURRENT or FUNC_DC_VOLTAGE
-          },
-          measure = {
-              nplc = nplc,
-              range = {{mrange}},
-              aperture = aperture,
-              count = measure_count,
-              delay = measure_delay,
-              func = CONSTANTS.{{mfunction}}, -- must be FUNC_DC_CURRENT, FUNC_DC_VOLTAGE, or FUNC_DC_IV_COMBINED
-              buffers = {
-      {{> measure_buffers}}
-              },
-          },
-      }))
-  {{/each}}
-  {{#each step_devices}}
-      UTILITY.insert(nodes.steps, UTILITY.makestep({
-          node_idx = {{node_idx}},
-          slot_idx = {{slot_idx}},
-          channel_idx = {{channel_idx}},
-          model = "{{model}}",
-          sense = CONSTANTS.{{sense}}, -- must be SENSE_2WIRE or SENSE_4WIRE
-          source = {
-      {{#if (eq mode "LIN")}}
-          --IF linear sweep
-          values = { linear = { start = {{start}}, stop = {{stop}}, count = numberOfSteps } },
-      {{/if}}
-      {{#if (eq mode "LOG")}}
-          --IF log sweep
-          values = { log = { start = {{start}}, stop = {{stop}}, count = numberOfSteps } },
-      {{/if}}
-      {{#if (eq mode "LIST")}}
-          --IF LIST
-          ---@diagnostic disable-next-line
-          values = { list = {{list}} },
-      {{/if}}
-          range = {{srange}},
-          limiti = {{limiti}},
-          limitv = {{limitv}},
-          delay = source_delay,
-          func = CONSTANTS.{{sfunction}}, -- must be FUNC_DC_VOLTAGE or FUNC_DC_CURRENT
-      },
-      measure = {
-          nplc = nplc,
-          range = {{mrange}},
-          aperture = aperture,
-          count = measure_count,
-          delay = measure_delay,
-          func = CONSTANTS.{{mfunction}}, -- must be FUNC_DC_VOLTAGE, FUNC_DC_CURRENT, or FUNC_DC_IV_COMBINED
-          buffers = {
-      {{> measure_buffers}}
-              },
-          },
-      }))
-  {{/each}}
-  {{#each sweep_devices}}
-      UTILITY.insert(nodes.sweeps, UTILITY.makesweep({
-          node_idx = {{node_idx}},
-          slot_idx = {{slot_idx}},
-          channel_idx = {{channel_idx}},
-          model = "{{model}}",
-          sense = CONSTANTS.{{sense}}, -- must be SENSE_2WIRE or SENSE_4WIRE
-          source = {
-      {{#if (eq mode "LIN")}}
-          --IF linear sweep
-          values = { linear = { start = {{start}}, stop = {{stop}}, count = numberOfSweeps }},
-      {{/if}}
-      {{#if (eq mode "LOG")}}
-          --IF log sweep
-          values = {log = { start = {{start}}, stop = {{stop}}, count = numberOfSweeps }},
-      {{/if}}
-      {{#if (eq mode "LIST")}}
-          --IF LIST
-          ---@diagnostic disable-next-line
-          values = { list = {{list~}} },
-      {{/if}}
-          range = {{srange}},
-          limiti = {{limiti}},
-          limitv = {{limitv}},
-          delay = source_delay,
-          func = CONSTANTS.{{sfunction}}, -- must be FUNC_DC_VOLTAGE or FUNC_DC_CURRENT
-      },
-      measure = {
-          nplc = nplc,
-          range = {{mrange}},
-          aperture = aperture,
-          count = measure_count,
-          delay = measure_delay,
-          func = CONSTANTS.{{mfunction}}, -- must be FUNC_DC_VOLTAGE, FUNC_DC_CURRENT, or FUNC_DC_IV_COMBINED
-          buffers = {
-      {{> measure_buffers}}
-              },
-          },
-      }))
-  {{/each}}
-      print("Initializing channels...")
-      Init(nodes)
-
+      {{/each}}
       print("Resetting channels...")
-      Reset(nodes)
+      {{#each channels}}
+      {{name}}.ch.reset()
+      {{/each}}
+      {{#each nodes}}
+      for i = 1, 3 do {{this}}.tsplink.trigger[i].reset() end
+      for i = 1, 4 do {{this}}.trigger.timer[i].reset() end
+      {{/each}}
+      {{#each channels}}
+      {{#if first_in_slot}}
+      {{name}}.tm.abort()
+      {{/if}}
+      {{/each}}
 
       print("Configuring channels...")
-      ConfigureChannels(nodes)
+      {{#each channels}}
+      {{> configure}}
+      {{/each}}
 
       print("Configuring trigger models...")
-      ConfigureTriggerModel(nodes)
+      -- Events used by the channels to notify each other of source/measure completion
+      {{#each channels}}
+      {{> event channel=name event=source_event id=source_event_id}}
+      {{> event channel=name event=measure_event id=measure_event_id}}
+      {{/each}}
+      {{#each channels}}
+
+      -- {{name}}
+      {{name}}.tm.delete({{name}}.tm_name)
+      {{name}}.tm.create({{name}}.tm_name)
+      {{#if (eq role "bias")}}
+      {{> bias_trigger_model}}
+      {{/if}}
+      {{#if (eq role "step")}}
+      {{> step_trigger_model}}
+      {{/if}}
+      {{#if (eq role "sweep")}}
+      {{> sweep_trigger_model}}
+      {{/if}}
+      {{/each}}
 
       print("Turning on channels...")
-      TurnOnChannels(nodes)
+      {{#each channels}}
+      {{name}}.ch.source.output = 1
+      {{/each}}
 
       print("Initiating trigger model...")
-      InitiateTriggerModels(nodes)
+      {{#each channels}}
+      {{#if (eq role "sweep")}}
+      {{> initiate}}
+      {{/if}}
+      {{/each}}
+      {{#each channels}}
+      {{#if (eq role "step")}}
+      {{> initiate}}
+      {{/if}}
+      {{/each}}
+      {{#each channels}}
+      {{#if (eq role "bias")}}
+      {{> initiate}}
+      {{/if}}
+      {{/each}}
 
       print("Waiting for trigger model to complete...")
       waitcomplete()
 
       print("Turning off channels...")
-      TurnOffChannels(nodes)
+      {{#each channels}}
+      {{name}}.ch.source.output = 0
+      {{/each}}
       waitcomplete()
 
       print("Printing results in CSV table (comma-delimited)...")
       print()
-      PrintResults(nodes)
+      local results = {
+          {{#each results}}
+          {{channel}}.ch.{{buffer}},
+          {{/each}}
+      }
+      print("{{results_header}}")
+      for row = 1, results[1].n do
+          local line = tostring(row)
+          for _, buffer in ipairs(results) do
+              line = line .. "," .. buffer.readings[row]
+          end
+          print(line)
+      end
 
       print()
       print("Complete")
   end
 
-  _Sweep()
+  Sweep()

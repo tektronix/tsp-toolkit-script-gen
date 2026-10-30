@@ -1,0 +1,1 @@
+-- no sweep ... requires at least 1 step channel or 1 sweep channel

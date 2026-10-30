@@ -1,0 +1,317 @@
+# Handlebars template for the Sweep() segment of the generated script.
+#
+# The values that are known when the script is generated (channel locations, event IDs, loop
+# counts, etc.) are resolved by `SweepModel` in script-gen-manager, so this template emits
+# straight-line TSP code for each channel. The output is re-indented when it is added to the
+# script, so indentation here is only for readability.
+#
+# Each channel is a table holding its slot, channel and trigger model:
+#   bias1.slot_id, bias1.slot, bias1.ch_id, bias1.ch, bias1.tm, bias1.tm_name
+# and the prefix of its trigger-model block names, bias1.block_id.
+id: SWEEP
+type: Sweep
+partials:
+  # Defines the table for a channel.
+  define: |
+    local {{name}} = { slot_id = {{slot_idx}}, ch_id = {{channel_idx}} }
+    {{name}}.slot = {{node}}.slot[{{name}}.slot_id]
+    {{#if first_in_slot}}
+    if {{name}}.slot.model ~= "{{model}}" then error("Expected {{model}} in slot " .. {{name}}.slot_id .. " but found " .. {{name}}.slot.model .. ". Please check your configuration.") end
+    {{/if}}
+    {{name}}.ch = {{name}}.slot.{{channel_type}}[{{name}}.ch_id]
+    {{name}}.tm = {{name}}.slot.trigger.model
+    {{name}}.tm_name = "{{node}}" .. {{name}}.slot_id .. {{name}}.ch_id .. " {{role_title}} Trigger Model"
+    {{name}}.block_id = {{name}}.slot_id .. {{name}}.ch_id
+
+  # Configures the source and measure settings of a channel.
+  configure: |
+    -- {{name}}
+    {{#if sense}}
+    {{name}}.ch.sense = {{name}}.ch.{{sense}}
+    {{/if}}
+    {{#if source_func}}
+    {{name}}.ch.source.func = {{name}}.slot.smu.{{source_func}}
+    {{/if}}
+    {{#if source_unit}}
+    {{#if level}}
+    {{name}}.ch.source.level{{source_unit}} = {{level}}
+    {{/if}}
+    {{#if list}}
+    {{name}}.ch.trigger.source.list{{source_unit}}({{list}})
+    {{/if}}
+    {{#if sweep}}
+    {{name}}.ch.trigger.source.{{sweep.kind}}{{source_unit}}({{sweep.start}}, {{sweep.stop}}, {{sweep.count}})
+    {{/if}}
+    {{/if}}
+    {{#if source_autorange}}
+    {{name}}.ch.source.autorange{{source_unit}} = {{name}}.slot.smu.ON
+    {{/if}}
+    {{#if source_range}}
+    {{name}}.ch.source.range{{source_unit}} = {{source_range}}
+    {{/if}}
+    {{#if limiti}}
+    {{name}}.ch.source.limiti = {{limiti}}
+    {{/if}}
+    {{#if limitv}}
+    {{name}}.ch.source.limitv = {{limitv}}
+    {{/if}}
+    {{#if is_smu}}
+    {{#if @root.source_delay}}
+    {{name}}.ch.source.delay = source_delay
+    {{/if}}
+    {{#if @root.nplc}}
+    {{name}}.ch.measure.nplc = nplc
+    {{/if}}
+    {{#if @root.aperture}}
+    {{name}}.ch.measure.aperture = aperture
+    {{/if}}
+    {{/if}}
+    {{#if measure_autorange}}
+    {{name}}.ch.measure.autorange{{measure_unit}} = {{name}}.slot.smu.ON
+    {{/if}}
+    {{#if measure_range}}
+    {{name}}.ch.measure.range{{measure_unit}} = {{measure_range}}
+    {{/if}}
+    {{name}}.ch.measure.count = measure_count
+    {{#if is_smu}}
+    {{#if @root.measure_delay}}
+    {{name}}.ch.measure.delay = measure_delay
+    {{/if}}
+    {{/if}}
+    {{name}}.ch.trigger.measure.{{measure_func}}({{name}}.ch.defbuffer1{{#if (eq measure_func "iv")}}, {{name}}.ch.defbuffer2{{/if}})
+
+  # A notify event of a channel, given its number.
+  event: |
+    {{#if id}}
+    local {{event}} = {{channel}}.tm.EVENT_NOTIFY{{id}}
+    {{else}}
+    local {{event}} = nil
+    {{/if}}
+
+  # A wait block for one or more events, in the trigger model of `channel`.
+  wait: |
+    {{channel}}.tm.addblock.wait({{channel}}.tm_name, {{channel}}.block_id .. "{{block}}", {{first}}{{#each rest}}{{#if @first}}, {{../../channel}}.tm.CLEAR_NEVER, {{../../channel}}.tm.WAIT_AND{{/if}}, {{this}}{{/each}})
+
+  bias_trigger_model: |
+    {{#each source_waits}}
+    {{> wait channel=../name}}
+    {{/each}}
+    {{name}}.tm.addblock.notify({{name}}.tm_name, {{name}}.block_id .. "_bias_notify", {{source_event}})
+    {{#if @root.sweep_source}}
+    {{name}}.tm.addblock.wait({{name}}.tm_name, {{name}}.block_id .. "_wait_sweep", {{@root.sweep_source}}, {{name}}.tm.CLEAR_NEVER)
+    {{else}}
+    {{name}}.tm.addblock.wait({{name}}.tm_name, {{name}}.block_id .. "_wait_step", {{@root.step_source}}, {{name}}.tm.CLEAR_NEVER)
+    {{/if}}
+    {{name}}.tm.addblock.measure({{name}}.tm_name, {{name}}.block_id .. "_bias_measure", {{name}}.ch_id)
+    {{#each measure_waits}}
+    {{> wait channel=../name}}
+    {{/each}}
+    {{name}}.tm.addblock.notify({{name}}.tm_name, {{name}}.block_id .. "_bias_meas_notify", {{measure_event}})
+    {{#if @root.sweep_measure}}
+    {{name}}.tm.addblock.wait({{name}}.tm_name, {{name}}.block_id .. "_bias_wait_sweep_meas", {{@root.sweep_measure}}, {{name}}.tm.CLEAR_NEVER)
+    {{/if}}
+    {{#if @root.step_measure}}
+    {{name}}.tm.addblock.wait({{name}}.tm_name, {{name}}.block_id .. "_bias_wait_step_meas", {{@root.step_measure}}, {{name}}.tm.CLEAR_NEVER)
+    {{name}}.tm.addblock.branch.counter({{name}}.tm_name, {{name}}.block_id .. "_loop", {{name}}.block_id .. "_bias_notify", {{@root.total_count}})
+    {{else}}
+    {{name}}.tm.addblock.branch.counter({{name}}.tm_name, {{name}}.block_id .. "_loop", {{name}}.block_id .. "_wait_sweep", {{@root.total_count}})
+    {{/if}}
+
+  step_trigger_model: |
+    {{#if @root.bias_source}}
+    {{name}}.tm.addblock.wait({{name}}.tm_name, {{name}}.block_id .. "_step_wait_bias", {{@root.bias_source}}, {{name}}.tm.CLEAR_NEVER)
+    {{/if}}
+    {{name}}.tm.addblock.source.action.step({{name}}.tm_name, {{name}}.block_id .. "_step_step", {{name}}.ch_id)
+    {{#each source_waits}}
+    {{> wait channel=../name}}
+    {{/each}}
+    {{#if @root.sweep_source}}
+    {{name}}.tm.addblock.delay.constant({{name}}.tm_name, {{name}}.block_id .. "_step_delay_sweep", stepToSweepDelay)
+    {{/if}}
+    {{name}}.tm.addblock.notify({{name}}.tm_name, {{name}}.block_id .. "_step_done", {{source_event}})
+    {{#if @root.sweep_source}}
+    {{name}}.tm.addblock.wait({{name}}.tm_name, {{name}}.block_id .. "_step_wait_sweep", {{@root.sweep_source}}, {{name}}.tm.CLEAR_NEVER)
+    {{/if}}
+    {{name}}.tm.addblock.measure({{name}}.tm_name, {{name}}.block_id .. "_step_measure", {{name}}.ch_id)
+    {{#each measure_waits}}
+    {{> wait channel=../name}}
+    {{/each}}
+    {{name}}.tm.addblock.notify({{name}}.tm_name, {{name}}.block_id .. "_step_meas done", {{measure_event}})
+    {{#each dependency_waits}}
+    {{> wait channel=../name}}
+    {{/each}}
+    {{#if @root.sweep_source}}
+    {{name}}.tm.addblock.branch.counter({{name}}.tm_name, {{name}}.block_id .. "_step_inner_loop", {{name}}.block_id .. "_step_wait_sweep", {{@root.sweep_count}})
+    {{/if}}
+    {{#if @root.bias_source}}
+    {{name}}.tm.addblock.branch.counter({{name}}.tm_name, {{name}}.block_id .. "_step_outer_loop", {{name}}.block_id .. "_step_wait_bias", {{@root.step_count}})
+    {{else}}
+    {{name}}.tm.addblock.branch.counter({{name}}.tm_name, {{name}}.block_id .. "_step_outer_loop", {{name}}.block_id .. "_step_step", {{@root.step_count}})
+    {{/if}}
+    {{name}}.tm.addblock.notify({{name}}.tm_name, {{name}}.block_id .. "_final_notify", {{source_event}})
+
+  sweep_trigger_model: |
+    {{#if @root.bias_source}}
+    {{name}}.tm.addblock.wait({{name}}.tm_name, {{name}}.block_id .. "_sweep_wait_bias", {{@root.bias_source}}, {{name}}.tm.CLEAR_NEVER)
+    {{/if}}
+    {{#if @root.step_source}}
+    {{name}}.tm.addblock.wait({{name}}.tm_name, {{name}}.block_id .. "_sweep_wait_step", {{@root.step_source}}, {{name}}.tm.CLEAR_NEVER)
+    {{/if}}
+    {{name}}.tm.addblock.source.action.step({{name}}.tm_name, {{name}}.block_id .. "_sweep_step", {{name}}.ch_id)
+    {{#each source_waits}}
+    {{> wait channel=../name}}
+    {{/each}}
+    {{name}}.tm.addblock.notify({{name}}.tm_name, {{name}}.block_id .. "_sweep_done", {{source_event}})
+    {{name}}.tm.addblock.measure({{name}}.tm_name, {{name}}.block_id .. "_sweep_measure", {{name}}.ch_id)
+    {{#each measure_waits}}
+    {{> wait channel=../name}}
+    {{/each}}
+    {{name}}.tm.addblock.notify({{name}}.tm_name, "{{node}}sweep_measure_done", {{measure_event}})
+    {{#each dependency_waits}}
+    {{> wait channel=../name}}
+    {{/each}}
+    {{name}}.tm.addblock.branch.counter({{name}}.tm_name, {{name}}.block_id .. "_sweep_inner_loop", {{name}}.block_id .. "_sweep_step", {{@root.sweep_count}})
+    {{#if @root.step_source}}
+    {{name}}.tm.addblock.branch.counter({{name}}.tm_name, {{name}}.block_id .. "_sweep_outer_loop", {{name}}.block_id .. "_sweep_wait_step", {{@root.step_count}})
+    {{/if}}
+
+  initiate: |
+    {{name}}.tm.initiate({{name}}.tm_name)
+body: |
+  --==========================================================================
+  -- Runs the IV Characterization sweep as configured in the IV
+  -- characterization script generation tool.
+  --
+  -- WARNING: Edits made to this file will be lost if changes are made in
+  --          the IV Characterization Script Generation tool. Be sure to
+  --          rename this script before making code changes to prevent
+  --          accidental overwrites.
+  --==========================================================================
+  function Sweep()
+      {{#each errors}}
+      error("{{this}}")
+      {{/each}}
+      {{#if step_points}}
+      local numberOfSteps    = {{step_points}}
+      {{/if}}
+      {{#if sweep_points}}
+      local numberOfSweeps   = {{sweep_points}}
+      {{/if}}
+      {{#if step_to_sweep_delay}}
+      local stepToSweepDelay = {{step_to_sweep_delay}}
+      {{/if}}
+      {{#if nplc}}
+      local nplc             = {{nplc}}
+      {{/if}}
+      {{#if aperture}}
+      local aperture         = {{aperture}}
+      {{/if}}
+      {{#if source_delay}}
+      local source_delay     = {{source_delay}}
+      {{/if}}
+      {{#if measure_delay}}
+      local measure_delay    = {{measure_delay}}
+      {{/if}}
+      local measure_count    = {{measure_count}}
+
+      {{#each channels}}
+      {{> define}}
+
+      {{/each}}
+      print("Resetting channels...")
+      -- Reset the TSP-Link and timer triggers for each node
+      {{#each nodes}}
+      for i = 1, 3 do {{this}}.tsplink.trigger[i].reset() end
+      for i = 1, 4 do {{this}}.trigger.timer[i].reset() end
+      {{/each}}
+      {{#each channels}}
+      {{name}}.ch.reset()
+      {{/each}}
+
+      -- Abort any trigger models that may be running
+      -- Only one abort per slot is necessary, so not all channels need to be listed here.
+      {{#each channels}}
+      {{#if first_in_slot}}
+      {{name}}.tm.abort()
+      {{/if}}
+      {{/each}}
+
+      print("Configuring channels...")
+      {{#each channels}}
+      {{> configure}}
+      {{/each}}
+
+      print("Configuring trigger models...")
+      -- Events used by the channels to notify each other of source/measure completion
+      {{#each channels}}
+      {{> event channel=name event=source_event id=source_event_id}}
+      {{> event channel=name event=measure_event id=measure_event_id}}
+      {{/each}}
+      {{#each channels}}
+
+      -- {{name}}
+      {{name}}.tm.delete({{name}}.tm_name)
+      {{name}}.tm.create({{name}}.tm_name)
+      {{#if (eq role "bias")}}
+      {{> bias_trigger_model}}
+      {{/if}}
+      {{#if (eq role "step")}}
+      {{> step_trigger_model}}
+      {{/if}}
+      {{#if (eq role "sweep")}}
+      {{> sweep_trigger_model}}
+      {{/if}}
+      {{/each}}
+
+      print("Turning on channels...")
+      {{#each channels}}
+      {{name}}.ch.source.output = 1
+      {{/each}}
+
+      print("Initiating trigger model...")
+      {{#each channels}}
+      {{#if (eq role "sweep")}}
+      {{> initiate}}
+      {{/if}}
+      {{/each}}
+      {{#each channels}}
+      {{#if (eq role "step")}}
+      {{> initiate}}
+      {{/if}}
+      {{/each}}
+      {{#each channels}}
+      {{#if (eq role "bias")}}
+      {{> initiate}}
+      {{/if}}
+      {{/each}}
+
+      print("Waiting for trigger model to complete...")
+      waitcomplete()
+
+      print("Turning off channels...")
+      {{#each channels}}
+      {{name}}.ch.source.output = 0
+      {{/each}}
+      waitcomplete()
+
+      print("Printing results in CSV table (comma-delimited)...")
+      print()
+      local results = {
+          {{#each results}}
+          {{channel}}.ch.{{buffer}},
+          {{/each}}
+      }
+      print("{{results_header}}")
+      for row = 1, results[1].n do
+          local line = tostring(row)
+          for _, buffer in ipairs(results) do
+              line = line .. "," .. buffer.readings[row]
+          end
+          print(line)
+      end
+
+      print()
+      print("Complete")
+  end
+
+  Sweep()

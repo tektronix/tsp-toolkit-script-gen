@@ -1,10 +1,11 @@
-use std::{any::Any, collections::HashMap};
+use std::any::Any;
 
 use crate::model::sweep_data::sweep_config::SweepConfig;
 
 use super::function::FunctionModel;
 use script_aggregator::script_buffer::ScriptBuffer;
-use xml_handler::group::Group;
+use script_templates::{error::Result, FunctionTemplate};
+use serde::Serialize;
 
 /// [`DataReportModel`] is an aggregation of [`FunctionModel`] that represents the `_DataReport()` function of the script.
 /// This is an optional function in the generated script.
@@ -13,8 +14,31 @@ pub struct DataReportModel {
     type_: String,
     select_mode: SelectMode,
     description: String,
-    metadata: Group,
-    val_replacement_map: HashMap<String, String>,
+    template: FunctionTemplate,
+}
+
+/// The values referenced by the DataReport template.
+#[derive(Debug, Serialize)]
+struct DataReportContext {
+    reading_buffers: &'static str,
+    reading_buffer_names: &'static str,
+    reading_buffer_smu_names: &'static str,
+    wait_interval: u32,
+    max_readings_to_return: u32,
+
+    tag_data_report: &'static str,
+    tag_sweep_start: &'static str,
+    tag_start: &'static str,
+    tag_name: &'static str,
+    tag_expected_count: &'static str,
+    tag_pts_in_buff: &'static str,
+    tag_pts_returned: &'static str,
+    tag_base_time_stamp: &'static str,
+    tag_readings: &'static str,
+    tag_timestamps: &'static str,
+    tag_srcvals: &'static str,
+    tag_end: &'static str,
+    tag_complete: &'static str,
 }
 
 impl FunctionModel for DataReportModel {
@@ -30,78 +54,50 @@ impl FunctionModel for DataReportModel {
         self.description.as_str()
     }
 
-    fn get_val_replacement_map(&self) -> &std::collections::HashMap<String, String> {
-        &self.val_replacement_map
+    fn get_template(&self) -> &FunctionTemplate {
+        &self.template
     }
 
-    fn get_metadata(&self) -> &xml_handler::group::Group {
-        &self.metadata
-    }
+    fn to_script(
+        &mut self,
+        sweep_config: &SweepConfig,
+        script_buffer: &mut ScriptBuffer,
+    ) -> Result<()> {
+        let context = DataReportContext {
+            reading_buffers: "{}",
+            reading_buffer_names: "{}",
+            reading_buffer_smu_names: "{}",
+            wait_interval: 1,
+            max_readings_to_return: 100,
 
-    fn to_script(&mut self, sweep_config: &SweepConfig, script_buffer: &mut ScriptBuffer) {
-        let buffers = String::from("{}");
-        let buffer_names = String::from("{}");
-        let buffer_smu_names = String::from("{}");
+            tag_data_report: "Data",
+            tag_sweep_start: "SWEEP-START",
+            tag_start: "START",
+            tag_name: "NAME",
+            tag_expected_count: "EXPECTED-COUNT",
+            tag_pts_in_buff: "PTS-IN-BUFF",
+            tag_pts_returned: "PTS-RETURNED",
+            tag_base_time_stamp: "BASE-TIME-STAMP",
+            tag_readings: "READINGS",
+            tag_timestamps: "TIMESTAMPS",
+            tag_srcvals: "SRCVALS",
+            tag_end: "END",
+            tag_complete: "COMPLETE",
+        };
 
-        self.val_replacement_map
-            .insert(String::from("READING-BUFFERS"), buffers);
-        self.val_replacement_map
-            .insert(String::from("READING-BUFFER-NAMES"), buffer_names);
-        self.val_replacement_map
-            .insert(String::from("READING-BUFFER-SMU-NAMES"), buffer_smu_names);
-
-        self.val_replacement_map
-            .insert(String::from("WAIT-INTERVAL"), String::from("1"));
-        self.val_replacement_map
-            .insert(String::from("MAX-READINGS-TO-RETURN"), String::from("100"));
-
-        self.val_replacement_map
-            .insert(String::from("TAG-DATA-REPORT"), String::from("Data"));
-        self.val_replacement_map
-            .insert(String::from("TAG-SWEEP-START"), String::from("SWEEP-START"));
-        self.val_replacement_map
-            .insert(String::from("TAG-START"), String::from("START"));
-        self.val_replacement_map.insert(
-            String::from("TAG-EXPECTED-COUNT"),
-            String::from("EXPECTED-COUNT"),
-        );
-        self.val_replacement_map
-            .insert(String::from("TAG-NAME"), String::from("NAME"));
-        self.val_replacement_map
-            .insert(String::from("TAG-PTS-IN-BUFF"), String::from("PTS-IN-BUFF"));
-        self.val_replacement_map.insert(
-            String::from("TAG-PTS-RETURNED"),
-            String::from("PTS-RETURNED"),
-        );
-        self.val_replacement_map.insert(
-            String::from("TAG-BASE-TIME-STAMP"),
-            String::from("BASE-TIME-STAMP"),
-        );
-        self.val_replacement_map
-            .insert(String::from("TAG-READINGS"), String::from("READINGS"));
-        self.val_replacement_map
-            .insert(String::from("TAG-TIMESTAMPS"), String::from("TIMESTAMPS"));
-        self.val_replacement_map
-            .insert(String::from("TAG-SRCVALS"), String::from("SRCVALS"));
-        self.val_replacement_map
-            .insert(String::from("TAG-END"), String::from("END"));
-        self.val_replacement_map
-            .insert(String::from("TAG-COMPLETE"), String::from("COMPLETE"));
-
-        self.build(script_buffer);
+        self.build(script_buffer, &context)
     }
 }
 
 impl DataReportModel {
     const DESCRIPTION: &'static str = "This script returns a series of reading buffers. ";
 
-    pub fn new(group: Group) -> Self {
+    pub fn new(template: FunctionTemplate) -> Self {
         Self {
-            type_: group.type_.clone(),
+            type_: template.type_().to_string(),
             select_mode: SelectMode::Auto,
             description: Self::DESCRIPTION.to_string(),
-            metadata: group,
-            val_replacement_map: HashMap::new(),
+            template,
         }
     }
 }

@@ -531,10 +531,8 @@ impl SweepModel {
         } else {
             Some("v")
         };
-        let is_voltage_source =
-            attributes.source_function.value == BaseMetadata::FUNCTION_VOLTAGE;
-        let is_current_source =
-            attributes.source_function.value == BaseMetadata::FUNCTION_CURRENT;
+        let is_voltage_source = attributes.source_function.value == BaseMetadata::FUNCTION_VOLTAGE;
+        let is_current_source = attributes.source_function.value == BaseMetadata::FUNCTION_CURRENT;
         let (source_autorange, source_range) = if is_smu && source_unit.is_some() {
             Self::get_range_value(&attributes.source_range)
         } else {

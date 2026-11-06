@@ -84,7 +84,6 @@ function Sweep()
     bias1.ch.source.levelv = 0
     bias1.ch.source.autorangev = bias1.slot.smu.ON
     bias1.ch.source.limiti = 0.1
-    bias1.ch.source.limitv = 20
     bias1.ch.source.delay = source_delay
     bias1.ch.measure.nplc = nplc
     bias1.ch.measure.autorangei = bias1.slot.smu.ON
@@ -96,7 +95,6 @@ function Sweep()
     bias2.ch.source.levelv = 0
     bias2.ch.source.autorangev = bias2.slot.smu.ON
     bias2.ch.source.limiti = 0.1
-    bias2.ch.source.limitv = 20
     bias2.ch.source.delay = source_delay
     bias2.ch.measure.nplc = nplc
     bias2.ch.measure.count = measure_count
@@ -115,7 +113,6 @@ function Sweep()
     sweep2.ch.trigger.source.logv(1e-3, 10, numberOfSweeps)
     sweep2.ch.source.autorangev = sweep2.slot.smu.ON
     sweep2.ch.source.limiti = 0.1
-    sweep2.ch.source.limitv = 20
     sweep2.ch.source.delay = source_delay
     sweep2.ch.measure.nplc = nplc
     sweep2.ch.measure.autorangev = sweep2.slot.smu.ON
@@ -127,7 +124,6 @@ function Sweep()
     sweep3.ch.trigger.source.logv(1e-3, 10, numberOfSweeps)
     sweep3.ch.source.autorangev = sweep3.slot.smu.ON
     sweep3.ch.source.limiti = 0.1
-    sweep3.ch.source.limitv = 20
     sweep3.ch.source.delay = source_delay
     sweep3.ch.measure.nplc = nplc
     sweep3.ch.measure.autorangev = sweep3.slot.smu.ON

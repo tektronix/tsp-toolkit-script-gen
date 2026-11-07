@@ -142,6 +142,30 @@ fn list_sweep_with_iv_measurement_and_aperture() {
 }
 
 #[test]
+fn current_source_sweep_limits() {
+    let mut config = new_config(LOCALNODE_SYSTEM);
+    config.add_channel("sweep");
+    config.sweep_channels[0]
+        .start_stop_channel
+        .common_chan_attributes
+        .source_function
+        .value = BaseMetadata::FUNCTION_CURRENT.to_string();
+    config.evaluate();
+    config.sweep_channels[0]
+        .start_stop_channel
+        .common_chan_attributes
+        .source_limitv
+        .as_mut()
+        .unwrap()
+        .value = 2.5;
+
+    let script = render("current_source_sweep_limits", &config);
+    assert!(script.contains("sweep1.ch.source.limitv = 2.5"));
+    assert!(!script.contains("sweep1.ch.source.limiti ="));
+    check("current_source_sweep_limits", &script);
+}
+
+#[test]
 fn multiple_biases_and_log_sweeps() {
     let mut config = new_config(LOCALNODE_SYSTEM);
     config.add_channel("bias");

@@ -62,7 +62,6 @@ function Sweep()
     step1.ch.trigger.source.linearv(0, 1, numberOfSteps)
     step1.ch.source.autorangev = step1.slot.smu.ON
     step1.ch.source.limiti = 0.1
-    step1.ch.source.limitv = 20
     step1.ch.source.delay = source_delay
     step1.ch.measure.nplc = nplc
     step1.ch.measure.autorangei = step1.slot.smu.ON
@@ -74,7 +73,6 @@ function Sweep()
     sweep1.ch.trigger.source.linearv(0, 1, numberOfSweeps)
     sweep1.ch.source.autorangev = sweep1.slot.smu.ON
     sweep1.ch.source.limiti = 0.1
-    sweep1.ch.source.limitv = 20
     sweep1.ch.source.delay = source_delay
     sweep1.ch.measure.nplc = nplc
     sweep1.ch.measure.autorangei = sweep1.slot.smu.ON

@@ -1,7 +1,8 @@
-use std::{any::Any, collections::HashMap};
+use std::any::Any;
 
 use script_aggregator::script_buffer::ScriptBuffer;
-use xml_handler::{composite::CommonChunk, group::Group};
+use script_templates::{error::Result, FunctionTemplate};
+use serde::Serialize;
 
 use crate::model::sweep_data::sweep_config::SweepConfig;
 
@@ -13,8 +14,18 @@ use super::function::FunctionModel;
 pub struct InitializeModel {
     type_: String,
     description: String,
-    metadata: Group,
-    val_replacement_map: HashMap<String, String>,
+    template: FunctionTemplate,
+}
+
+/// The values referenced by the Initialize template.
+#[derive(Debug, Serialize)]
+struct InitializeContext {
+    max_nodes: u32,
+    //TODO: populate from the project's instrument configuration
+    product_setup: String,
+    append_mode: u32,
+    include_timestamps: u32,
+    include_srcvals: u32,
 }
 
 impl FunctionModel for InitializeModel {
@@ -30,44 +41,38 @@ impl FunctionModel for InitializeModel {
         self.description.as_str()
     }
 
-    fn get_val_replacement_map(&self) -> &std::collections::HashMap<String, String> {
-        &self.val_replacement_map
+    fn get_template(&self) -> &FunctionTemplate {
+        &self.template
     }
 
-    fn get_metadata(&self) -> &xml_handler::group::Group {
-        &self.metadata
-    }
+    fn to_script(
+        &mut self,
+        sweep_config: &SweepConfig,
+        script_buffer: &mut ScriptBuffer,
+    ) -> Result<()> {
+        let context = InitializeContext {
+            max_nodes: 64,
+            product_setup: String::new(),
+            append_mode: 1,
+            include_timestamps: 1,
+            include_srcvals: 1,
+        };
 
-    fn to_script(&mut self, sweep_config: &SweepConfig, script_buffer: &mut ScriptBuffer) {
-        self.val_replacement_map
-            .insert(String::from("MAX-NODES"), String::from("64"));
-        self.val_replacement_map
-            .insert(String::from("APPEND-MODE"), String::from("1"));
-        self.val_replacement_map
-            .insert(String::from("INCLUDE-TIMESTAMPS"), String::from("1"));
-        self.val_replacement_map
-            .insert(String::from("INCLUDE-SRCVALS"), String::from("1"));
+        // aux chunk
+        if let Some(aux) = self.template.render_aux(&context)? {
+            let mut temp = ScriptBuffer::new();
+            temp.set_auto_indent(true);
 
-        for child in &mut self.metadata.children {
-            if let xml_handler::group::IncludeResult::Composite(comp) = child {
-                // aux chunk
-                if comp.type_.is_some() {
-                    let mut temp = ScriptBuffer::new();
-                    temp.set_auto_indent(true);
-
-                    temp.change_indent(ScriptBuffer::DEFAULT_INDENT);
-                    comp.to_script(&mut temp, &self.val_replacement_map);
-                    temp.change_indent(-ScriptBuffer::DEFAULT_INDENT);
-
-                    script_buffer.preamble_append(&temp.to_string());
-                }
+            temp.change_indent(ScriptBuffer::DEFAULT_INDENT);
+            for line in aux.lines() {
+                temp.body_append(line);
             }
+            temp.change_indent(-ScriptBuffer::DEFAULT_INDENT);
+
+            script_buffer.preamble_append(&temp.to_string());
         }
 
-        // self.val_replacement_map
-        //     .insert(String::from("PRODUCT-SETUP"), self.get_product_setup());
-
-        self.build(script_buffer);
+        self.build(script_buffer, &context)
     }
 }
 
@@ -76,12 +81,11 @@ impl InitializeModel {
     It first verifies that current setup matches project's setup.
     Then, it initializes members used to keep track of reading buffer storage.  ";
 
-    pub fn new(group: Group) -> Self {
+    pub fn new(template: FunctionTemplate) -> Self {
         Self {
-            type_: group.type_.clone(),
+            type_: template.type_().to_string(),
             description: Self::DESCRIPTION.to_string(),
-            metadata: group,
-            val_replacement_map: HashMap::new(),
+            template,
         }
     }
 }

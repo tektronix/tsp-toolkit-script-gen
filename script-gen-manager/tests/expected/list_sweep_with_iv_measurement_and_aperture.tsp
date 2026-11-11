@@ -39,7 +39,6 @@ function Sweep()
     sweep1.ch.trigger.source.listv({ 0.5, 1, 1.5 })
     sweep1.ch.source.autorangev = sweep1.slot.smu.ON
     sweep1.ch.source.limiti = 0.1
-    sweep1.ch.source.limitv = 20
     sweep1.ch.source.delay = source_delay
     sweep1.ch.measure.aperture = aperture
     sweep1.ch.measure.count = measure_count

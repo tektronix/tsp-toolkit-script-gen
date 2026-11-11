@@ -98,6 +98,78 @@ impl CommonChanAttributes {
         self.set_meas_range_value();
     }
 
+    /// Rebuilds device-dependent attributes while retaining values supported by the new device.
+    pub fn migrate_to_device(&mut self, device: Device) {
+        let previous = self.clone();
+        // Target defaults supply newly available fields and values for unsupported selections.
+        let mut migrated = Self::new(previous.chan_name.clone(), device);
+        migrated.uuid.clone_from(&previous.uuid);
+        migrated.set_defaults();
+
+        Self::preserve_supported_selection(
+            &mut migrated.source_function,
+            &previous.source_function,
+        );
+        Self::preserve_supported_selection(&mut migrated.meas_function, &previous.meas_function);
+
+        let metadata = migrated.device.get_metadata();
+        migrated.set_source_range(&metadata);
+        migrated.set_meas_range(&metadata);
+
+        if migrated
+            .source_range
+            .range
+            .contains(&previous.source_range.value)
+        {
+            migrated
+                .source_range
+                .value
+                .clone_from(&previous.source_range.value);
+        }
+        if migrated
+            .meas_range
+            .range
+            .contains(&previous.meas_range.value)
+        {
+            migrated
+                .meas_range
+                .value
+                .clone_from(&previous.meas_range.value);
+        }
+        migrated.set_source_range_value();
+        migrated.set_meas_range_value();
+
+        Self::preserve_supported_float(&mut migrated.source_limiti, &previous.source_limiti);
+        Self::preserve_supported_float(&mut migrated.source_limitv, &previous.source_limitv);
+        if let (Some(new_sense_mode), Some(old_sense_mode)) =
+            (&mut migrated.sense_mode, &previous.sense_mode)
+        {
+            Self::preserve_supported_selection(new_sense_mode, old_sense_mode);
+        }
+
+        // Recompute limits and units from the new device before assigning the migrated state.
+        migrated.evaluate();
+        *self = migrated;
+    }
+
+    fn preserve_supported_selection(destination: &mut ParameterString, previous: &ParameterString) {
+        if destination.range.contains(&previous.value) {
+            destination.value.clone_from(&previous.value);
+        }
+    }
+
+    fn preserve_supported_float(
+        destination: &mut Option<ParameterFloat>,
+        previous: &Option<ParameterFloat>,
+    ) {
+        if let (Some(destination), Some(previous)) = (destination, previous) {
+            // Values can only be carried over directly when both parameters use the same unit.
+            if destination.unit == previous.unit {
+                destination.value = previous.value;
+            }
+        }
+    }
+
     pub fn evaluate(&mut self) {
         self.evaluate_source_function();
         self.evaluate_measure_function();
@@ -355,5 +427,51 @@ impl CommonChanAttributes {
         } else {
             max
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::system_info::Slot;
+
+    fn device(module: &str, channel: i32) -> Device {
+        let slot = Slot {
+            slot_id: "slot[1]".to_string(),
+            module: module.to_string(),
+        };
+        Device::new("localnode", "MP5103", &slot, channel)
+    }
+
+    #[test]
+    fn migration_preserves_supported_values_and_clamps_limits() {
+        let mut attributes = CommonChanAttributes::new("sweep1".to_string(), device("MSMU60-2", 1));
+        attributes.set_defaults();
+        attributes.source_limiti.as_mut().unwrap().value = 8.0;
+        attributes.source_range.value = "20 V".to_string();
+
+        attributes.migrate_to_device(device("MPSU50-2ST", 2));
+
+        assert_eq!(
+            attributes.source_function.value,
+            BaseMetadata::FUNCTION_VOLTAGE
+        );
+        assert_eq!(attributes.source_range.value, "50 V");
+        assert!((attributes.source_limiti.as_ref().unwrap().value - 5.1).abs() < 1e-9);
+        assert!(attributes.source_limitv.is_none());
+        assert!(attributes.sense_mode.is_none());
+    }
+
+    #[test]
+    fn migration_initializes_features_supported_only_by_the_new_device() {
+        let mut attributes =
+            CommonChanAttributes::new("sweep1".to_string(), device("MPSU50-2ST", 1));
+        attributes.set_defaults();
+
+        attributes.migrate_to_device(device("MSMU60-2", 2));
+
+        assert!(attributes.source_limitv.is_some());
+        assert!(attributes.sense_mode.is_some());
+        assert_eq!(attributes.source_limitv.as_ref().unwrap().value, 20.0);
     }
 }

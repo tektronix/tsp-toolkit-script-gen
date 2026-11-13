@@ -44,6 +44,47 @@ impl StartStopChannel {
         self.set_list(steps_or_points);
     }
 
+    /// Retains compatible sweep values while applying the new device's limits and units.
+    pub fn migrate_to_device(&mut self, device: Device) {
+        self.common_chan_attributes.migrate_to_device(device);
+
+        let unit = self.common_chan_attributes.source_range.unit.clone();
+        // Voltage and current values are not interchangeable; keep values only for matching units.
+        let start_value = if self.start.unit.as_deref() == Some(unit.as_str()) {
+            self.start.value
+        } else {
+            0.0
+        };
+        self.start.value = self.common_chan_attributes.source_range.limit(start_value);
+        self.start.unit = Some(unit.clone());
+
+        let stop_value = if self.stop.unit.as_deref() == Some(unit.as_str()) {
+            self.stop.value
+        } else {
+            1.0
+        };
+        self.stop.value = self.common_chan_attributes.source_range.limit(stop_value);
+        self.stop.unit = Some(unit.clone());
+
+        for point in &mut self.list {
+            let value = if point.unit.as_deref() == Some(unit.as_str()) {
+                point.value
+            } else {
+                0.0
+            };
+            point.value = self.common_chan_attributes.source_range.limit(value);
+            point.unit = Some(unit.clone());
+        }
+
+        self.style.range = vec![
+            BaseMetadata::STYLE_LIN.to_string(),
+            BaseMetadata::STYLE_LOG.to_string(),
+        ];
+        if !self.style.range.contains(&self.style.value) {
+            self.style.value = BaseMetadata::STYLE_LIN.to_string();
+        }
+    }
+
     fn set_list(&mut self, steps_or_points: i32) {
         let num_points = steps_or_points;
         self.list = Vec::with_capacity(num_points.try_into().unwrap());
@@ -208,5 +249,80 @@ impl StartStopChannel {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::system_info::Slot;
+
+    fn device(module: &str, channel: i32) -> Device {
+        let slot = Slot {
+            slot_id: "slot[1]".to_string(),
+            module: module.to_string(),
+        };
+        Device::new("localnode", "MP5103", &slot, channel)
+    }
+
+    #[test]
+    fn migration_preserves_values_and_clamps_out_of_range_points() {
+        let old_device = device("MSMU60-2", 1);
+        let new_device = device("MPSU50-2ST", 2);
+        let mut channel = StartStopChannel::new("sweep1".to_string(), old_device);
+        channel.set_defaults(3);
+        channel.start.value = 1.0;
+        channel.stop.value = 200.0;
+        channel.list = vec![
+            ParameterFloat::new("list_0", 10.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
+            ParameterFloat::new("list_1", 40.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
+            ParameterFloat::new("list_2", 200.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
+        ];
+
+        channel.migrate_to_device(new_device);
+
+        assert_eq!(channel.list.len(), 3);
+        assert_eq!(
+            channel
+                .list
+                .iter()
+                .map(|point| point.value)
+                .collect::<Vec<_>>(),
+            vec![10.0, 40.0, 50.1]
+        );
+        assert!((channel.stop.value - 50.1).abs() < 1e-9);
+    }
+
+    #[test]
+    fn migration_defaults_values_with_units_unsupported_by_target_function() {
+        let old_device = device("MSMU60-2", 1);
+        let new_device = device("MPSU50-2ST", 2);
+        let mut channel = StartStopChannel::new("sweep1".to_string(), old_device);
+        channel.set_defaults(3);
+        channel.common_chan_attributes.source_function.value =
+            BaseMetadata::FUNCTION_CURRENT.to_string();
+        channel.common_chan_attributes.source_range.value = "100 mA".to_string();
+        channel.start =
+            ParameterFloat::new("start", 0.1, Some(BaseMetadata::UNIT_AMPERES.to_string()));
+        channel.stop =
+            ParameterFloat::new("stop", 0.5, Some(BaseMetadata::UNIT_AMPERES.to_string()));
+        channel.list = vec![
+            ParameterFloat::new("list_0", 0.1, Some(BaseMetadata::UNIT_AMPERES.to_string())),
+            ParameterFloat::new("list_1", 0.3, Some(BaseMetadata::UNIT_AMPERES.to_string())),
+            ParameterFloat::new("list_2", 0.5, Some(BaseMetadata::UNIT_AMPERES.to_string())),
+        ];
+
+        channel.migrate_to_device(new_device);
+
+        assert_eq!(
+            channel.common_chan_attributes.source_function.value,
+            BaseMetadata::FUNCTION_VOLTAGE
+        );
+        assert_eq!(channel.start.value, 0.0);
+        assert_eq!(channel.stop.value, 1.0);
+        assert_eq!(channel.list.len(), 3);
+        assert!(channel.list.iter().all(|point| {
+            point.value == 0.0 && point.unit.as_deref() == Some(BaseMetadata::UNIT_VOLTS)
+        }));
     }
 }

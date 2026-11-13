@@ -116,29 +116,6 @@ impl CommonChanAttributes {
         migrated.set_source_range(&metadata);
         migrated.set_meas_range(&metadata);
 
-        if migrated
-            .source_range
-            .range
-            .contains(&previous.source_range.value)
-        {
-            migrated
-                .source_range
-                .value
-                .clone_from(&previous.source_range.value);
-        }
-        if migrated
-            .meas_range
-            .range
-            .contains(&previous.meas_range.value)
-        {
-            migrated
-                .meas_range
-                .value
-                .clone_from(&previous.meas_range.value);
-        }
-        migrated.set_source_range_value();
-        migrated.set_meas_range_value();
-
         Self::preserve_supported_float(&mut migrated.source_limiti, &previous.source_limiti);
         Self::preserve_supported_float(&mut migrated.source_limitv, &previous.source_limitv);
         if let (Some(new_sense_mode), Some(old_sense_mode)) =
@@ -147,14 +124,64 @@ impl CommonChanAttributes {
             Self::preserve_supported_selection(new_sense_mode, old_sense_mode);
         }
 
-        // Recompute limits and units from the new device before assigning the migrated state.
+        // Evaluate target capabilities first; then restore/clamp the requested ranges last.
         migrated.evaluate();
+        Self::preserve_supported_range(&mut migrated.source_range, &previous.source_range);
+        Self::preserve_supported_range(&mut migrated.meas_range, &previous.meas_range);
+        migrated.set_source_range_value();
+        migrated.set_meas_range_value();
+
+        if migrated.meas_function.value == migrated.source_function.value {
+            migrated
+                .meas_range
+                .value
+                .clone_from(&migrated.source_range.value);
+        }
+
         *self = migrated;
     }
 
     fn preserve_supported_selection(destination: &mut ParameterString, previous: &ParameterString) {
         if destination.range.contains(&previous.value) {
             destination.value.clone_from(&previous.value);
+        }
+    }
+
+    fn preserve_supported_range(destination: &mut ChannelRange, previous: &ChannelRange) {
+        if destination.range.contains(&previous.value) {
+            destination.value.clone_from(&previous.value);
+            return;
+        }
+
+        let mut previous_range = ChannelRange::new();
+        previous_range.unit.clone_from(&destination.unit);
+        previous_range.value.clone_from(&previous.value);
+        let Some(previous_value) = previous_range.get_scaled_value() else {
+            return;
+        };
+
+        let mut supported_ranges: Vec<(f64, &str)> = destination
+            .range
+            .iter()
+            .filter_map(|range| {
+                let mut candidate = ChannelRange::new();
+                candidate.unit.clone_from(&destination.unit);
+                candidate.value.clone_from(range);
+                candidate
+                    .get_scaled_value()
+                    .map(|value| (value, range.as_str()))
+            })
+            .collect();
+        supported_ranges.sort_by(|left, right| left.0.total_cmp(&right.0));
+
+        // Select the smallest supported range that still covers the old request.
+        // Requests above the device maximum saturate at its largest fixed range.
+        if let Some((_, range)) = supported_ranges
+            .iter()
+            .find(|(value, _)| *value >= previous_value)
+            .or_else(|| supported_ranges.last())
+        {
+            destination.value = (*range).to_string();
         }
     }
 
@@ -473,5 +500,20 @@ mod tests {
         assert!(attributes.source_limitv.is_some());
         assert!(attributes.sense_mode.is_some());
         assert_eq!(attributes.source_limitv.as_ref().unwrap().value, 20.0);
+    }
+
+    #[test]
+    fn migration_clamps_unsupported_fixed_ranges_to_target_maximum() {
+        let mut attributes =
+            CommonChanAttributes::new("sweep1".to_string(), device("MSMU200-2", 1));
+        attributes.set_defaults();
+        attributes.source_range.value = "200 V".to_string();
+        attributes.meas_function.value = BaseMetadata::FUNCTION_VOLTAGE.to_string();
+        attributes.meas_range.value = "200 V".to_string();
+
+        attributes.migrate_to_device(device("MSMU60-2", 2));
+
+        assert_eq!(attributes.source_range.value, "60 V");
+        assert_eq!(attributes.meas_range.value, "60 V");
     }
 }

@@ -89,6 +89,14 @@ export class AppComponent implements OnInit, OnDestroy {
         if (data.sweep_model) {
           this.sweepModel = new SweepModel(data.sweep_model);
           this.sweepConfig = this.sweepModel.sweep_config;
+          if (this.sweepConfig.status_msg) {
+            this.statusService.showTemporary(
+              this.sweepConfig.status_msg,
+              this.sweepConfig.status_msg.timeout_ms ?? 5000
+            );
+          } else {
+            this.statusService.clear();
+          }
 
           // Update visibility based on the device list
           if (this.sweepConfig.device_list.length > 0) {
@@ -97,23 +105,32 @@ export class AppComponent implements OnInit, OnDestroy {
           }
         } else {
           console.error('sweep_model property is missing in the data');
+          this.statusService.clear();
         }
       } 
       
       else if (ipcData.request_type === 'open_script') {
         vscode.postMessage({ command: 'open_script' });
+        const statusMsg = this.sweepConfig?.status_msg;
+        if (statusMsg) {
+          this.statusService.showTemporary(statusMsg, statusMsg.timeout_ms ?? 5000);
+        } else {
+          this.statusService.clear();
+        }
       } 
       
       else if (ipcData.request_type === 'empty_system_config_error') {
         // handle empty system config error
         console.log('Empty system config error received');
+        this.statusService.clear();
       } else {
         console.warn('Unhandled request_type:', ipcData.request_type);
+        this.statusService.clear();
       }
     } catch (error) {
       console.log('Error parsing server data:', error);
+      this.statusService.clear();
     }
-     this.statusService.clear()
   }
 
   ngOnDestroy(): void {

@@ -6,6 +6,7 @@ pub struct StatusMsg {
     pub status_type: StatusType,
     pub message: String,
     pub time_stamp: String,
+    pub timeout_ms: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -17,12 +18,13 @@ pub enum StatusType {
 
 impl StatusMsg {
     #[must_use]
-    pub fn new(status_type: StatusType, message: String) -> Self {
+    pub fn new(status_type: StatusType, message: String, timeout_ms: Option<u64>) -> Self {
         let time_stamp = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
         Self {
             status_type,
             message,
             time_stamp,
+            timeout_ms,
         }
     }
 }

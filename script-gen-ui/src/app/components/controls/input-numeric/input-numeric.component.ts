@@ -109,6 +109,13 @@ export class InputNumericComponent implements ControlValueAccessor, OnInit {
   onKeyDown(event: KeyboardEvent): void {
     if (event.key === 'Enter') {
       this.onInputChange(event);
+    } else if (event.key === 'Tab') {
+      setTimeout(() => {
+        const activeElement = document.activeElement;
+        if (activeElement instanceof HTMLInputElement) {
+          activeElement.select();
+        }
+      });
     }
   }
 }

@@ -105,7 +105,7 @@ export class ListComponent implements OnChanges, AfterViewInit {
 
   onInputMouseDown() {
     this.isDragDisabled = true;
-    
+
     setTimeout(() => {
       if (this.isDragDisabled) {
         this.isDragDisabled = false;

@@ -63,7 +63,7 @@ export class InputPlainComponent implements ControlValueAccessor, OnInit {
   }
 
   set displayValue(val: string) {
-    const decimalValue = parseToDecimal(val,this.unit);
+    const decimalValue = parseToDecimal(val, this.unit);
     if (decimalValue !== null) {
       this._value = decimalValue;
 
@@ -115,6 +115,13 @@ export class InputPlainComponent implements ControlValueAccessor, OnInit {
   onKeyDown(event: KeyboardEvent): void {
     if (event.key === 'Enter') {
       this.onInputChange(event);
+    } else if (event.key === 'Tab') {
+      setTimeout(() => {
+        const activeElement = document.activeElement;
+        if (activeElement instanceof HTMLInputElement) {
+          activeElement.select();
+        }
+      });
     }
   }
 }

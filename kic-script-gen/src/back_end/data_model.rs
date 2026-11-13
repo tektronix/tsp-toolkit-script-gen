@@ -220,6 +220,14 @@ impl DataModel {
 mod tests {
     use super::DataModel;
     use crate::back_end::ipc_data::IpcData;
+    use script_gen_manager::{
+        device::Device,
+        instr_metadata::base_metadata::BaseMetadata,
+        model::{
+            chan_data::sweep_channel::SweepChannel, sweep_data::sweep_model::SweepModel,
+            system_info::Slot,
+        },
+    };
 
     #[test]
     fn sweep_model_response_preserves_nested_ipc_shape() {
@@ -237,5 +245,66 @@ mod tests {
         assert_eq!(ipc_data.additional_info, "Processed sweep model");
         assert!(inner.get("sweep_model").is_some());
         assert_eq!(inner.as_object().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn channel_id_update_response_clamps_200v_source_range_to_60v() {
+        let old_device = Device::new(
+            "localnode",
+            "MP5103",
+            &Slot {
+                slot_id: "slot[1]".to_string(),
+                module: "MSMU200-2".to_string(),
+            },
+            1,
+        );
+        let new_device = Device::new(
+            "localnode",
+            "MP5103",
+            &Slot {
+                slot_id: "slot[1]".to_string(),
+                module: "MSMU60-2".to_string(),
+            },
+            2,
+        );
+
+        let mut sweep_model = SweepModel::new();
+        let mut old_device = old_device;
+        old_device.in_use = true;
+        sweep_model.sweep_config.device_list = vec![old_device.clone(), new_device.clone()];
+        let mut channel = SweepChannel::new("sweep1".to_string(), old_device.clone(), 10);
+        channel
+            .start_stop_channel
+            .common_chan_attributes
+            .source_function
+            .value = BaseMetadata::FUNCTION_VOLTAGE.to_string();
+        channel
+            .start_stop_channel
+            .common_chan_attributes
+            .source_range
+            .value = "200 V".to_string();
+        sweep_model.sweep_config.sweep_channels.push(channel);
+
+        let mut data_model = DataModel { sweep_model };
+        let json_value = serde_json::to_string(&data_model.sweep_model).unwrap();
+        let response = data_model.add_remove_channel(IpcData {
+            request_type: "reallocation".to_string(),
+            additional_info: format!("update,sweep,{},{}", old_device._id, new_device._id),
+            json_value,
+        });
+
+        let ipc_data: IpcData = serde_json::from_str(&response).unwrap();
+        assert_eq!(ipc_data.request_type, "evaluated_response");
+        let inner: serde_json::Value = serde_json::from_str(&ipc_data.json_value).unwrap();
+        assert_eq!(
+            inner["sweep_model"]["sweep_config"]["sweep_channels"][0]["start_stop_channel"]
+                ["common_chan_attributes"]["source_function"]["value"],
+            BaseMetadata::FUNCTION_VOLTAGE
+        );
+        assert_eq!(
+            inner["sweep_model"]["sweep_config"]["sweep_channels"][0]["start_stop_channel"]
+                ["common_chan_attributes"]["source_range"]["value"],
+            "60 V"
+        );
     }
 }

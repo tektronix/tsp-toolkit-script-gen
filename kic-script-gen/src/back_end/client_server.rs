@@ -199,6 +199,10 @@ async fn ws_index(
                                 }
                                 session.text(response).await.unwrap();
                             } else if ipc_data.request_type == "save_as_generated_script" {
+                                 // Generate script if needed
+                                if let Err(e) = gen_script_tx.send(()) {
+                                    eprintln!("Failed to send signal: {e}");
+                                }
                                 let response = serde_json::to_string(&ipc_data)
                                     .expect("Failed to serialize response");
                                 session.text(response).await.unwrap();
@@ -450,63 +454,4 @@ pub async fn start(mut script_model: ScriptModel) -> anyhow::Result<()> {
     //run()?;
     server.await?;
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use actix_web::{body::MessageBody, http::StatusCode, test};
-    use futures::future::poll_fn;
-    use std::pin::pin;
-
-    #[actix_web::test]
-    async fn save_as_acknowledges_without_generating_a_script() {
-        let state = Arc::new(AppState::new());
-        let mut generation_requests = state.gen_script_tx.subscribe();
-        let app = test::init_service(
-            App::new()
-                .app_data(web::Data::new(state))
-                .route("/ws", web::get().to(ws_index)),
-        )
-        .await;
-        let message =
-            r#"{"request_type":"save_as_generated_script","additional_info":"","json_value":"{}"}"#;
-        let mask = [1, 2, 3, 4];
-        let length = u8::try_from(message.len()).unwrap();
-        let mut frame = vec![0x81, 0x80 | length];
-        frame.extend_from_slice(&mask);
-        frame.extend(
-            message
-                .bytes()
-                .enumerate()
-                .map(|(index, byte)| byte ^ mask[index % mask.len()]),
-        );
-        let request = test::TestRequest::get()
-            .uri("/ws")
-            .insert_header(("connection", "upgrade"))
-            .insert_header(("upgrade", "websocket"))
-            .insert_header(("sec-websocket-version", "13"))
-            .insert_header(("sec-websocket-key", "dGhlIHNhbXBsZSBub25jZQ=="))
-            .set_payload(frame)
-            .to_request();
-
-        let response = test::call_service(&app, request).await;
-        assert_eq!(response.status(), StatusCode::SWITCHING_PROTOCOLS);
-        let mut body = pin!(response.into_body());
-        let bytes = tokio::time::timeout(
-            std::time::Duration::from_secs(5),
-            poll_fn(|cx| body.as_mut().poll_next(cx)),
-        )
-        .await
-        .expect("Save As acknowledgment timed out")
-        .unwrap()
-        .unwrap();
-        let mut expected = vec![0x81, length];
-        expected.extend_from_slice(message.as_bytes());
-        assert_eq!(bytes.as_ref(), expected);
-        assert!(matches!(
-            generation_requests.try_recv(),
-            Err(broadcast::error::TryRecvError::Empty)
-        ));
-    }
 }

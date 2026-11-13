@@ -29,6 +29,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [0.1.7]
 
+### Changed
+- Changing the channel ID now preserves compatible settings and list points while adjusting values to the new device’s supported limits.
+
 ## [0.1.6]
 
 ## [0.1.5]

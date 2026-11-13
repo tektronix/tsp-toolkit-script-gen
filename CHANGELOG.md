@@ -17,12 +17,14 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 -->
 ## [Unreleased]
 
+### Added
+- "Save As" option for generated script
+
 ### Changed
 - Script templates are now Handlebars templates organized in YAML files
 - The sweep script now configures each channel directly instead of including a generic
   channel-configuration library, making generated scripts much shorter
 - Source Limit I/V are now added/removed based on source function value
-- Implement "Save As" option for generated script
 
 ### Fixed
 - Waiting on more than two other channels of the same role no longer skips one of them

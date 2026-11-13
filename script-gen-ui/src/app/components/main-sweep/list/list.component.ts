@@ -103,6 +103,21 @@ export class ListComponent implements OnChanges, AfterViewInit {
     this.isDragDisabled = false;
   }
 
+  onListKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Tab') {
+      const listContainer = event.currentTarget as HTMLElement;
+      setTimeout(() => {
+        const activeElement = document.activeElement;
+        if (
+          activeElement instanceof HTMLInputElement &&
+          listContainer.contains(activeElement)
+        ) {
+          activeElement.select();
+        }
+      });
+    }
+  }
+
   onInputMouseDown() {
     this.isDragDisabled = true;
     

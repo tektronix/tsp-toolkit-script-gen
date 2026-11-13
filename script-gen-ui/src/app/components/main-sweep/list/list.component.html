@@ -4,7 +4,7 @@
       <h3 style="margin: 0">List</h3>
       <mat-icon class="button" [attr.aria-label]="'closeListTab'" (click)="onClose()">close</mat-icon>
     </div>
-    <div class="outer-container">
+    <div class="outer-container" (keydown)="onListKeyDown($event)">
       <div style="width: 14vw">
         <app-input-numeric
           [label]="'Points/Steps'"

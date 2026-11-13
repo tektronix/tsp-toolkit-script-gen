@@ -44,16 +44,16 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug unit tests in library 'xml-handler'",
+            "name": "Debug unit tests in library 'script-templates'",
             "cargo": {
                 "args": [
                     "test",
                     "--no-run",
                     "--lib",
-                    "--package=xml-handler"
+                    "--package=script-templates"
                 ],
                 "filter": {
-                    "name": "xml-handler",
+                    "name": "script_templates",
                     "kind": "lib"
                 }
             },

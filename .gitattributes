@@ -1,0 +1,4 @@
+# Generated scripts always use "\n", so the expected output and the templates must be
+# checked out with LF line endings on every platform.
+script-gen-manager/tests/expected/** text eol=lf
+script-templates/templates/** text eol=lf

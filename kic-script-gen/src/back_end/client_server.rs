@@ -87,6 +87,7 @@ impl AppState {
                         "The folder is read-only (OR) Work folder does not exist: {:?}",
                         path_file.to_string_lossy().to_string()
                     ),
+                    None,
                 );
                 println!(
                     "{}",

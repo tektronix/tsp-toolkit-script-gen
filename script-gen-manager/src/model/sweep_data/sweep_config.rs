@@ -172,6 +172,7 @@ impl SweepConfig {
             self.status_msg = Some(StatusMsg::new(
             StatusType::Error,
             String::from("Some channels in use are invalid. Re-assign the invalid channels for the generated script to be functional"),
+            Some(0),
         ));
         }
 
@@ -502,6 +503,7 @@ impl SweepConfig {
             self.status_msg = Some(StatusMsg::new(
                 StatusType::Warning,
                 String::from("No valid or free device found to add a new channel."),
+                None,
             ));
         }
     }
@@ -602,6 +604,7 @@ impl SweepConfig {
             self.status_msg = Some(StatusMsg::new(
                 StatusType::Warning,
                 String::from("Only bias channels are configured. Please add a step or sweep channel to generate a functional script."),
+                None,
             ));
         }
     }

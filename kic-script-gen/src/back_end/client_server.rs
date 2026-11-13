@@ -198,6 +198,14 @@ async fn ws_index(
                                     eprintln!("Failed to send signal: {e}");
                                 }
                                 session.text(response).await.unwrap();
+                            } else if ipc_data.request_type == "save_as_generated_script" {
+                                 // Generate script if needed
+                                if let Err(e) = gen_script_tx.send(()) {
+                                    eprintln!("Failed to send signal: {e}");
+                                }
+                                let response = serde_json::to_string(&ipc_data)
+                                    .expect("Failed to serialize response");
+                                session.text(response).await.unwrap();
                             } else if ipc_data.request_type == "open_script" {
                                 // Generate script if needed
                                 if let Err(e) = gen_script_tx.send(()) {

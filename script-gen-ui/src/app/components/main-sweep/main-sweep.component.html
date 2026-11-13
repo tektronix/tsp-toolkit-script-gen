@@ -25,7 +25,15 @@
           (ok)="closeTimingDialog()"
         ></app-timing>
       </div>
-      <div>
+      <div class="script-actions">
+        <button
+          [attr.aria-label]="'SaveAsScript'"
+          class="open-script"
+          (click)="saveAsGeneratedScript()"
+          title="Save generated script as"
+        >
+          Save As
+        </button>
         <button
           [attr.aria-label]="'OpenScript'"
           class="open-script"

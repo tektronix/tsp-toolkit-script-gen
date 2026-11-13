@@ -119,6 +119,11 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       } 
       
+      else if (ipcData.request_type === 'save_as_generated_script') {
+        vscode.postMessage({ command: 'save_as_generated_script' });
+        this.statusService.clear();
+      }
+
       else if (ipcData.request_type === 'empty_system_config_error') {
         // handle empty system config error
         console.log('Empty system config error received');

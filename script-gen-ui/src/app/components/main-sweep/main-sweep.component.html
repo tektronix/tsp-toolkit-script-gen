@@ -43,7 +43,7 @@
           <button
             (click)="toggleBias()"
             class="button-icon"
-            [attr.aria-label]="'BiasExpander'"
+            [attr.aria-label] ="!hasBiasChannels()? 'BiasExpander-Disabled' : 'BiasExpander'"
             [disabled]="!hasBiasChannels()"
             (mouseenter)="showBiasExpanderTooltip = true"
             (mouseleave)="showBiasExpanderTooltip = false"
@@ -74,7 +74,7 @@
       <span style="position: relative; display: flex">
         <button
           class="button-icon"
-          [attr.aria-label]="'addBias'"
+          [attr.aria-label]="!hasAvailableChannels()? 'addBias-Disabled' : 'addBias'"
           (click)="addBias()"
           [disabled]="!hasAvailableChannels()"
           (mouseenter)="showBiasTooltip = true"
@@ -123,7 +123,7 @@
           <button
             (click)="toggleStep()"
             class="button-icon"
-            [attr.aria-label]="'StepExpander'"
+            [attr.aria-label]="!hasStepChannels()? 'StepExpander-Disabled' : 'StepExpander'"
             [disabled]="!hasStepChannels()"
             (mouseenter)="showStepExpanderTooltip = true"
             (mouseleave)="showStepExpanderTooltip = false"
@@ -154,7 +154,7 @@
       <span style="position: relative; display: flex">
         <button
           *ngIf="stepChannels.length === 0"
-          [attr.aria-label]="'addStep'"
+          [attr.aria-label]="!hasAvailableChannels()? 'addStep-Disabled' : 'addStep'"
           class="button-icon"
           (click)="addStep()"
           [disabled]="!hasAvailableChannels()"
@@ -223,7 +223,7 @@
           <button
             (click)="toggleSweep()"
             class="button-icon"
-            [attr.aria-label]="'SweepExpander'"
+            [attr.aria-label]="!hasSweepChannels()? 'SweepExpander-Disabled' : 'SweepExpander'"
             [disabled]="!hasSweepChannels()"
             (mouseenter)="showSweepExpanderTooltip = true"
             (mouseleave)="showSweepExpanderTooltip = false"
@@ -255,7 +255,7 @@
       <span style="position: relative; display: flex">
         <button
           class="button-icon"
-          [attr.aria-label]="'addSweep'"
+          [attr.aria-label]="!hasAvailableChannels()? 'addSweep-Disabled' : 'addSweep'"
           (click)="addSweep()"
           [disabled]="!hasAvailableChannels()"
           (mouseenter)="showSweepTooltip = true"
@@ -305,7 +305,7 @@
           </div>
           <div style="margin-top: auto; margin-bottom: 0.5vh">
             <button
-              [attr.aria-label]="'EditSweepList'"
+              [attr.aria-label]="!isListSweep ? 'EditSweepList-Disabled' : 'EditSweepList'"
               [class.sweepList-open]="showList"
               class="timing"
               (click)="enableList()"

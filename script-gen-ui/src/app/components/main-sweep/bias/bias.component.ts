@@ -147,6 +147,7 @@ export class BiasComponent implements OnChanges {
         uuid: this.uuid,
         chan_name: this.chanName,
         device_id: this.selectedDeviceOption?.value || '',
+        device_model: this.commonChanAttributes?.device_model,
         source_function: this.sourceFunction!,
         source_range: this.sourceRange!,
         meas_function: this.measFunction!,

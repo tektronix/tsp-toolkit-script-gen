@@ -60,6 +60,7 @@ export interface ICommonChanAttributes {
   uuid: string;
   chan_name: string;
   device_id: string;
+  device_model?: string;
   source_function: IParameterString;
   meas_function: IParameterString;
   source_range: IChannelRange;

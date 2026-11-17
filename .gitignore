@@ -7,6 +7,8 @@ bin/
 !**/src/bin/
 target/
 
+**/host
+
 # Generated test artifacts
 **/parser.exp
 **/parser.lib

@@ -9,6 +9,7 @@ export class CommonChanAttributes {
   uuid: string;
   chan_name: string;
   device_id: string;
+  device_model: string;
   source_function: ParameterString;
   meas_function: ParameterString;
   source_range: ChannelRange;
@@ -22,6 +23,7 @@ export class CommonChanAttributes {
     this.uuid = data.uuid;
     this.chan_name = data.chan_name;
     this.device_id = data.device_id;
+    this.device_model = data.device_model ?? '';
     this.source_function = new ParameterString(data.source_function);
     this.meas_function = new ParameterString(data.meas_function);
     this.source_range = new ChannelRange(data.source_range);
@@ -40,6 +42,7 @@ export class CommonChanAttributes {
       uuid: this.uuid,
       chan_name: this.chan_name,
       device_id: this.device_id,
+      device_model: this.device_model,
       source_function: this.source_function.toJSON(),
       meas_function: this.meas_function.toJSON(),
       source_range: this.source_range.toJSON(),

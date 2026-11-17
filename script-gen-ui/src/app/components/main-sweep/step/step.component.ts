@@ -233,6 +233,7 @@ export class StepComponent implements OnChanges {
           uuid: this.uuid,
           chan_name: this.chanName,
           device_id: this.selectedDeviceOption?.value || '',
+          device_model: this.commonChanAttributes?.device_model,
           source_function: this.sourceFunction!,
           meas_function: this.measFunction!,
           source_range: this.sourceRange!,

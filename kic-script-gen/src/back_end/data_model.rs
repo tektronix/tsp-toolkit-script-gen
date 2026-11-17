@@ -1,4 +1,7 @@
-use script_gen_manager::model::sweep_data::sweep_model::SweepModel;
+use script_gen_manager::model::sweep_data::{
+    status_msg::{StatusMsg, StatusType},
+    sweep_model::SweepModel,
+};
 use serde::Serialize;
 
 use crate::back_end::ipc_data::IpcData;
@@ -144,14 +147,43 @@ impl DataModel {
 
                 sweep_model.sweep_config.update_channel_devices();
                 let res: Vec<&str> = ipc_data.additional_info.split(',').collect();
-                if res[0] == "remove" {
-                    sweep_model.sweep_config.remove_channel(res[2]);
-                } else if res[0] == "add" {
-                    sweep_model.sweep_config.add_channel(res[1]);
-                } else if res[0] == "update" {
-                    sweep_model
+                let accepted = match res.as_slice() {
+                    ["remove", "bias" | "step" | "sweep", address, model] => sweep_model
                         .sweep_config
-                        .update_channel(res[1], res[2], res[3]);
+                        .remove_channel_for_model(address, model),
+                    ["add", role @ ("bias" | "step" | "sweep")] => {
+                        sweep_model.sweep_config.add_channel(role);
+                        true
+                    }
+                    ["update", role, old_address, new_address, old_model, new_model] => {
+                        sweep_model.sweep_config.update_channel_for_models(
+                            role,
+                            old_address,
+                            new_address,
+                            old_model,
+                            new_model,
+                        )
+                    }
+                    _ => {
+                        println!("Invalid channel operation: {}", ipc_data.additional_info);
+                        sweep_model.sweep_config.status_msg = Some(StatusMsg::new(
+                            StatusType::Error,
+                            String::from(
+                                "Invalid channel operation. Existing configuration preserved.",
+                            ),
+                            Some(0),
+                        ));
+                        false
+                    }
+                };
+                if !accepted {
+                    self.sweep_model.sweep_config.status_msg =
+                        sweep_model.sweep_config.status_msg.clone();
+                    return self.serialize_sweep_model(
+                        &self.sweep_model,
+                        "evaluated_response",
+                        "Channel operation rejected; existing configuration preserved",
+                    );
                 }
 
                 // remove unused and invalid channels
@@ -220,6 +252,116 @@ impl DataModel {
 mod tests {
     use super::DataModel;
     use crate::back_end::ipc_data::IpcData;
+    use serde_json::json;
+
+    #[test]
+    fn model_aware_messages_reassign_and_release_only_the_selected_model() {
+        let mut model = DataModel::new();
+        let mut system = json!({
+            "systems": [{
+                "name": "System 1", "isActive": true, "localNode": "MP5103",
+                "slots": [{"slotId": "slot[1]", "module": "MSMU60-2"}], "nodes": null
+            }]
+        });
+        model.process_system_config(&system.to_string());
+        system["systems"][0]["slots"][0]["module"] = json!("MSMU200-2");
+        model.process_system_config(&system.to_string());
+        let mut removal = model.clone();
+        removal.sweep_model.sweep_config.add_channel("bias");
+        removal.sweep_model.sweep_config.step_channels.clear();
+        removal.add_remove_channel(IpcData {
+            request_type: "add_remove_channel".into(),
+            additional_info: "remove,step,localnode.slot[1].smu[1],MSMU60-2".into(),
+            json_value: serde_json::to_string(&removal.sweep_model).unwrap(),
+        });
+        assert!(removal
+            .sweep_model
+            .sweep_config
+            .device_list
+            .iter()
+            .any(|d| d.model == "MSMU200-2" && d.chan_num == 1 && d.in_use));
+        assert!(!removal
+            .sweep_model
+            .sweep_config
+            .device_list
+            .iter()
+            .any(|d| d.model == "MSMU60-2" && d.chan_num == 1));
+        model.add_remove_channel(IpcData {
+            request_type: "add_remove_channel".into(),
+            additional_info:
+                "update,step,localnode.slot[1].smu[1],localnode.slot[1].smu[1],MSMU60-2,MSMU200-2"
+                    .into(),
+            json_value: serde_json::to_string(&model.sweep_model).unwrap(),
+        });
+        let config = &model.sweep_model.sweep_config;
+        let step = &config.step_channels[0]
+            .start_stop_channel
+            .common_chan_attributes;
+        assert_eq!(step.device_model, "MSMU200-2");
+        assert!(step.device.is_valid);
+        assert!(
+            !config.sweep_channels[0]
+                .start_stop_channel
+                .common_chan_attributes
+                .device
+                .is_valid
+        );
+    }
+
+    #[test]
+    fn rejected_operation_preserves_host_state_and_returns_error_status() {
+        let mut model = DataModel::new();
+        let original = serde_json::to_value(&model.sweep_model).unwrap();
+        let response = model.add_remove_channel(IpcData {
+            request_type: "add_remove_channel".into(),
+            additional_info: "update,step,missing,missing,MSMU60-2,MSMU200-2".into(),
+            json_value: serde_json::to_string(&model.sweep_model).unwrap(),
+        });
+        assert!(model.sweep_model.sweep_config.status_msg.is_some());
+        let mut after = serde_json::to_value(&model.sweep_model).unwrap();
+        after["sweep_config"]["status_msg"] = json!(null);
+        assert_eq!(after, original);
+        let envelope: IpcData = serde_json::from_str(&response).unwrap();
+        let payload: serde_json::Value = serde_json::from_str(&envelope.json_value).unwrap();
+        assert_eq!(
+            payload["sweep_model"]["sweep_config"]["status_msg"]["status_type"],
+            "Error"
+        );
+        for operation in [
+            "update",
+            "remove,step,address",
+            "update,step,oldAddress,newAddress",
+        ] {
+            let mut submitted = model.sweep_model.clone();
+            submitted
+                .sweep_config
+                .step_global_parameters
+                .step_points
+                .value = 123;
+            let malformed = model.add_remove_channel(IpcData {
+                request_type: "add_remove_channel".into(),
+                additional_info: operation.into(),
+                json_value: serde_json::to_string(&submitted).unwrap(),
+            });
+            let envelope: IpcData = serde_json::from_str(&malformed).unwrap();
+            assert_eq!(envelope.request_type, "evaluated_response");
+            let payload: serde_json::Value = serde_json::from_str(&envelope.json_value).unwrap();
+            let mut returned = payload["sweep_model"].clone();
+            assert_eq!(
+                returned["sweep_config"]["status_msg"]["status_type"],
+                "Error"
+            );
+            assert_eq!(
+                returned["sweep_config"]["status_msg"]["message"],
+                "Invalid channel operation. Existing configuration preserved."
+            );
+            returned["sweep_config"]["status_msg"] = json!(null);
+            assert_eq!(returned, original);
+            let mut actual = serde_json::to_value(&model.sweep_model).unwrap();
+            actual["sweep_config"]["status_msg"] = json!(null);
+            assert_eq!(actual, original);
+        }
+    }
 
     #[test]
     fn sweep_model_response_preserves_nested_ipc_shape() {

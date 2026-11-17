@@ -8,7 +8,7 @@
           class="toggle-option"
           [class.selected]="option === selectedOption"
           [class.disabled]="disabled"
-          [attr.aria-label]="option + '1'"
+          [attr.aria-label]="disabled? option + '1'+ 'Disabled': option + '1'"
           (click)="toggleOption(option)"
         >
           {{ option }}

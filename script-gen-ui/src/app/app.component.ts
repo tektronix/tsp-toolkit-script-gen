@@ -114,14 +114,14 @@ export class AppComponent implements OnInit, OnDestroy {
           // Update visibility based on the device list
           if (this.sweepConfig.device_list.length > 0) {
             this.isMainSweepVisible = true;
-            
+
           }
         } else {
           console.error('sweep_model property is missing in the data');
           this.statusService.clear();
         }
-      } 
-      
+      }
+
       else if (ipcData.request_type === 'open_script') {
         vscode.postMessage({ command: 'open_script' });
         const statusMsg = this.sweepConfig?.status_msg;
@@ -130,10 +130,10 @@ export class AppComponent implements OnInit, OnDestroy {
         } else {
           this.statusService.clear();
         }
-      } 
-      
+      }
+
       else if (ipcData.request_type === 'save_as_generated_script') {
-        vscode.postMessage({ command: 'open_saved_script' });
+        vscode.postMessage({ command: 'open_saved_script' , payload : ipcData.additional_info});
         this.statusService.clear();
       }
 

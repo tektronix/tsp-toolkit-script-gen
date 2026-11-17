@@ -27,12 +27,16 @@ pub struct CommonChanAttributes {
     #[serde(skip)]
     pub device: Device,
     pub device_id: String,
+    /// Assigned module model; empty for legacy configurations until resolved from their device list.
+    #[serde(default)]
+    pub device_model: String,
 }
 
 impl CommonChanAttributes {
     #[must_use]
     pub fn new(chan_name: String, device: Device) -> Self {
         let device_id = &device.get_id();
+        let device_model = device.model.clone();
 
         Self {
             uuid: Uuid::new_v4().to_string(),
@@ -47,6 +51,7 @@ impl CommonChanAttributes {
 
             device,
             device_id: device_id.clone(),
+            device_model,
         }
     }
 
@@ -355,5 +360,40 @@ impl CommonChanAttributes {
         } else {
             max
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CommonChanAttributes;
+    use crate::{device::Device, model::system_info::Slot};
+
+    #[test]
+    fn assigned_model_round_trips_without_changing_the_address() {
+        let slot = Slot {
+            slot_id: "slot[1]".into(),
+            module: "MSMU60-2".into(),
+        };
+        let device = Device::new("node[2]", "MP5103", &slot, 1);
+        let channel = CommonChanAttributes::new("step1".into(), device);
+        assert_eq!(channel.device_model, "MSMU60-2");
+        assert_eq!(channel.device_id, "node[2].slot[1].smu[1]");
+
+        let serialized = serde_json::to_value(&channel).unwrap();
+        assert_eq!(serialized["device_model"], "MSMU60-2");
+        let restored: CommonChanAttributes = serde_json::from_value(serialized).unwrap();
+        assert_eq!(restored.device_model, channel.device_model);
+        assert_eq!(restored.device_id, channel.device_id);
+    }
+
+    #[test]
+    fn legacy_channel_without_model_still_deserializes() {
+        let channel = CommonChanAttributes::new("step1".into(), Device::default());
+        let mut serialized = serde_json::to_value(&channel).unwrap();
+        serialized.as_object_mut().unwrap().remove("device_model");
+
+        let restored: CommonChanAttributes = serde_json::from_value(serialized).unwrap();
+        assert!(restored.device_model.is_empty());
+        assert_eq!(restored.device_id, channel.device_id);
     }
 }

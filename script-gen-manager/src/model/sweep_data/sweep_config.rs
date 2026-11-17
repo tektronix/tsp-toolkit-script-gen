@@ -57,6 +57,7 @@ impl SweepConfig {
         }
     }
 
+    /// Adds channels from localnode and all MP5103 mainframe nodes in active systems.
     pub fn create_device_list(&mut self, system_info: &str) -> bool {
         let mut is_device_found = false;
         let res = serde_json::from_str::<Root>(system_info);
@@ -82,30 +83,22 @@ impl SweepConfig {
                         }
                     };
 
-                // Try localnode first
-                let found_local = if system.local_node == "MP5103" {
+                if system.local_node == "MP5103" {
                     let found = process_slots("localnode", &system.local_node, &system.slots);
                     if !found {
                         println!("All modules are empty in localnode. Checking nodes...");
                     }
-                    found
-                } else {
-                    false
-                };
+                }
 
-                // If not found in localnode, check nodes
-                if !found_local {
-                    if let Some(nodes) = &system.nodes {
-                        for node in nodes.iter().filter(|n| n.mainframe == "MP5103") {
-                            let found = process_slots(&node.node_id, &node.mainframe, &node.slots);
-                            if found {
-                                break;
-                            }
+                if let Some(nodes) = &system.nodes {
+                    for node in nodes.iter().filter(|n| n.mainframe == "MP5103") {
+                        let found = process_slots(&node.node_id, &node.mainframe, &node.slots);
+                        if !found {
                             println!("All modules are empty in node {}. Skipping.", node.node_id);
                         }
-                    } else {
-                        println!("No nodes found in the system info.");
                     }
+                } else {
+                    println!("No nodes found in the system info.");
                 }
             }
         } else if let Err(e) = res {
@@ -115,11 +108,18 @@ impl SweepConfig {
         is_device_found
     }
 
+    /// Refreshes localnode and all MP5103 mainframe nodes with non-empty slots in active systems.
+    /// Missing or mismatched devices are retained only while in use.
     pub fn update_devices_for_changed_slots(&mut self, system_info: &str) {
         self.status_msg = None;
 
         let res = serde_json::from_str::<Root>(system_info);
         let mut found_any_valid_slots = false;
+
+        // Only devices confirmed by this snapshot become valid again.
+        for device in &mut self.device_list {
+            device.is_valid = false;
+        }
 
         if let Ok(root) = res {
             for system in root.systems.into_iter().filter(|s| s.is_active) {
@@ -137,19 +137,13 @@ impl SweepConfig {
                         })
                     };
 
-                // Try localnode first
                 if system.local_node == "MP5103" {
                     processed = process("localnode", &system.local_node, &system.slots);
                 }
 
-                // If not processed, try nodes
-                if !processed {
-                    if let Some(nodes) = &system.nodes {
-                        if nodes.iter().any(|n| {
-                            n.mainframe == "MP5103" && process(&n.node_id, &n.mainframe, &n.slots)
-                        }) {
-                            processed = true;
-                        }
+                if let Some(nodes) = &system.nodes {
+                    for node in nodes.iter().filter(|n| n.mainframe == "MP5103") {
+                        processed |= process(&node.node_id, &node.mainframe, &node.slots);
                     }
                 }
 
@@ -160,9 +154,6 @@ impl SweepConfig {
         }
 
         if !found_any_valid_slots {
-            for device in &mut self.device_list {
-                device.is_valid = false;
-            }
             println!("No valid slots found or system_info is empty. All devices invalidated.");
         }
 
@@ -181,13 +172,13 @@ impl SweepConfig {
 
     fn process_slots(&mut self, node_id: &str, mainframe: &str, slots: &[Slot]) {
         for slot in slots {
-            // Find all indices of devices matching this slot_id
+            // Match the slot within its node, not across mainframes.
             let matching_indices: Vec<_> = self
                 .device_list
                 .iter()
                 .enumerate()
                 .filter_map(|(i, d)| {
-                    if d.slot_id == slot.slot_id {
+                    if d.node_id == node_id && d.slot_id == slot.slot_id {
                         Some(i)
                     } else {
                         None
@@ -207,9 +198,6 @@ impl SweepConfig {
             for &idx in &matching_indices {
                 let device = &mut self.device_list[idx];
                 device.is_valid = device.model == slot.module;
-                if device.is_valid {
-                    self.update_device_and_related_channels_node(idx, node_id);
-                }
             }
 
             // 3. Ensure at most one valid device for each channel (1 and 2)
@@ -232,60 +220,6 @@ impl SweepConfig {
                     valid_channels.push(channel);
                 }
             }
-        }
-    }
-
-    /// Updates the node info for the device and all related channels if the `node_id` has changed.
-    fn update_device_and_related_channels_node(&mut self, device_idx: usize, new_node_id: &str) {
-        let device = &mut self.device_list[device_idx];
-        if device.node_id == new_node_id {
-            return;
-        }
-        let old_id = device._id.clone();
-        device.update_node_info(new_node_id.to_string());
-        let new_id = device._id.clone();
-        let updated_device = device.clone();
-
-        // Helper closure to update device_id and device
-        let update_channel = |chan_device_id: &mut String, chan_device: &mut Device| {
-            if *chan_device_id == old_id {
-                chan_device_id.clone_from(&new_id);
-                *chan_device = updated_device.clone();
-            }
-        };
-
-        // Update bias channels
-        for bias_channel in &mut self.bias_channels {
-            update_channel(
-                &mut bias_channel.common_chan_attributes.device_id,
-                &mut bias_channel.common_chan_attributes.device,
-            );
-        }
-        // Update step channels
-        for step_channel in &mut self.step_channels {
-            update_channel(
-                &mut step_channel
-                    .start_stop_channel
-                    .common_chan_attributes
-                    .device_id,
-                &mut step_channel
-                    .start_stop_channel
-                    .common_chan_attributes
-                    .device,
-            );
-        }
-        // Update sweep channels
-        for sweep_channel in &mut self.sweep_channels {
-            update_channel(
-                &mut sweep_channel
-                    .start_stop_channel
-                    .common_chan_attributes
-                    .device_id,
-                &mut sweep_channel
-                    .start_stop_channel
-                    .common_chan_attributes
-                    .device,
-            );
         }
     }
 
@@ -620,5 +554,262 @@ impl SweepConfig {
 
     pub fn reset(&mut self) {
         *self = Self::new();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SweepConfig;
+    use crate::model::system_info::Slot;
+    use serde_json::json;
+
+    #[test]
+    fn refresh_retains_missing_devices_only_when_in_use() {
+        let original = json!({
+            "systems": [{
+                "name": "System 1", "isActive": true, "localNode": "MP5103",
+                "slots": [{ "slotId": "slot[1]", "module": "MSMU60-2" }],
+                "nodes": [{
+                    "nodeId": "node[2]", "mainframe": "MP5103",
+                    "slots": [{ "slotId": "slot[1]", "module": "MSMU60-2" }]
+                }]
+            }]
+        });
+        for target in ["localnode", "node[2]"] {
+            for change in [
+                "empty",
+                "no-slots",
+                "null-slots",
+                "mainframe",
+                "inactive",
+                "no-systems",
+                "removed",
+            ] {
+                if target == "localnode" && change == "removed" {
+                    continue;
+                }
+                let context = format!("{target}: {change}");
+                let mut config = SweepConfig::new();
+                assert!(config.create_device_list(&original.to_string()));
+                config.add_channel("step");
+                let retained_id = format!("{target}.slot[1].smu[1]");
+                if target != "localnode" {
+                    config.update_channel("step", "localnode.slot[1].smu[1]", &retained_id);
+                }
+                let original_assignment = serde_json::to_value(&config.step_channels).unwrap();
+                let mut updated = original.clone();
+                let system = &mut updated["systems"][0];
+                let slots = if target == "localnode" {
+                    &mut system["slots"]
+                } else {
+                    &mut system["nodes"][0]["slots"]
+                };
+                match change {
+                    "empty" => slots[0]["module"] = json!("Empty"),
+                    "no-slots" => *slots = json!([]),
+                    "null-slots" => *slots = json!(null),
+                    "mainframe" if target == "localnode" => system["localNode"] = json!("2450"),
+                    "mainframe" => system["nodes"][0]["mainframe"] = json!("2450"),
+                    "inactive" => system["isActive"] = json!(false),
+                    "no-systems" => updated["systems"] = json!([]),
+                    "removed" => system["nodes"] = json!([]),
+                    _ => unreachable!(),
+                }
+                for _ in 0..2 {
+                    config.update_devices_for_changed_slots(&updated.to_string());
+                    let retained = config
+                        .device_list
+                        .iter()
+                        .find(|d| d._id == retained_id)
+                        .unwrap();
+                    assert!(retained.in_use && !retained.is_valid, "{context}");
+                    let expected_valid = if matches!(change, "inactive" | "no-systems") {
+                        0
+                    } else {
+                        2
+                    };
+                    assert_eq!(config.device_list.len(), expected_valid + 1, "{context}");
+                    assert_eq!(
+                        config.device_list.iter().filter(|d| d.is_valid).count(),
+                        expected_valid,
+                        "{context}"
+                    );
+                    assert!(
+                        config.device_list.iter().all(|d| d.is_valid || d.in_use),
+                        "{context}"
+                    );
+                    assert_eq!(
+                        serde_json::to_value(&config.step_channels).unwrap(),
+                        original_assignment,
+                        "{context}"
+                    );
+                    assert!(config.status_msg.is_some(), "{context}");
+                }
+                config.update_devices_for_changed_slots(&original.to_string());
+                assert_eq!(config.device_list.len(), 4, "{context}");
+                assert!(config.device_list.iter().all(|d| d.is_valid), "{context}");
+            }
+        }
+    }
+
+    #[test]
+    fn refresh_processes_all_qualifying_mainframes_without_duplicates() {
+        for local_model in ["MP5103", "2450"] {
+            let mut system_info = json!({
+                "systems": [{
+                    "name": "System 1", "isActive": true,
+                    "localNode": local_model,
+                    "slots": [{ "slotId": "slot[1]", "module": "MSMU60-2" }],
+                    "nodes": [{
+                        "nodeId": "node[2]", "mainframe": "MP5103",
+                        "slots": [{ "slotId": "slot[1]", "module": "MSMU60-2" }]
+                    }]
+                }]
+            });
+            let mut config = SweepConfig::new();
+            assert!(config.create_device_list(&system_info.to_string()));
+            config.auto_configure();
+            let original_channels = json!([
+                config.bias_channels,
+                config.step_channels,
+                config.sweep_channels
+            ]);
+            system_info["systems"][0]["nodes"] = json!([
+                { "nodeId": "node[1]", "mainframe": "MP5103",
+                  "slots": [{ "slotId": "slot[1]", "module": "Empty" }] },
+                { "nodeId": "node[2]", "mainframe": "MP5103",
+                  "slots": [{ "slotId": "slot[1]", "module": "MSMU60-2" }] },
+                { "nodeId": "node[3]", "mainframe": "2450",
+                  "slots": [{ "slotId": "slot[1]", "module": "MSMU60-2" }] },
+                { "nodeId": "node[4]", "mainframe": "MP5103",
+                  "slots": [{ "slotId": "slot[1]", "module": "MSMU200-2" }] }
+            ]);
+            let mut expected = Vec::new();
+            if local_model == "MP5103" {
+                expected.extend(["localnode.slot[1].smu[1]", "localnode.slot[1].smu[2]"]);
+            }
+            expected.extend([
+                "node[2].slot[1].smu[1]",
+                "node[2].slot[1].smu[2]",
+                "node[4].slot[1].smu[1]",
+                "node[4].slot[1].smu[2]",
+            ]);
+
+            for _ in 0..2 {
+                config.update_devices_for_changed_slots(&system_info.to_string());
+                let actual: Vec<_> = config.device_list.iter().map(|d| d._id.as_str()).collect();
+                assert_eq!(actual, expected);
+                assert!(config.device_list.iter().all(|d| d.is_valid));
+                assert_eq!(
+                    json!([
+                        config.bias_channels,
+                        config.step_channels,
+                        config.sweep_channels
+                    ]),
+                    original_channels
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn process_slots_preserves_other_nodes_and_their_assignments() {
+        for module in ["MSMU60-2", "MSMU200-2", "Empty"] {
+            let mut config = SweepConfig::new();
+            let local_slots = [
+                Slot {
+                    slot_id: "slot[1]".into(),
+                    module: "MSMU60-2".into(),
+                },
+                Slot {
+                    slot_id: "slot[2]".into(),
+                    module: "MSMU60-2".into(),
+                },
+            ];
+            config.process_slots("localnode", "MP5103", &local_slots);
+            config.auto_configure();
+            let original_devices = serde_json::to_value(&config.device_list).unwrap();
+            let original_channels = json!([
+                config.bias_channels,
+                config.step_channels,
+                config.sweep_channels
+            ]);
+            let remote_slots = [Slot {
+                slot_id: "slot[1]".into(),
+                module: module.into(),
+            }];
+
+            for _ in 0..2 {
+                config.process_slots("node[2]", "MP5103", &remote_slots);
+                assert_eq!(
+                    serde_json::to_value(&config.device_list[..4]).unwrap(),
+                    original_devices
+                );
+                assert_eq!(
+                    json!([
+                        config.bias_channels,
+                        config.step_channels,
+                        config.sweep_channels
+                    ]),
+                    original_channels
+                );
+                let expected_remote_count = if module == "Empty" { 0 } else { 2 };
+                assert_eq!(config.device_list.len(), 4 + expected_remote_count);
+                for (i, device) in config.device_list[4..].iter().enumerate() {
+                    assert_eq!(device.node_id, "node[2]");
+                    assert_eq!(device._id, format!("node[2].slot[1].smu[{}]", i + 1));
+                    assert_eq!(device.model, module);
+                    assert!(device.is_valid);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn create_device_list_includes_all_qualifying_mainframes() {
+        for (local_model, local_module) in [
+            ("MP5103", "MSMU60-2"),
+            ("MP5103", "Empty"),
+            ("2450", "MSMU60-2"),
+        ] {
+            let system_info = json!({
+                "systems": [{
+                    "name": "System 1",
+                    "isActive": true,
+                    "localNode": local_model,
+                    "slots": [{ "slotId": "slot[1]", "module": local_module }],
+                    "nodes": [
+                        { "nodeId": "node[1]", "mainframe": "MP5103",
+                          "slots": [{ "slotId": "slot[1]", "module": "Empty" }] },
+                        { "nodeId": "node[2]", "mainframe": "MP5103",
+                          "slots": [{ "slotId": "slot[1]", "module": "MSMU60-2" }] },
+                        { "nodeId": "node[3]", "mainframe": "2450",
+                          "slots": [{ "slotId": "slot[1]", "module": "MSMU60-2" }] },
+                        { "nodeId": "node[4]", "mainframe": "MP5103",
+                          "slots": [{ "slotId": "slot[1]", "module": "MSMU60-2" }] }
+                    ]
+                }, {
+                    "name": "Inactive system",
+                    "isActive": false,
+                    "localNode": "MP5103",
+                    "slots": [{ "slotId": "slot[2]", "module": "MSMU60-2" }],
+                    "nodes": null
+                }]
+            });
+            let mut config = SweepConfig::new();
+            assert!(config.create_device_list(&system_info.to_string()));
+            let mut expected = Vec::new();
+            if local_model == "MP5103" && local_module != "Empty" {
+                expected.extend(["localnode.slot[1].smu[1]", "localnode.slot[1].smu[2]"]);
+            }
+            expected.extend([
+                "node[2].slot[1].smu[1]",
+                "node[2].slot[1].smu[2]",
+                "node[4].slot[1].smu[1]",
+                "node[4].slot[1].smu[2]",
+            ]);
+            let actual: Vec<_> = config.device_list.iter().map(|d| d._id.as_str()).collect();
+            assert_eq!(actual, expected);
+        }
     }
 }

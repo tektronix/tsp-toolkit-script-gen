@@ -61,7 +61,9 @@ fn render(name: &str, config: &SweepConfig) -> String {
 
     let dir = std::env::temp_dir().join(format!("script-gen-test-{}-{name}", std::process::id()));
     let path = dir.join("script.tsp");
-    script_model.to_script(config, path.to_str().unwrap());
+    script_model
+        .to_script(config, path.to_str().unwrap())
+        .unwrap();
     let script = std::fs::read_to_string(&path).unwrap();
     let _ = std::fs::remove_dir_all(dir);
     script

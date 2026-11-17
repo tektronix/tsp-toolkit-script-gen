@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
 import { WebSocketService } from './websocket.service';
 import { Subscription } from 'rxjs';
 import { ServerData } from './model/serverData';
@@ -45,6 +45,19 @@ export class AppComponent implements OnInit, OnDestroy {
   isMainSweepVisible = false;
 
   constructor(private webSocketService: WebSocketService, private statusService: StatusService) {}
+
+  // The extension replies with the file chosen in the Save As dialog
+  @HostListener('window:message', ['$event'])
+  onHostMessage(event: MessageEvent): void {
+    const data = event.data as { command?: string; path?: unknown } | undefined;
+    if (data?.command === 'save_as_target' && typeof data.path === 'string' && data.path) {
+      this.webSocketService.send(JSON.stringify(new IpcData({
+        request_type: 'save_as_generated_script',
+        additional_info: data.path,
+        json_value: '{}',
+      })));
+    }
+  }
 
   ngOnInit() {
     this.webSocketService.connect();
@@ -120,8 +133,13 @@ export class AppComponent implements OnInit, OnDestroy {
       } 
       
       else if (ipcData.request_type === 'save_as_generated_script') {
-        vscode.postMessage({ command: 'save_as_generated_script' });
+        vscode.postMessage({ command: 'open_saved_script' });
         this.statusService.clear();
+      }
+
+      else if (ipcData.request_type === 'script_generation_error') {
+        const statusMsg = new StatusMsg(JSON.parse(ipcData.json_value));
+        this.statusService.show(statusMsg);
       }
 
       else if (ipcData.request_type === 'empty_system_config_error') {

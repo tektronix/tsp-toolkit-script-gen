@@ -423,18 +423,8 @@ export class MainSweepComponent implements OnChanges {
   }
 
   saveAsGeneratedScript() {
-    // Create an IPC message requesting to fetch the script
-    const ipcData = new IpcData({
-      request_type: 'save_as_generated_script',
-      additional_info: '',
-      json_value: '{}',
-    });
-
-    // Convert to JSON string
-    const message = JSON.stringify(ipcData);
-
-    // Send request via WebSocket service
-    this.webSocketService.send(message);
+    // The host asks for the destination first; generation then targets that path
+    this.webSocketService.requestSaveAsLocation();
   }
 
   updateBiasChannelsConfig(updatedBiasChannel: BiasChannel) {

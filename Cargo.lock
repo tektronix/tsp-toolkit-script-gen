@@ -2066,6 +2066,7 @@ version = "0.1.7"
 name = "script-gen-manager"
 version = "0.1.7"
 dependencies = [
+ "anyhow",
  "chrono",
  "phf",
  "phf_macros 0.10.0",

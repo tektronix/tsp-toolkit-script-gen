@@ -457,7 +457,7 @@ impl SweepConfig {
         }
     }
 
-    /// Reassigns a channel without confusing different models at the same TSP address.
+    /// Reassigns a channel to a uniquely identified device while preserving supported settings.
     pub fn update_channel_for_models(
         &mut self,
         chan_type: &str,
@@ -472,7 +472,7 @@ impl SweepConfig {
         let Some(new_idx) = self.resolve_device_index(new_chan_id, new_model) else {
             return false;
         };
-        let old_model = self.device_list[old_idx].model.clone();
+
         let matches_channel = |channel: &CommonChanAttributes| {
             channel.device_id == old_chan_id && channel.device_model == old_model
         };
@@ -480,99 +480,82 @@ impl SweepConfig {
             "bias" => self
                 .bias_channels
                 .iter()
-                .filter(|c| matches_channel(&c.common_chan_attributes))
+                .filter(|channel| matches_channel(&channel.common_chan_attributes))
                 .count(),
             "step" => self
                 .step_channels
                 .iter()
-                .filter(|c| matches_channel(&c.start_stop_channel.common_chan_attributes))
+                .filter(|channel| {
+                    matches_channel(&channel.start_stop_channel.common_chan_attributes)
+                })
                 .count(),
             "sweep" => self
                 .sweep_channels
                 .iter()
-                .filter(|c| matches_channel(&c.start_stop_channel.common_chan_attributes))
+                .filter(|channel| {
+                    matches_channel(&channel.start_stop_channel.common_chan_attributes)
+                })
                 .count(),
             _ => 0,
         };
-        if matching_channels != 1
-            || !self.device_list[new_idx].is_valid
-            || (new_idx != old_idx && self.device_list[new_idx].in_use)
-        {
+        if matching_channels != 1 {
             self.channel_operation_error(String::from(
-                "Cannot reassign channel: assignment is missing or ambiguous, or the selected device is invalid or in use."
+                "Cannot reassign channel: assignment is missing or ambiguous.",
             ));
             return false;
         }
-        if old_idx == new_idx {
+        if !self.device_list[new_idx].is_valid
+            || (new_idx != old_idx && self.device_list[new_idx].in_use)
+        {
+            self.channel_operation_error(String::from(
+                "Cannot reassign channel: the selected device is invalid or in use.",
+            ));
+            return false;
+        }
+        if new_idx == old_idx {
             return true;
         }
-        // Set old device as not in use
-        self.device_list[old_idx].in_use = false;
-        // Set new device as in use
-        self.device_list[new_idx].in_use = true;
-        let new_device = self.device_list[new_idx].clone();
 
-        if chan_type == "bias" {
-            if let Some(bias_channel) = self
+        let mut new_device = self.device_list[new_idx].clone();
+        new_device.in_use = true;
+        let migrated = match chan_type {
+            "bias" => self
                 .bias_channels
                 .iter_mut()
-                .find(|chan| matches_channel(&chan.common_chan_attributes))
-            {
-                let mut new_bias_channel = BiasChannel::new(
-                    bias_channel.common_chan_attributes.chan_name.clone(),
-                    new_device,
-                );
-                new_bias_channel
-                    .common_chan_attributes
-                    .uuid
-                    .clone_from(&bias_channel.common_chan_attributes.uuid);
-                *bias_channel = new_bias_channel;
-            }
-        } else if chan_type == "step" {
-            if let Some(step_channel) = self
+                .find(|channel| matches_channel(&channel.common_chan_attributes))
+                .map(|channel| channel.migrate_to_device(new_device.clone()))
+                .is_some(),
+            "step" => self
                 .step_channels
                 .iter_mut()
-                .find(|chan| matches_channel(&chan.start_stop_channel.common_chan_attributes))
-            {
-                let mut new_step_channel = StepChannel::new(
-                    step_channel
+                .find(|channel| matches_channel(&channel.start_stop_channel.common_chan_attributes))
+                .map(|channel| {
+                    channel
                         .start_stop_channel
-                        .common_chan_attributes
-                        .chan_name
-                        .clone(),
-                    new_device,
-                    self.step_global_parameters.step_points.value,
-                );
-                new_step_channel
-                    .start_stop_channel
-                    .common_chan_attributes
-                    .uuid
-                    .clone_from(&step_channel.start_stop_channel.common_chan_attributes.uuid);
-                *step_channel = new_step_channel;
-            }
-        } else if chan_type == "sweep" {
-            if let Some(sweep_channel) = self
+                        .migrate_to_device(new_device.clone());
+                })
+                .is_some(),
+            "sweep" => self
                 .sweep_channels
                 .iter_mut()
-                .find(|chan| matches_channel(&chan.start_stop_channel.common_chan_attributes))
-            {
-                let mut new_sweep_channel = SweepChannel::new(
-                    sweep_channel
+                .find(|channel| matches_channel(&channel.start_stop_channel.common_chan_attributes))
+                .map(|channel| {
+                    channel
                         .start_stop_channel
-                        .common_chan_attributes
-                        .chan_name
-                        .clone(),
-                    new_device,
-                    self.sweep_global_parameters.sweep_points.value,
-                );
-                new_sweep_channel
-                    .start_stop_channel
-                    .common_chan_attributes
-                    .uuid
-                    .clone_from(&sweep_channel.start_stop_channel.common_chan_attributes.uuid);
-                *sweep_channel = new_sweep_channel;
-            }
+                        .migrate_to_device(new_device.clone());
+                })
+                .is_some(),
+            _ => false,
+        };
+        if !migrated {
+            self.channel_operation_error(String::from(
+                "Cannot reassign channel: assignment is missing or ambiguous.",
+            ));
+            return false;
         }
+
+        self.device_list[old_idx].in_use = false;
+        self.device_list[new_idx].in_use = true;
         true
     }
 
@@ -611,8 +594,10 @@ impl SweepConfig {
 
 #[cfg(test)]
 mod tests {
-    use super::SweepConfig;
-    use crate::model::system_info::Slot;
+    use super::*;
+    use crate::{
+        instr_metadata::base_metadata::BaseMetadata, model::sweep_data::parameters::ParameterFloat,
+    };
     use serde_json::json;
 
     fn assigned_channel<'a>(
@@ -633,6 +618,29 @@ mod tests {
             }
             _ => unreachable!(),
         }
+    }
+
+    fn device(module: &str, channel: i32) -> Device {
+        let slot = Slot {
+            slot_id: "slot[1]".to_string(),
+            module: module.to_string(),
+        };
+        Device::new("localnode", "MP5103", &slot, channel)
+    }
+
+    fn reassign(
+        config: &mut SweepConfig,
+        role: &str,
+        old_device: &Device,
+        new_device: &Device,
+    ) -> bool {
+        config.update_channel_for_models(
+            role,
+            &old_device._id,
+            &new_device._id,
+            &old_device.model,
+            &new_device.model,
+        )
     }
 
     #[test]
@@ -658,7 +666,7 @@ mod tests {
                 let new_id = config
                     .device_list
                     .iter()
-                    .find(|d| d.model == new_model && d.chan_num == 1)
+                    .find(|candidate| candidate.model == new_model && candidate.chan_num == 1)
                     .unwrap()
                     ._id
                     .clone();
@@ -666,7 +674,7 @@ mod tests {
                 removal
                     .device_list
                     .iter_mut()
-                    .find(|d| d._id == new_id && d.model == new_model)
+                    .find(|candidate| candidate._id == new_id && candidate.model == new_model)
                     .unwrap()
                     .in_use = true;
                 assert!(removal.remove_channel_for_model(&original.device_id, old_model));
@@ -675,7 +683,7 @@ mod tests {
                 assert!(removal
                     .device_list
                     .iter()
-                    .any(|d| d._id == new_id && d.in_use));
+                    .any(|candidate| candidate._id == new_id && candidate.in_use));
 
                 assert!(config.update_channel_for_models(
                     role,
@@ -830,7 +838,9 @@ mod tests {
                     config
                         .device_list
                         .iter()
-                        .filter(|d| d.model == new_model && d.is_valid && !d.in_use)
+                        .filter(|device| {
+                            device.model == new_model && device.is_valid && !device.in_use
+                        })
                         .count(),
                     4
                 );
@@ -907,13 +917,14 @@ mod tests {
                 config.add_channel("step");
                 let retained_id = format!("{target}.slot[1].smu[1]");
                 if target != "localnode" {
-                    assert!(config.update_channel_for_models(
-                        "step",
-                        "localnode.slot[1].smu[1]",
-                        &retained_id,
-                        "MSMU60-2",
-                        "MSMU60-2",
-                    ));
+                    let old_device = config.device_list[0].clone();
+                    let new_device = config
+                        .device_list
+                        .iter()
+                        .find(|device| device._id == retained_id)
+                        .unwrap()
+                        .clone();
+                    assert!(reassign(&mut config, "step", &old_device, &new_device));
                 }
                 let original_assignment = serde_json::to_value(&config.step_channels).unwrap();
                 let mut updated = original.clone();
@@ -939,7 +950,7 @@ mod tests {
                     let retained = config
                         .device_list
                         .iter()
-                        .find(|d| d._id == retained_id)
+                        .find(|device| device._id == retained_id)
                         .unwrap();
                     assert!(retained.in_use && !retained.is_valid, "{context}");
                     let expected_valid = if matches!(change, "inactive" | "no-systems") {
@@ -949,12 +960,19 @@ mod tests {
                     };
                     assert_eq!(config.device_list.len(), expected_valid + 1, "{context}");
                     assert_eq!(
-                        config.device_list.iter().filter(|d| d.is_valid).count(),
+                        config
+                            .device_list
+                            .iter()
+                            .filter(|device| device.is_valid)
+                            .count(),
                         expected_valid,
                         "{context}"
                     );
                     assert!(
-                        config.device_list.iter().all(|d| d.is_valid || d.in_use),
+                        config
+                            .device_list
+                            .iter()
+                            .all(|device| device.is_valid || device.in_use),
                         "{context}"
                     );
                     assert_eq!(
@@ -974,7 +992,10 @@ mod tests {
                 }
                 config.update_devices_for_changed_slots(&original.to_string());
                 assert_eq!(config.device_list.len(), 4, "{context}");
-                assert!(config.device_list.iter().all(|d| d.is_valid), "{context}");
+                assert!(
+                    config.device_list.iter().all(|device| device.is_valid),
+                    "{context}"
+                );
                 assert!(
                     config.step_channels[0]
                         .start_stop_channel
@@ -1032,9 +1053,13 @@ mod tests {
 
             for _ in 0..2 {
                 config.update_devices_for_changed_slots(&system_info.to_string());
-                let actual: Vec<_> = config.device_list.iter().map(|d| d._id.as_str()).collect();
+                let actual: Vec<_> = config
+                    .device_list
+                    .iter()
+                    .map(|device| device._id.as_str())
+                    .collect();
                 assert_eq!(actual, expected);
-                assert!(config.device_list.iter().all(|d| d.is_valid));
+                assert!(config.device_list.iter().all(|device| device.is_valid));
                 assert_eq!(
                     json!([
                         config.bias_channels,
@@ -1090,9 +1115,9 @@ mod tests {
                 );
                 let expected_remote_count = if module == "Empty" { 0 } else { 2 };
                 assert_eq!(config.device_list.len(), 4 + expected_remote_count);
-                for (i, device) in config.device_list[4..].iter().enumerate() {
+                for (index, device) in config.device_list[4..].iter().enumerate() {
                     assert_eq!(device.node_id, "node[2]");
-                    assert_eq!(device._id, format!("node[2].slot[1].smu[{}]", i + 1));
+                    assert_eq!(device._id, format!("node[2].slot[1].smu[{}]", index + 1));
                     assert_eq!(device.model, module);
                     assert!(device.is_valid);
                 }
@@ -1143,8 +1168,337 @@ mod tests {
                 "node[4].slot[1].smu[1]",
                 "node[4].slot[1].smu[2]",
             ]);
-            let actual: Vec<_> = config.device_list.iter().map(|d| d._id.as_str()).collect();
+            let actual: Vec<_> = config
+                .device_list
+                .iter()
+                .map(|device| device._id.as_str())
+                .collect();
             assert_eq!(actual, expected);
         }
+    }
+
+    #[test]
+    fn updating_same_module_channel_preserves_sweep_configuration() {
+        let mut old_device = device("MSMU60-2", 1);
+        old_device.in_use = true;
+        let new_device = device("MSMU60-2", 2);
+        let mut config = SweepConfig::new();
+        config.device_list = vec![old_device.clone(), new_device.clone()];
+        config.sweep_global_parameters.sweep_points.value = 3;
+        config.sweep_global_parameters.list_sweep = true;
+
+        let mut channel = SweepChannel::new("sweep1".to_string(), old_device.clone(), 3);
+        let common = &mut channel.start_stop_channel.common_chan_attributes;
+        common.source_range.value = "20 V".to_string();
+        common.source_limiti.as_mut().unwrap().value = 0.05;
+        channel.start_stop_channel.start.value = 2.0;
+        channel.start_stop_channel.stop.value = 5.0;
+        channel.start_stop_channel.style.value = BaseMetadata::STYLE_LOG.to_string();
+        channel.start_stop_channel.list = vec![
+            ParameterFloat::new("list_0", 1.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
+            ParameterFloat::new("list_1", 3.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
+            ParameterFloat::new("list_2", 4.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
+        ];
+        let uuid = channel
+            .start_stop_channel
+            .common_chan_attributes
+            .uuid
+            .clone();
+        config.sweep_channels.push(channel);
+
+        assert!(reassign(&mut config, "sweep", &old_device, &new_device));
+        assert!(
+            config.sweep_channels[0]
+                .start_stop_channel
+                .common_chan_attributes
+                .device
+                .in_use
+        );
+        config.evaluate();
+
+        let migrated = &config.sweep_channels[0].start_stop_channel;
+        assert_eq!(migrated.common_chan_attributes.uuid, uuid);
+        assert_eq!(migrated.common_chan_attributes.device_id, new_device._id);
+        assert_eq!(migrated.common_chan_attributes.source_range.value, "20 V");
+        assert!(
+            (migrated
+                .common_chan_attributes
+                .source_limiti
+                .as_ref()
+                .unwrap()
+                .value
+                - 0.05)
+                .abs()
+                < 1e-9
+        );
+        assert_eq!(migrated.start.value, 2.0);
+        assert_eq!(migrated.stop.value, 5.0);
+        assert_eq!(migrated.style.value, BaseMetadata::STYLE_LOG);
+        assert_eq!(
+            migrated
+                .list
+                .iter()
+                .map(|point| point.value)
+                .collect::<Vec<_>>(),
+            vec![1.0, 3.0, 4.0]
+        );
+        assert!(!config.device_list[0].in_use);
+        assert!(config.device_list[1].in_use);
+    }
+
+    #[test]
+    fn updating_to_a_different_module_clamps_bias_and_removes_unsupported_fields() {
+        let mut old_device = device("MSMU60-2", 1);
+        old_device.in_use = true;
+        let new_device = device("MPSU50-2ST", 2);
+        let mut config = SweepConfig::new();
+        config.device_list = vec![old_device.clone(), new_device.clone()];
+
+        let mut channel = BiasChannel::new("bias1".to_string(), old_device.clone());
+        channel.bias.value = 200.0;
+        config.bias_channels.push(channel);
+
+        assert!(reassign(&mut config, "bias", &old_device, &new_device));
+        config.evaluate();
+
+        let migrated = &config.bias_channels[0];
+        assert_eq!(migrated.common_chan_attributes.device_id, new_device._id);
+        assert!((migrated.bias.value - 50.1).abs() < 1e-9);
+        assert!(migrated.common_chan_attributes.source_limitv.is_none());
+        assert!(migrated.common_chan_attributes.sense_mode.is_none());
+        assert!(!config.device_list[0].in_use);
+        assert!(config.device_list[1].in_use);
+    }
+
+    #[test]
+    fn updating_to_a_different_module_clamps_sweep_values_without_resetting_list_points() {
+        let mut old_device = device("MSMU60-2", 1);
+        old_device.in_use = true;
+        let new_device = device("MPSU50-2ST", 2);
+        let mut config = SweepConfig::new();
+        config.device_list = vec![old_device.clone(), new_device.clone()];
+        config.sweep_global_parameters.sweep_points.value = 3;
+        config.sweep_global_parameters.list_sweep = true;
+
+        let mut channel = SweepChannel::new("sweep1".to_string(), old_device.clone(), 3);
+        channel.start_stop_channel.start.value = 1.0;
+        channel.start_stop_channel.stop.value = 200.0;
+        channel.start_stop_channel.list = vec![
+            ParameterFloat::new("list_0", 10.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
+            ParameterFloat::new("list_1", 40.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
+            ParameterFloat::new("list_2", 200.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
+        ];
+        config.sweep_channels.push(channel);
+
+        assert!(reassign(&mut config, "sweep", &old_device, &new_device));
+        config.evaluate();
+
+        let migrated = &config.sweep_channels[0].start_stop_channel;
+        assert_eq!(migrated.list.len(), 3);
+        assert_eq!(
+            migrated
+                .list
+                .iter()
+                .map(|point| point.value)
+                .collect::<Vec<_>>(),
+            vec![10.0, 40.0, 50.1]
+        );
+        assert!((migrated.stop.value - 50.1).abs() < 1e-9);
+    }
+
+    #[test]
+    fn updating_channel_clamps_unsupported_fixed_range_to_new_device_maximum() {
+        let mut old_device = device("MSMU200-2", 1);
+        old_device.in_use = true;
+        let new_device = device("MSMU60-2", 2);
+        let mut config = SweepConfig::new();
+        config.device_list = vec![old_device.clone(), new_device.clone()];
+
+        let mut channel = SweepChannel::new("sweep1".to_string(), old_device.clone(), 10);
+        channel
+            .start_stop_channel
+            .common_chan_attributes
+            .source_range
+            .value = "200 V".to_string();
+        config.sweep_channels.push(channel);
+
+        config = serde_json::from_str(&serde_json::to_string(&config).unwrap()).unwrap();
+        config.update_channel_devices();
+        assert!(reassign(&mut config, "sweep", &old_device, &new_device));
+        config.evaluate();
+
+        assert_eq!(
+            config.sweep_channels[0]
+                .start_stop_channel
+                .common_chan_attributes
+                .source_range
+                .value,
+            "60 V"
+        );
+    }
+
+    #[test]
+    fn updating_step_channel_preserves_its_configuration() {
+        let mut old_device = device("MSMU60-2", 1);
+        old_device.in_use = true;
+        let new_device = device("MSMU60-2", 2);
+        let mut config = SweepConfig::new();
+        config.device_list = vec![old_device.clone(), new_device.clone()];
+        config.step_global_parameters.step_points.value = 3;
+        config.step_global_parameters.list_step = true;
+
+        let mut channel = StepChannel::new("step1".to_string(), old_device.clone(), 3);
+        channel.start_stop_channel.start.value = 2.0;
+        channel.start_stop_channel.stop.value = 5.0;
+        channel.start_stop_channel.list = vec![
+            ParameterFloat::new("list_0", 1.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
+            ParameterFloat::new("list_1", 3.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
+            ParameterFloat::new("list_2", 4.0, Some(BaseMetadata::UNIT_VOLTS.to_string())),
+        ];
+        config.step_channels.push(channel);
+
+        assert!(reassign(&mut config, "step", &old_device, &new_device));
+        config.evaluate();
+
+        let migrated = &config.step_channels[0].start_stop_channel;
+        assert_eq!(migrated.common_chan_attributes.device_id, new_device._id);
+        assert_eq!(migrated.start.value, 2.0);
+        assert_eq!(migrated.stop.value, 5.0);
+        assert_eq!(
+            migrated
+                .list
+                .iter()
+                .map(|point| point.value)
+                .collect::<Vec<_>>(),
+            vec![1.0, 3.0, 4.0]
+        );
+    }
+
+    #[test]
+    fn unsupported_source_function_uses_target_defaults_without_dropping_list_entries() {
+        let mut old_device = device("MSMU60-2", 1);
+        old_device.in_use = true;
+        let new_device = device("MPSU50-2ST", 2);
+        let mut config = SweepConfig::new();
+        config.device_list = vec![old_device.clone(), new_device.clone()];
+        config.sweep_global_parameters.sweep_points.value = 3;
+        config.sweep_global_parameters.list_sweep = true;
+
+        let mut channel = SweepChannel::new("sweep1".to_string(), old_device.clone(), 3);
+        let common = &mut channel.start_stop_channel.common_chan_attributes;
+        common.source_function.value = BaseMetadata::FUNCTION_CURRENT.to_string();
+        common.source_range.value = "100 mA".to_string();
+        channel.start_stop_channel.start =
+            ParameterFloat::new("start", 0.1, Some(BaseMetadata::UNIT_AMPERES.to_string()));
+        channel.start_stop_channel.stop =
+            ParameterFloat::new("stop", 0.5, Some(BaseMetadata::UNIT_AMPERES.to_string()));
+        channel.start_stop_channel.list = vec![
+            ParameterFloat::new("list_0", 0.1, Some(BaseMetadata::UNIT_AMPERES.to_string())),
+            ParameterFloat::new("list_1", 0.3, Some(BaseMetadata::UNIT_AMPERES.to_string())),
+            ParameterFloat::new("list_2", 0.5, Some(BaseMetadata::UNIT_AMPERES.to_string())),
+        ];
+        config.sweep_channels.push(channel);
+
+        assert!(reassign(&mut config, "sweep", &old_device, &new_device));
+        config.evaluate();
+
+        let migrated = &config.sweep_channels[0].start_stop_channel;
+        assert_eq!(
+            migrated.common_chan_attributes.source_function.value,
+            BaseMetadata::FUNCTION_VOLTAGE
+        );
+        assert_eq!(migrated.start.value, 0.0);
+        assert_eq!(migrated.stop.value, 1.0);
+        assert_eq!(migrated.list.len(), 3);
+        assert!(migrated.list.iter().all(|point| {
+            point.value == 0.0 && point.unit.as_deref() == Some(BaseMetadata::UNIT_VOLTS)
+        }));
+    }
+
+    #[test]
+    fn selecting_the_current_channel_id_is_a_no_op() {
+        let mut old_device = device("MSMU60-2", 1);
+        old_device.in_use = true;
+        let mut config = SweepConfig::new();
+        config.device_list.push(old_device.clone());
+        let mut channel = SweepChannel::new("sweep1".to_string(), old_device.clone(), 10);
+        channel.start_stop_channel.stop.value = 42.0;
+        config.sweep_channels.push(channel);
+
+        assert!(reassign(&mut config, "sweep", &old_device, &old_device));
+
+        assert_eq!(config.sweep_channels[0].start_stop_channel.stop.value, 42.0);
+        assert!(config.device_list[0].in_use);
+    }
+
+    #[test]
+    fn reassignment_preserves_supported_sweep_settings_and_clamps_values() {
+        let mut old_device = device("MSMU200-2", 1);
+        old_device.in_use = true;
+        let new_device = device("MSMU60-2", 2);
+        let old_id = old_device._id.clone();
+        let new_id = new_device._id.clone();
+
+        let mut config = SweepConfig::new();
+        config.device_list = vec![old_device.clone(), new_device];
+        let mut channel = SweepChannel::new("sweep1".to_string(), old_device, 10);
+        channel.start_stop_channel.start.value = 2.0;
+        channel.start_stop_channel.stop.value = 180.0;
+        config.sweep_channels.push(channel);
+
+        assert!(config.update_channel_for_models(
+            "sweep",
+            &old_id,
+            &new_id,
+            "MSMU200-2",
+            "MSMU60-2",
+        ));
+
+        let migrated = &config.sweep_channels[0].start_stop_channel;
+        assert_eq!(migrated.common_chan_attributes.device_id, new_id);
+        assert_eq!(migrated.common_chan_attributes.device_model, "MSMU60-2");
+        assert_eq!(migrated.start.value, 2.0);
+        assert_eq!(migrated.stop.value, 60.6);
+        assert!(!config.device_list[0].in_use);
+        assert!(config.device_list[1].in_use);
+    }
+
+    #[test]
+    fn reassignment_rejects_a_mismatched_old_model_without_mutating_assignment() {
+        let mut old_device = device("MSMU60-2", 1);
+        old_device.in_use = true;
+        let new_device = device("MSMU60-2", 2);
+        let old_id = old_device._id.clone();
+        let new_id = new_device._id.clone();
+
+        let mut config = SweepConfig::new();
+        config.device_list = vec![old_device.clone(), new_device];
+        config
+            .sweep_channels
+            .push(SweepChannel::new("sweep1".to_string(), old_device, 10));
+        let original_id = config.sweep_channels[0]
+            .start_stop_channel
+            .common_chan_attributes
+            .device_id
+            .clone();
+
+        assert!(!config.update_channel_for_models(
+            "sweep",
+            &old_id,
+            &new_id,
+            "MSMU200-2",
+            "MSMU60-2",
+        ));
+
+        assert_eq!(
+            config.sweep_channels[0]
+                .start_stop_channel
+                .common_chan_attributes
+                .device_id,
+            original_id
+        );
+        assert!(config.device_list[0].in_use);
+        assert!(!config.device_list[1].in_use);
+        assert!(config.status_msg.is_some());
     }
 }

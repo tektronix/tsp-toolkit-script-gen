@@ -25,7 +25,7 @@ const CURRENT_1_MA: &str = "1 mA";
 const CURRENT_10_MA: &str = "10 mA";
 const CURRENT_100_MA: &str = "100 mA";
 const CURRENT_1_A: &str = "1 A";
-const CURRENT_1_5_A: &str = "1.5 A";
+const CURRENT_1_5_A: &str = "7 A";
 
 // Range arrays built from constants
 const VOLTAGE_RANGES: &[&str] = &[

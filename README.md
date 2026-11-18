@@ -1,5 +1,6 @@
 # tsp-toolkit-script-gen
-The rust application to generate tsp scripts 
+
+The rust application to generate tsp scripts
 
 ## Channel operation messages
 
@@ -19,4 +20,14 @@ Remove/update messages require explicit module models; address-only messages are
 not accepted. Rejected operations and malformed operation messages preserve the
 backend's existing configuration and return it with an error status in an
 `evaluated_response`, allowing the UI to restore its state and display the error.
-Model-aware UI selection and save/recall migration are separate follow-up work.
+The bias, step, and sweep UI dropdowns use address-and-model identities, display
+`address (model)`, retain invalid current assignments, and exclude occupied
+alternatives. Changes and removals send both address and model; channel edits and
+device validity lookups also match both fields.
+The dropdown updates immediately on selection. The backend response supplies the
+authoritative configuration, restoring the prior assignment if the operation is
+rejected. TSP addresses are not changed.
+
+Save/recall migration and role/mainframe constraints remain follow-up work.
+Legacy channels without `device_model` remain unresolved (including when only one
+device has the address); the UI does not infer a model.

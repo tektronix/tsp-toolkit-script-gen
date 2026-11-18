@@ -29,6 +29,8 @@ import { TimingComponent } from './timing/timing.component';
 import { SweepModel } from '../../model/sweep_data/sweepModel';
 import { IpcData } from '../../model/ipcData';
 import { Device } from '../../model/device_data/device';
+import { CommonChanAttributes } from '../../model/chan_data/defaultChannel';
+import { DeviceIdentity, DeviceIdentityChange, matchesDevice, resolveChannelDevice } from '../../model/device_data/deviceSelection';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -316,11 +318,8 @@ export class MainSweepComponent implements OnChanges {
 
   updateSweepListsWithNames() {
     this.sweepListsWithNames = this.sweepChannels.map((sweep) => {
-      const matchingDevice = this.deviceList.find(
-        (device) =>
-          device._id ===
-          sweep.start_stop_channel.common_chan_attributes.device_id
-      );
+      const { device: matchingDevice } = resolveChannelDevice(
+        sweep.start_stop_channel.common_chan_attributes, this.deviceList);
       return {
         chanName: sweep.start_stop_channel.common_chan_attributes.chan_name,
         list: sweep.start_stop_channel.list,
@@ -423,10 +422,10 @@ export class MainSweepComponent implements OnChanges {
   }
 
   updateBiasChannelsConfig(updatedBiasChannel: BiasChannel) {
-    const index = this.biasChannels.findIndex(
-      (channel) =>
-        channel.common_chan_attributes.device_id ===
-        updatedBiasChannel.common_chan_attributes.device_id
+    const attributes = updatedBiasChannel.common_chan_attributes;
+    const index = this.channelIndex(
+      this.biasChannels.map((channel) => channel.common_chan_attributes),
+      { deviceId: attributes.device_id, deviceModel: attributes.device_model }
     );
     if (index !== -1) {
       this.biasChannels[index] = updatedBiasChannel;
@@ -435,10 +434,10 @@ export class MainSweepComponent implements OnChanges {
   }
 
   updateStepChannelsConfig(updatedStepChannel: StepChannel) {
-    const index = this.stepChannels.findIndex(
-      (channel) =>
-        channel.start_stop_channel.common_chan_attributes.device_id ===
-        updatedStepChannel.start_stop_channel.common_chan_attributes.device_id
+    const attributes = updatedStepChannel.start_stop_channel.common_chan_attributes;
+    const index = this.channelIndex(
+      this.stepChannels.map((channel) => channel.start_stop_channel.common_chan_attributes),
+      { deviceId: attributes.device_id, deviceModel: attributes.device_model }
     );
     if (index !== -1) {
       this.stepChannels[index] = updatedStepChannel;
@@ -457,10 +456,10 @@ export class MainSweepComponent implements OnChanges {
   }
 
   updateSweepChannelsConfig(updatedSweepChannel: SweepChannel) {
-    const index = this.sweepChannels.findIndex(
-      (channel) =>
-        channel.start_stop_channel.common_chan_attributes.device_id ===
-        updatedSweepChannel.start_stop_channel.common_chan_attributes.device_id
+    const attributes = updatedSweepChannel.start_stop_channel.common_chan_attributes;
+    const index = this.channelIndex(
+      this.sweepChannels.map((channel) => channel.start_stop_channel.common_chan_attributes),
+      { deviceId: attributes.device_id, deviceModel: attributes.device_model }
     );
     if (index !== -1) {
       this.sweepChannels[index] = updatedSweepChannel;
@@ -479,57 +478,59 @@ export class MainSweepComponent implements OnChanges {
     }
   }
 
-  removeBiasChannel(deviceID: string) {
-    const index = this.biasChannels.findIndex(
-      (channel) => channel.common_chan_attributes.device_id === deviceID
+  private channelIndex(channels: CommonChanAttributes[], identity: DeviceIdentity): number {
+    return channels.findIndex((attributes) => matchesDevice(attributes, identity));
+  }
+
+  removeBiasChannel(identity: DeviceIdentity) {
+    const index = this.channelIndex(
+      this.biasChannels.map((channel) => channel.common_chan_attributes), identity
     );
     if (index !== -1) {
       this.biasChannels.splice(index, 1);
-      this.submitSweepConfigAsJson('reallocation', 'remove,bias,' + deviceID);
+      this.submitSweepConfigAsJson('reallocation', `remove,bias,${identity.deviceId},${identity.deviceModel}`);
     }
   }
 
-  removeStepChannel(deviceID: string) {
-    const index = this.stepChannels.findIndex(
-      (channel) =>
-        channel.start_stop_channel.common_chan_attributes.device_id === deviceID
+  removeStepChannel(identity: DeviceIdentity) {
+    const index = this.channelIndex(
+      this.stepChannels.map((channel) => channel.start_stop_channel.common_chan_attributes), identity
     );
     if (index !== -1) {
       this.stepChannels.splice(index, 1);
-      this.submitSweepConfigAsJson('reallocation', 'remove,step,' + deviceID);
+      this.submitSweepConfigAsJson('reallocation', `remove,step,${identity.deviceId},${identity.deviceModel}`);
     }
   }
 
-  removeSweepChannel(deviceID: string) {
-    const index = this.sweepChannels.findIndex(
-      (channel) =>
-        channel.start_stop_channel.common_chan_attributes.device_id === deviceID
+  removeSweepChannel(identity: DeviceIdentity) {
+    const index = this.channelIndex(
+      this.sweepChannels.map((channel) => channel.start_stop_channel.common_chan_attributes), identity
     );
     if (index !== -1) {
       this.sweepChannels.splice(index, 1);
-      this.submitSweepConfigAsJson('reallocation', 'remove,sweep,' + deviceID);
+      this.submitSweepConfigAsJson('reallocation', `remove,sweep,${identity.deviceId},${identity.deviceModel}`);
     }
     this.updateSweepListsWithNames();
   }
 
-  updateBiasChannelId($event: { oldChanId: string; newChanId: string }) {
+  updateBiasChannelId($event: DeviceIdentityChange) {
     this.submitSweepConfigAsJson(
       'reallocation',
-      'update,bias,' + $event.oldChanId + ',' + $event.newChanId
+      `update,bias,${$event.oldChanId},${$event.newChanId},${$event.oldModel},${$event.newModel}`
     );
   }
 
-  updateStepChannelId($event: { oldChanId: string; newChanId: string }) {
+  updateStepChannelId($event: DeviceIdentityChange) {
     this.submitSweepConfigAsJson(
       'reallocation',
-      'update,step,' + $event.oldChanId + ',' + $event.newChanId
+      `update,step,${$event.oldChanId},${$event.newChanId},${$event.oldModel},${$event.newModel}`
     );
   }
 
-  updateSweepChannelId($event: { oldChanId: string; newChanId: string }) {
+  updateSweepChannelId($event: DeviceIdentityChange) {
     this.submitSweepConfigAsJson(
       'reallocation',
-      'update,sweep,' + $event.oldChanId + ',' + $event.newChanId
+      `update,sweep,${$event.oldChanId},${$event.newChanId},${$event.oldModel},${$event.newModel}`
     );
   }
 

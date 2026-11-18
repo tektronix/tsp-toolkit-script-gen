@@ -65,9 +65,24 @@ export class CommonChanAttributes {
 export class Option {
   value: string;
   isValid: boolean;
+  deviceId: string;
+  deviceModel: string;
+  label: string;
+  error?: string;
 
-  constructor(value: string, isValid: boolean) {
+  constructor(
+    value: string,
+    isValid: boolean,
+    deviceId: string,
+    deviceModel: string,
+    label: string,
+    error?: string,
+  ) {
     this.value = value;
     this.isValid = isValid;
+    this.deviceId = deviceId;
+    this.deviceModel = deviceModel;
+    this.label = label;
+    this.error = error;
   }
 }

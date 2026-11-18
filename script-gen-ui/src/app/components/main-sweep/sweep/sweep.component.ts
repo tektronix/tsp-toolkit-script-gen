@@ -15,6 +15,7 @@ import {
 import { SweepChannel } from '../../../model/chan_data/sweepChannel';
 import { CommonChanAttributes } from '../../../model/chan_data/defaultChannel';
 import { Device } from '../../../model/device_data/device';
+import { channelDeviceOptions, DeviceIdentity, DeviceIdentityChange } from '../../../model/device_data/deviceSelection';
 import { Option } from '../../../model/chan_data/defaultChannel';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -72,11 +73,8 @@ export class SweepComponent implements OnChanges {
     isExpanded: boolean;
   }>();
   @Output() emitSweepData = new EventEmitter<SweepChannel>();
-  @Output() emitSweepChannelDelete = new EventEmitter<string>();
-  @Output() emitSweepChannelIdChange = new EventEmitter<{
-    oldChanId: string;
-    newChanId: string;
-  }>();
+  @Output() emitSweepChannelDelete = new EventEmitter<DeviceIdentity>();
+  @Output() emitSweepChannelIdChange = new EventEmitter<DeviceIdentityChange>();
 
   @Input() isActive = false;
   @Input() color = '';
@@ -122,20 +120,9 @@ export class SweepComponent implements OnChanges {
 
       this.list = this.sweepChannel.start_stop_channel.list;
 
-      if (this.deviceList) {
-        this.deviceOptionList = this.deviceList
-          .filter(
-            (device) =>
-              !device.in_use ||
-              device._id === this.commonChanAttributes?.device_id
-          ) // Include current device even if in use
-          .map((device) => new Option(device._id, device.is_valid)); // Create Option objects
-
-        // Set the selected device option based on the sweep channel's device ID
-        this.selectedDeviceOption = this.deviceOptionList.find(
-          (option) => option.value === this.commonChanAttributes?.device_id // Match by device ID
-        );
-      }
+      const { options, selected } = channelDeviceOptions(this.commonChanAttributes, this.deviceList);
+      this.deviceOptionList = options;
+      this.selectedDeviceOption = selected;
     }
   }
 
@@ -148,7 +135,12 @@ export class SweepComponent implements OnChanges {
   }
 
   removeSweep() {
-    this.emitSweepChannelDelete.emit(this.selectedDeviceOption?.value || '');
+    if (this.commonChanAttributes) {
+      this.emitSweepChannelDelete.emit({
+        deviceId: this.commonChanAttributes.device_id,
+        deviceModel: this.commonChanAttributes.device_model,
+      });
+    }
   }
 
   getSweepChanConfigFromComponent(): SweepChannel {
@@ -157,7 +149,7 @@ export class SweepComponent implements OnChanges {
         common_chan_attributes: {
           uuid: this.uuid,
           chan_name: this.chanName,
-          device_id: this.selectedDeviceOption?.value || '',
+          device_id: this.commonChanAttributes?.device_id || '',
           device_model: this.commonChanAttributes?.device_model,
           source_function: this.sourceFunction!,
           meas_function: this.measFunction!,
@@ -180,11 +172,14 @@ export class SweepComponent implements OnChanges {
   }
 
   onDeviceIDChange($event: Option) {
-    if (this.sweepChannel) {
+    if (this.sweepChannel && $event.isValid) {
+      this.selectedDeviceOption = $event;
       this.emitSweepChannelIdChange.emit({
         oldChanId:
           this.sweepChannel.start_stop_channel.common_chan_attributes.device_id,
-        newChanId: $event.value,
+        newChanId: $event.deviceId,
+        oldModel: this.sweepChannel.start_stop_channel.common_chan_attributes.device_model,
+        newModel: $event.deviceModel,
       });
     }
   }

@@ -15,6 +15,7 @@ import {
 import { ChannelRange } from '../../../model/chan_data/channelRange';
 import { CommonChanAttributes } from '../../../model/chan_data/defaultChannel';
 import { Device } from '../../../model/device_data/device';
+import { channelDeviceOptions, DeviceIdentity, DeviceIdentityChange } from '../../../model/device_data/deviceSelection';
 import { Option } from '../../../model/chan_data/defaultChannel';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -70,11 +71,8 @@ export class BiasComponent implements OnChanges {
     uuid: string;
     isExpanded: boolean;
   }>();
-  @Output() emitBiasChannelDelete = new EventEmitter<string>();
-  @Output() emitBiasChannelIdChange = new EventEmitter<{
-    oldChanId: string;
-    newChanId: string;
-  }>();
+  @Output() emitBiasChannelDelete = new EventEmitter<DeviceIdentity>();
+  @Output() emitBiasChannelIdChange = new EventEmitter<DeviceIdentityChange>();
 
   @Input() color = '';
   isFocused = false;
@@ -111,20 +109,9 @@ export class BiasComponent implements OnChanges {
       this.sourceLimitV = this.commonChanAttributes.source_limitv;
       this.senseMode = this.commonChanAttributes.sense_mode;
 
-      if (this.deviceList) {
-        this.deviceOptionList = this.deviceList
-          .filter(
-            (device) =>
-              !device.in_use ||
-              device._id === this.biasChannel?.common_chan_attributes.device_id
-          ) // Include current device even if in use
-          .map((device) => new Option(device._id, device.is_valid)); // Create Option objects
-
-        // Set the selected device option based on the bias channel's device ID
-        this.selectedDeviceOption = this.deviceOptionList.find(
-          (option) => option.value === this.commonChanAttributes?.device_id // Match by device ID
-        );
-      }
+      const { options, selected } = channelDeviceOptions(this.commonChanAttributes, this.deviceList);
+      this.deviceOptionList = options;
+      this.selectedDeviceOption = selected;
     }
   }
 
@@ -137,7 +124,12 @@ export class BiasComponent implements OnChanges {
   }
 
   removeBias() {
-    this.emitBiasChannelDelete.emit(this.selectedDeviceOption?.value || '');
+    if (this.commonChanAttributes) {
+      this.emitBiasChannelDelete.emit({
+        deviceId: this.commonChanAttributes.device_id,
+        deviceModel: this.commonChanAttributes.device_model,
+      });
+    }
   }
 
   getBiasChanConfigFromComponent(): BiasChannel {
@@ -146,7 +138,7 @@ export class BiasComponent implements OnChanges {
       common_chan_attributes: {
         uuid: this.uuid,
         chan_name: this.chanName,
-        device_id: this.selectedDeviceOption?.value || '',
+        device_id: this.commonChanAttributes?.device_id || '',
         device_model: this.commonChanAttributes?.device_model,
         source_function: this.sourceFunction!,
         source_range: this.sourceRange!,
@@ -166,10 +158,13 @@ export class BiasComponent implements OnChanges {
   }
 
   onDeviceIDChange($event: Option) {
-    if (this.biasChannel) {
+    if (this.biasChannel && $event.isValid) {
+      this.selectedDeviceOption = $event;
       this.emitBiasChannelIdChange.emit({
         oldChanId: this.biasChannel.common_chan_attributes.device_id,
-        newChanId: $event.value,
+        newChanId: $event.deviceId,
+        oldModel: this.biasChannel.common_chan_attributes.device_model,
+        newModel: $event.deviceModel,
       });
     }
   }

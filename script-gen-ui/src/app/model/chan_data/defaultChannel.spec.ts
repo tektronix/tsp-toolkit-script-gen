@@ -1,7 +1,7 @@
 /// <reference types="jasmine" />
 
 import { ICommonChanAttributes } from '../interface';
-import { CommonChanAttributes } from './defaultChannel';
+import { CommonChanAttributes, Option } from './defaultChannel';
 
 describe('CommonChanAttributes model identity', () => {
   function channelData(): ICommonChanAttributes {
@@ -27,6 +27,24 @@ describe('CommonChanAttributes model identity', () => {
     expect(serialized.device_model).toBe('MSMU60-2');
     expect(restored.device_model).toBe('MSMU60-2');
     expect(restored.device_id).toBe(data.device_id);
+  });
+
+  describe('Device dropdown option', () => {
+    it('keeps selection value, address, model and label separate', () => {
+      const address = 'node[2].slot[1].smu[1]';
+      const options = ['MSMU60-2', 'MSMU200-2'].map((model) => new Option(
+        JSON.stringify([address, model]),
+        true,
+        address,
+        model,
+        `${address} (${model})`,
+      ));
+
+      expect(options[0].value).not.toBe(options[1].value);
+      expect(options[0].deviceId).toBe(options[1].deviceId);
+      expect(options[0].deviceModel).toBe('MSMU60-2');
+      expect(options[1].label).toBe(`${address} (MSMU200-2)`);
+    });
   });
 
   it('leaves a missing legacy model unresolved instead of guessing', () => {

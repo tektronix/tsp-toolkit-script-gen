@@ -42,7 +42,6 @@
   <div *ngIf="isStepExpanded" class="input-group">
     <div>
       <app-channel-dropdown
-        [(ngModel)]="selectedDeviceOption"
         [label]="'ID'"
         [selected]="selectedDeviceOption"
         [options]="deviceOptionList"

@@ -17,6 +17,7 @@ import { StepChannel } from '../../../model/chan_data/stepChannel';
 import { CommonChanAttributes } from '../../../model/chan_data/defaultChannel';
 import { StepGlobalParameters } from '../../../model/sweep_data/stepSweepConfig';
 import { Device } from '../../../model/device_data/device';
+import { channelDeviceOptions, DeviceIdentity, DeviceIdentityChange, resolveChannelDevice } from '../../../model/device_data/deviceSelection';
 import { Option } from '../../../model/chan_data/defaultChannel';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -93,11 +94,8 @@ export class StepComponent implements OnChanges {
     uuid: string;
     isExpanded: boolean;
   }>();
-  @Output() emitStepChannelDelete = new EventEmitter<string>();
-  @Output() emitStepChannelIdChange = new EventEmitter<{
-    oldChanId: string;
-    newChanId: string;
-  }>();
+  @Output() emitStepChannelDelete = new EventEmitter<DeviceIdentity>();
+  @Output() emitStepChannelIdChange = new EventEmitter<DeviceIdentityChange>();
 
   @Input() isActive = false;
   @Input() color = '';
@@ -146,20 +144,9 @@ export class StepComponent implements OnChanges {
       // this.listStep = true;
       this.list = this.stepChannel.start_stop_channel.list;
 
-      if (this.deviceList) {
-        this.deviceOptionList = this.deviceList
-          .filter(
-            (device) =>
-              !device.in_use ||
-              device._id === this.commonChanAttributes?.device_id
-          ) // Include current device even if in use
-          .map((device) => new Option(device._id, device.is_valid)); // Create Option objects
-
-        // Set the selected device option based on the step channel's device ID
-        this.selectedDeviceOption = this.deviceOptionList.find(
-          (option) => option.value === this.commonChanAttributes?.device_id // Match by device ID
-        );
-      }
+      const { options, selected } = channelDeviceOptions(this.commonChanAttributes, this.deviceList);
+      this.deviceOptionList = options;
+      this.selectedDeviceOption = selected;
 
       this.updateStepListsWithNames();
 
@@ -172,11 +159,8 @@ export class StepComponent implements OnChanges {
 
   updateStepListsWithNames() {
     if (this.stepChannel) {
-      const matchingDevice = this.deviceList.find(
-        (device) =>
-          device._id ===
-          this.stepChannel?.start_stop_channel.common_chan_attributes.device_id
-      );
+      const { device: matchingDevice } = resolveChannelDevice(
+        this.stepChannel.start_stop_channel.common_chan_attributes, this.deviceList);
       this.stepListsWithNames = [
         {
           chanName:
@@ -223,7 +207,12 @@ export class StepComponent implements OnChanges {
   }
 
   removeStep() {
-    this.emitStepChannelDelete.emit(this.selectedDeviceOption?.value || '');
+    if (this.commonChanAttributes) {
+      this.emitStepChannelDelete.emit({
+        deviceId: this.commonChanAttributes.device_id,
+        deviceModel: this.commonChanAttributes.device_model,
+      });
+    }
   }
 
   getStepChanConfigFromComponent(): StepChannel {
@@ -232,7 +221,7 @@ export class StepComponent implements OnChanges {
         common_chan_attributes: {
           uuid: this.uuid,
           chan_name: this.chanName,
-          device_id: this.selectedDeviceOption?.value || '',
+          device_id: this.commonChanAttributes?.device_id || '',
           device_model: this.commonChanAttributes?.device_model,
           source_function: this.sourceFunction!,
           meas_function: this.measFunction!,
@@ -263,11 +252,14 @@ export class StepComponent implements OnChanges {
   }
 
   onDeviceIDChange($event: Option) {
-    if (this.stepChannel) {
+    if (this.stepChannel && $event.isValid) {
+      this.selectedDeviceOption = $event;
       this.emitStepChannelIdChange.emit({
         oldChanId:
           this.stepChannel.start_stop_channel.common_chan_attributes.device_id,
-        newChanId: $event.value,
+        newChanId: $event.deviceId,
+        oldModel: this.stepChannel.start_stop_channel.common_chan_attributes.device_model,
+        newModel: $event.deviceModel,
       });
     }
   }

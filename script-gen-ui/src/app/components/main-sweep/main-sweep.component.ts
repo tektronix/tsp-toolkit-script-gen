@@ -331,7 +331,7 @@ export class MainSweepComponent implements OnChanges {
 
   updateStatusMsg() {
     if (this.sweepConfig && this.sweepConfig.status_msg) {
-      this.statusService.showTemporary(this.sweepConfig.status_msg, 5000);
+      this.statusService.showTemporary(this.sweepConfig.status_msg, this.sweepConfig.status_msg.timeout_ms ?? 5000);
     }
   }
 
@@ -420,6 +420,11 @@ export class MainSweepComponent implements OnChanges {
 
     // Send request via WebSocket service
     this.webSocketService.send(message);
+  }
+
+  saveAsGeneratedScript() {
+    // The host asks for the destination first; generation then targets that path
+    this.webSocketService.requestSaveAsLocation();
   }
 
   updateBiasChannelsConfig(updatedBiasChannel: BiasChannel) {

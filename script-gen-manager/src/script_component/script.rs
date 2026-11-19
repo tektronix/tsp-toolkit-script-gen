@@ -1,3 +1,4 @@
+use anyhow::Context;
 use std::{fs::File, io::Write, path::Path};
 
 use super::{
@@ -38,11 +39,16 @@ impl ScriptModel {
     }
 
     /// Converts the script chunks to a script including ordering, indent and substitution.
-    pub fn to_script(&mut self, sweep_config: &SweepConfig, file_path: &str) {
+    ///
+    /// # Errors
+    /// Returns an error if rendering, directory creation, or writing the script fails.
+    pub fn to_script(&mut self, sweep_config: &SweepConfig, file_path: &str) -> anyhow::Result<()> {
         let mut script_buffer = ScriptBuffer::new();
         script_buffer.set_auto_indent(true);
         for chunk in &mut self.chunks {
-            chunk.to_script(sweep_config, &mut script_buffer);
+            chunk
+                .to_script(sweep_config, &mut script_buffer)
+                .with_context(|| format!("Error generating {} script", chunk.get_type()))?;
         }
         //let file_path = "C:\\ScriptGen\\Snippet.txt";
         println!("Writing script to file: {file_path}");
@@ -52,24 +58,21 @@ impl ScriptModel {
         if !path.exists() {
             if let Some(parent) = path.parent() {
                 if !parent.exists() {
-                    if let Err(e) = std::fs::create_dir_all(parent) {
-                        println!("Failed to create directory: {e}");
-                        return;
-                    }
+                    std::fs::create_dir_all(parent).with_context(|| {
+                        format!("Failed to create directory {}", parent.display())
+                    })?;
                 }
             }
         }
 
-        match File::create(file_path) {
-            Ok(mut file_res) => {
-                if let Err(e) = file_res.write_all(script_buffer.to_string().as_bytes()) {
-                    println!("Error writing to file: {e}");
-                }
-            }
-            Err(e) => {
-                println!("Error creating file: {e}");
-            }
-        }
+        let mut file = File::create(file_path)
+            .with_context(|| format!("Error creating script file {file_path}"))?;
+        file.write_all(script_buffer.to_string().as_bytes())
+            .with_context(|| format!("Error writing script file {file_path}"))?;
+        file.flush()
+            .with_context(|| format!("Error flushing script file {file_path}"))?;
+        drop(file);
+        Ok(())
     }
 
     /// Adds a function chunk to the script.
@@ -100,5 +103,45 @@ impl ScriptModel {
             let data_report = DataReportModel::new(group.clone());
             self.add(Box::new(data_report));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use script_templates::FunctionTemplate;
+
+    #[test]
+    fn rendering_failure_is_returned_before_touching_the_output() {
+        let template = FunctionTemplate::parse(
+            "failing.yaml",
+            "id: INITIALIZE\ntype: Initialize\nbody: '{{missing_value}}'\n",
+        )
+        .unwrap();
+        let mut model = ScriptModel::new(Catalog::new());
+        model.add(Box::new(InitializeModel::new(template)));
+        let output =
+            std::env::temp_dir().join(format!("script-render-error-{}.tsp", std::process::id()));
+        std::fs::write(&output, "existing script").unwrap();
+
+        let error = model
+            .to_script(&SweepConfig::new(), output.to_str().unwrap())
+            .unwrap_err();
+        assert!(format!("{error:#}").contains("Error generating Initialize script"));
+        assert_eq!(std::fs::read_to_string(&output).unwrap(), "existing script");
+        std::fs::remove_file(output).unwrap();
+    }
+
+    #[test]
+    fn invalid_parent_directory_returns_a_filesystem_error() {
+        let parent =
+            std::env::temp_dir().join(format!("script-invalid-parent-{}", std::process::id()));
+        std::fs::write(&parent, "not a directory").unwrap();
+        let output = parent.join("nested").join("script.tsp");
+        let error = ScriptModel::new(Catalog::new())
+            .to_script(&SweepConfig::new(), output.to_str().unwrap())
+            .unwrap_err();
+        assert!(format!("{error:#}").contains("Failed to create directory"));
+        std::fs::remove_file(parent).unwrap();
     }
 }

@@ -581,7 +581,7 @@ mod tests {
         IpcData {
             request_type: action.to_string(),
             additional_info: if action == "save_as_generated_script" {
-                "C:\\out\\a.tsp".to_string()
+                "save-as-test.tsp".to_string()
             } else {
                 String::new()
             },

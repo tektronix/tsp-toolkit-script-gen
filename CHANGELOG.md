@@ -17,6 +17,9 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 -->
 ## [Unreleased]
 
+### Added
+- "Save As" option for generated script
+
 ### Changed
 - Script templates are now Handlebars templates organized in YAML files
 - The sweep script now configures each channel directly instead of including a generic

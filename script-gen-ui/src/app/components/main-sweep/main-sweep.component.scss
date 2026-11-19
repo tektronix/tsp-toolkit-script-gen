@@ -346,6 +346,13 @@ input:focus {
   align-items: center;
 }
 
+.script-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .open-script {
   border-radius: 13px;
   background-color: transparent;
@@ -359,22 +366,6 @@ input:focus {
   padding-right: 15px;
   cursor: pointer;
   position: relative;
-
-  &:hover::after {
-    content: attr(title);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--vscode-tooltip-background);
-    color: var(--vscode-tooltip-foreground);
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
-    margin-bottom: 5px;
-  }
 }
 
 .biasExpander-tooltip::ng-deep {

@@ -41,6 +41,10 @@ export class WebSocketService {
    vscode.postMessage({ command: 'get_initial_configuration' });
   }
 
+  requestSaveAsLocation(): void {
+    vscode.postMessage({ command: 'save_as_generated_script' });
+  }
+
   private chunkString(str: string, size: number): string[] {
     const numChunks = Math.ceil(str.length / size);
     const chunks = new Array(numChunks);

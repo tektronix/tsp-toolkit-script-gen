@@ -4,12 +4,12 @@
     id="channel-dropdown"
     [attr.aria-label]="automationID"
     [ngClass]="{ 'invalid-select': selected && !selected.isValid }"
-    [value]="selected?.value"
     (change)="onSelectionChanged($event)"
   >
     <option
-      *ngFor="let option of options"
+      *ngFor="let option of options; trackBy: trackOptionByValue"
       [value]="option.value"
+      [selected]="option.value === selected?.value"
       [ngClass]="{ 'invalid-option': !option.isValid }"
     >
       {{ option.label }}

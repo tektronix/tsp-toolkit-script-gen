@@ -47,6 +47,10 @@ export class ChannelDropdownComponent implements ControlValueAccessor, OnInit {
     }
   }
 
+  trackOptionByValue(_index: number, option: Option): string {
+    return option.value;
+  }
+
   writeValue(value: Option): void {
     this.selected = value;
   }

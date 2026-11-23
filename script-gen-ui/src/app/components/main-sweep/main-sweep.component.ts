@@ -421,6 +421,11 @@ export class MainSweepComponent implements OnChanges {
     this.webSocketService.send(message);
   }
 
+  saveAsGeneratedScript() {
+    // The host asks for the destination first; generation then targets that path
+    this.webSocketService.requestSaveAsLocation();
+  }
+
   updateBiasChannelsConfig(updatedBiasChannel: BiasChannel) {
     const attributes = updatedBiasChannel.common_chan_attributes;
     const index = this.channelIndex(

@@ -291,6 +291,7 @@
             name="sweepPoints"
             automationID="SweepPoints"
             (inputChange)="updateSweepGlobalParameters()"
+            [disabled]="!hasValidSweepDevice()"
           ></app-input-numeric>
         </div>
         <!-- <div>
@@ -304,6 +305,7 @@
               [attr.aria-label]="'listSweep'"
               name="isListSweep"
               (change)="updateSweepGlobalParameters()"
+              [disabled]="!hasValidSweepDevice()"
             />
             <label
               for="list"

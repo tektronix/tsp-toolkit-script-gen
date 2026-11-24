@@ -102,6 +102,7 @@ impl DataModel {
         match serde_json::from_str::<SweepModel>(&data) {
             Ok(mut sweep_model) => {
                 //println!("Successfully deserialized saved JSON in server: {sweep_model:?}");
+                sweep_model.sweep_config.backfill_legacy_device_models();
                 sweep_model.sweep_config.evaluate();
 
                 self.sweep_model = sweep_model;
@@ -431,7 +432,10 @@ mod tests {
         let json_value = serde_json::to_string(&data_model.sweep_model).unwrap();
         let response = data_model.add_remove_channel(IpcData {
             request_type: "reallocation".to_string(),
-            additional_info: format!("update,sweep,{},{}", old_device._id, new_device._id),
+            additional_info: format!(
+                "update,sweep,{},{},{},{}",
+                old_device._id, new_device._id, old_device.model, new_device.model
+            ),
             json_value,
         });
 
@@ -448,5 +452,103 @@ mod tests {
                 ["common_chan_attributes"]["source_range"]["value"],
             "60 V"
         );
+    }
+
+    fn slot_device(module: &str, in_use: bool, is_valid: bool) -> Device {
+        let mut device = Device::new(
+            "localnode",
+            "MP5103",
+            &Slot {
+                slot_id: "slot[1]".to_string(),
+                module: module.to_string(),
+            },
+            1,
+        );
+        device.in_use = in_use;
+        device.is_valid = is_valid;
+        device
+    }
+
+    // Serializes a model, then drops `device_model` as legacy saves never had it.
+    fn legacy_save(model: &SweepModel) -> String {
+        let mut value = serde_json::to_value(model).unwrap();
+        let config = &mut value["sweep_config"];
+        for chan in config["bias_channels"].as_array_mut().unwrap() {
+            chan["common_chan_attributes"]
+                .as_object_mut()
+                .unwrap()
+                .remove("device_model");
+        }
+        for key in ["step_channels", "sweep_channels"] {
+            for chan in config[key].as_array_mut().unwrap() {
+                chan["start_stop_channel"]["common_chan_attributes"]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("device_model");
+            }
+        }
+        value.to_string()
+    }
+
+    #[test]
+    fn legacy_recall_keeps_channel_on_in_use_device_when_replacement_shares_address() {
+        // Same-address replacement: MSMU60 still in use (invalid), MSMU200 listed later.
+        let old_device = slot_device("MSMU60-2", true, false);
+        let new_device = slot_device("MSMU200-2", false, true);
+        let mut sweep_model = SweepModel::new();
+        sweep_model.sweep_config.device_list = vec![old_device.clone(), new_device];
+        let mut channel = SweepChannel::new("sweep1".to_string(), old_device, 10);
+        channel
+            .start_stop_channel
+            .common_chan_attributes
+            .source_function
+            .value = BaseMetadata::FUNCTION_VOLTAGE.to_string();
+        // Mimics the legacy overwrite that left 200 V options on a channel bound to MSMU60.
+        channel
+            .start_stop_channel
+            .common_chan_attributes
+            .source_range
+            .value = "200 V".to_string();
+        sweep_model.sweep_config.sweep_channels.push(channel);
+
+        let mut data_model = DataModel::new();
+        let response = data_model.process_data_from_saved_config(legacy_save(&sweep_model));
+
+        let ipc_data: IpcData = serde_json::from_str(&response).unwrap();
+        assert_eq!(ipc_data.request_type, "evaluated_response");
+        let attributes = &data_model.sweep_model.sweep_config.sweep_channels[0]
+            .start_stop_channel
+            .common_chan_attributes;
+        assert_eq!(attributes.device_model, "MSMU60-2");
+        assert_eq!(attributes.device.model, "MSMU60-2");
+        assert!(!attributes.device.is_valid);
+        assert!(!attributes.source_range.range.contains(&"200 V".to_string()));
+        assert!(attributes
+            .source_range
+            .range
+            .contains(&attributes.source_range.value));
+    }
+
+    #[test]
+    fn legacy_backfill_preserves_explicit_device_model() {
+        let first = slot_device("MSMU60-2", true, true);
+        let second = slot_device("MSMU200-2", false, false);
+        let mut sweep_model = SweepModel::new();
+        sweep_model.sweep_config.device_list = vec![first, second.clone()];
+        sweep_model
+            .sweep_config
+            .sweep_channels
+            .push(SweepChannel::new("sweep1".to_string(), second, 10));
+        let before = serde_json::to_value(&sweep_model).unwrap();
+        sweep_model.sweep_config.backfill_legacy_device_models();
+
+        assert_eq!(
+            sweep_model.sweep_config.sweep_channels[0]
+                .start_stop_channel
+                .common_chan_attributes
+                .device_model,
+            "MSMU200-2"
+        );
+        assert_eq!(serde_json::to_value(&sweep_model).unwrap(), before);
     }
 }

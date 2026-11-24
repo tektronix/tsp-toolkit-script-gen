@@ -343,6 +343,37 @@ impl SweepConfig {
         }
     }
 
+    /// Restores the module model for channels saved before `device_model` existed.
+    ///
+    /// Legacy reassignment between modules at the same address never took effect, so the channel
+    /// is still bound to the saved device at that address that is marked in use, even if a
+    /// replacement module now shares the address. Must run before `evaluate()`.
+    pub fn backfill_legacy_device_models(&mut self) {
+        let device_list = &self.device_list;
+        let channels = self
+            .bias_channels
+            .iter_mut()
+            .map(|c| &mut c.common_chan_attributes)
+            .chain(
+                self.step_channels
+                    .iter_mut()
+                    .map(|c| &mut c.start_stop_channel.common_chan_attributes),
+            )
+            .chain(
+                self.sweep_channels
+                    .iter_mut()
+                    .map(|c| &mut c.start_stop_channel.common_chan_attributes),
+            );
+        for channel in channels.filter(|c| c.device_model.is_empty()) {
+            let mut in_use = device_list
+                .iter()
+                .filter(|device| device._id == channel.device_id && device.in_use);
+            if let (Some(device), None) = (in_use.next(), in_use.next()) {
+                channel.device_model.clone_from(&device.model);
+            }
+        }
+    }
+
     /// Synchronizes assigned device copies using the address and module model.
     pub fn update_channel_devices(&mut self) {
         let channels = self

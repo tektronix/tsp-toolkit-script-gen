@@ -47,6 +47,19 @@ export class AppComponent implements OnInit, OnDestroy {
 
   constructor(private webSocketService: WebSocketService, private statusService: StatusService) {}
 
+  // The extension replies with the file chosen in the Save As dialog
+  @HostListener('window:message', ['$event'])
+  onHostMessage(event: MessageEvent): void {
+    const data = event.data as { command?: string; path?: unknown } | undefined;
+    if (data?.command === 'save_as_target' && typeof data.path === 'string' && data.path) {
+      this.webSocketService.send(JSON.stringify(new IpcData({
+        request_type: 'save_as_generated_script',
+        additional_info: data.path,
+        json_value: '{}',
+      })));
+    }
+  }
+
   ngOnInit() {
     this.webSocketService.connect();
     // Restore only the host's button-owned tab state, not whether the file is open elsewhere.
@@ -124,14 +137,14 @@ export class AppComponent implements OnInit, OnDestroy {
           // Update visibility based on the device list
           if (this.sweepConfig.device_list.length > 0) {
             this.isMainSweepVisible = true;
-            
+
           }
         } else {
           console.error('sweep_model property is missing in the data');
           this.statusService.clear();
         }
-      } 
-      
+      }
+
       else if (ipcData.request_type === 'open_script') {
         vscode.postMessage({ command: 'open_script' });
         const statusMsg = this.sweepConfig?.status_msg;
@@ -140,8 +153,18 @@ export class AppComponent implements OnInit, OnDestroy {
         } else {
           this.statusService.clear();
         }
-      } 
-      
+      }
+
+      else if (ipcData.request_type === 'save_as_generated_script') {
+        vscode.postMessage({ command: 'open_saved_script' , payload : ipcData.additional_info});
+        this.statusService.clear();
+      }
+
+      else if (ipcData.request_type === 'script_generation_error') {
+        const statusMsg = new StatusMsg(JSON.parse(ipcData.json_value));
+        this.statusService.show(statusMsg);
+      }
+
       else if (ipcData.request_type === 'empty_system_config_error') {
         // handle empty system config error
         console.log('Empty system config error received');

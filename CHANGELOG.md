@@ -17,15 +17,18 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 -->
 ## [Unreleased]
 
+### Added
+- "Save As" option for generated script
+
 ### Changed
 - Script templates are now Handlebars templates organized in YAML files
 - The sweep script now configures each channel directly instead of including a generic
   channel-configuration library, making generated scripts much shorter
 - Source Limit I/V are now added/removed based on source function value
 - In List editing window, Tab key moves control to the next input.
+- Added active highlighting to the 'Open Script' button when clicked to open the corresponding script.
 
 ### Fixed
-- Added active highlighting to the 'Open Script' button when clicked to open the corresponding script.
 - Waiting on more than two other channels of the same role no longer skips one of them
 - Measurement buffers of MPSU channels are now referenced correctly in generated scripts
 

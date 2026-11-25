@@ -4,6 +4,7 @@ version = { workspace = true }
 edition = "2021"
 
 [dependencies]
+anyhow = { workspace = true }
 script-templates = { workspace = true }
 script-aggregator = { workspace = true }
 tsp-toolkit-kic-lib = { workspace = true }

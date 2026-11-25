@@ -347,6 +347,13 @@ input:focus {
   align-items: center;
 }
 
+.script-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .open-script {
   box-sizing: border-box;
   // Opening the adjacent editor narrows the webview; keep the label on one line.

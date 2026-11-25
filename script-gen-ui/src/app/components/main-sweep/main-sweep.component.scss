@@ -262,7 +262,8 @@
   cursor: pointer;
 }
 
-button.timing.timing-open {
+button.timing.timing-open,
+button.open-script.script-open {
   outline: 1px solid -webkit-focus-ring-color;
   outline-offset: -1px;
 }
@@ -347,18 +348,21 @@ input:focus {
 }
 
 .open-script {
+  box-sizing: border-box;
+  // Opening the adjacent editor narrows the webview; keep the label on one line.
+  white-space: nowrap;
   border-radius: 13px;
   background-color: transparent;
   color: var(--vscode-editor-foreground);
-  border-color: var(--vscode-activityBarBadge-background);
-  border-style: solid;
-  border-width: thin;
-  padding-top: 5px;
-  padding-bottom: 5px;
-  padding-left: 15px;
-  padding-right: 15px;
+  border: 1px solid var(--vscode-activityBarBadge-background);
+  padding: 5px 15px;
   cursor: pointer;
   position: relative;
+
+  // Mouse focus must not look like the script-open indicator after a tab closes.
+  &:focus:not(:focus-visible):not(.script-open) {
+    outline: none;
+  }
 
   &:hover::after {
     content: attr(title);

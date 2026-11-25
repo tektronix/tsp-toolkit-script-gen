@@ -29,6 +29,8 @@
         <button
           [attr.aria-label]="'OpenScript'"
           class="open-script"
+          [class.script-open]="isScriptOpen"
+          [attr.aria-pressed]="isScriptOpen"
           (click)="openScript()"
           title="Open generated script"
         >

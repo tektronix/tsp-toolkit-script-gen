@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
 import { WebSocketService } from './websocket.service';
 import { Subscription } from 'rxjs';
 import { ServerData } from './model/serverData';
@@ -43,11 +43,14 @@ export class AppComponent implements OnInit, OnDestroy {
   sweepModel: SweepModel | undefined;
   sweepConfig: SweepConfig | undefined;
   isMainSweepVisible = false;
+  isGeneratedScriptOpen = false;
 
   constructor(private webSocketService: WebSocketService, private statusService: StatusService) {}
 
   ngOnInit() {
     this.webSocketService.connect();
+    // Restore only the host's button-owned tab state, not whether the file is open elsewhere.
+    vscode.postMessage({ command: 'get_script_editor_state', payload: '' });
 
     this.wsSubscription = this.webSocketService.getMessages().subscribe(
       (message) => {
@@ -60,6 +63,26 @@ export class AppComponent implements OnInit, OnDestroy {
         console.log('WebSocket connection closed');
       }
     );
+  }
+
+  @HostListener('window:message', ['$event'])
+  handleExtensionMessage(event: MessageEvent<unknown>): void {
+    const message = event.data;
+    if (typeof message !== 'object' || message === null) {
+      return;
+    }
+
+    const stateMessage = message as {
+      command?: unknown;
+      isOpen?: unknown;
+    };
+    if (
+      stateMessage.command === 'script_editor_state' &&
+      typeof stateMessage.isOpen === 'boolean'
+    ) {
+      // Only a host-confirmed button-owned tab activates the UI highlight.
+      this.isGeneratedScriptOpen = stateMessage.isOpen;
+    }
   }
 
   processServerData(message: string): void {

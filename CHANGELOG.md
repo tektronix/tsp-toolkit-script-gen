@@ -25,6 +25,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - In List editing window, Tab key moves control to the next input.
 
 ### Fixed
+- Added active highlighting to the 'Open Script' button when clicked to open the corresponding script.
 - Waiting on more than two other channels of the same role no longer skips one of them
 - Measurement buffers of MPSU channels are now referenced correctly in generated scripts
 

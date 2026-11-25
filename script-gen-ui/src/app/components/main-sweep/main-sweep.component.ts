@@ -133,6 +133,7 @@ export class MainSweepComponent implements OnChanges {
   showStepListStates: Record<string, boolean> = {}; // step list pop up box boolean tracking
   stepListPositions: Map<string, { left: number; top: number }> = new Map(); // step list positions
   @Input() sweepConfig: SweepConfig | undefined;
+  @Input() isScriptOpen = false;
 
   isBiasExpanded = false;
   isStepExpanded = false;

@@ -47,16 +47,41 @@ export class AppComponent implements OnInit, OnDestroy {
 
   constructor(private webSocketService: WebSocketService, private statusService: StatusService) {}
 
-  // The extension replies with the file chosen in the Save As dialog
+  // Handle both host replies here; separate window:message handlers caused Save As replies to be dropped.
   @HostListener('window:message', ['$event'])
-  onHostMessage(event: MessageEvent): void {
-    const data = event.data as { command?: string; path?: unknown } | undefined;
-    if (data?.command === 'save_as_target' && typeof data.path === 'string' && data.path) {
+  onHostMessage(event: MessageEvent<unknown>): void {
+    const data = event.data;
+    if (typeof data !== 'object' || data === null) {
+      return;
+    }
+
+    const message = data as {
+      command?: unknown;
+      path?: unknown;
+      isOpen?: unknown;
+    };
+
+    // Handle the file path returned by the VS Code Save As dialog.
+    // Forward the selected path to the backend so the generated script can be saved.
+    if (
+      message.command === 'save_as_target' &&
+      typeof message.path === 'string' &&
+      message.path
+    ) {
       this.webSocketService.send(JSON.stringify(new IpcData({
         request_type: 'save_as_generated_script',
-        additional_info: data.path,
+        additional_info: message.path,
         json_value: '{}',
       })));
+    } else if (
+      // Handle the script editor state returned by the VS Code extension.
+      // Update the UI state only when the host explicitly confirms whether
+      // the generated script editor tab is open
+      message.command === 'script_editor_state' &&
+      typeof message.isOpen === 'boolean'
+    ) {
+      // Only a host-confirmed button-owned tab activates the UI highlight.
+      this.isGeneratedScriptOpen = message.isOpen;
     }
   }
 
@@ -76,26 +101,6 @@ export class AppComponent implements OnInit, OnDestroy {
         console.log('WebSocket connection closed');
       }
     );
-  }
-
-  @HostListener('window:message', ['$event'])
-  handleExtensionMessage(event: MessageEvent<unknown>): void {
-    const message = event.data;
-    if (typeof message !== 'object' || message === null) {
-      return;
-    }
-
-    const stateMessage = message as {
-      command?: unknown;
-      isOpen?: unknown;
-    };
-    if (
-      stateMessage.command === 'script_editor_state' &&
-      typeof stateMessage.isOpen === 'boolean'
-    ) {
-      // Only a host-confirmed button-owned tab activates the UI highlight.
-      this.isGeneratedScriptOpen = stateMessage.isOpen;
-    }
   }
 
   processServerData(message: string): void {

@@ -369,23 +369,7 @@ input:focus {
   // Mouse focus must not look like the script-open indicator after a tab closes.
   &:focus:not(:focus-visible):not(.script-open) {
     outline: none;
-  }
-
-  &:hover::after {
-    content: attr(title);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--vscode-tooltip-background);
-    color: var(--vscode-tooltip-foreground);
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 1000;
-    margin-bottom: 5px;
-  }
+  }  
 }
 
 .biasExpander-tooltip::ng-deep {

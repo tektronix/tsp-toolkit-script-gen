@@ -315,11 +315,11 @@
           </div>
           <div style="margin-top: auto; margin-bottom: 0.5vh">
             <button
-              [attr.aria-label]="!isListSweep ? 'EditSweepList-Disabled' : 'EditSweepList'"
+              [attr.aria-label]="!isListSweep || !hasValidSweepDevice() ? 'EditSweepList-Disabled' : 'EditSweepList'"
               [class.sweepList-open]="showList"
               class="timing"
               (click)="enableList()"
-              [disabled]="!isListSweep"
+              [disabled]="!isListSweep || !hasValidSweepDevice()"
             >
               Edit
             </button>
@@ -327,6 +327,7 @@
               *ngIf="showList"
               [listsWithNames]="sweepListsWithNames"
               [noOfPointsOrSteps]="sweepPoints?.value"
+              [isNoOfPointsOrSteps]="hasValidSweepDevice()"
               (closeList)="closeList()"
               (listOfPoints)="listOfSweepPointsUpdate($event)"
               (updatedStepsOrPoints)="sweepPointsUpdatefromList($event)"

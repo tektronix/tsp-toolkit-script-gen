@@ -1,18 +1,48 @@
 <div class="channel-dropdown">
   <label for="channel-dropdown">{{ label }}</label>
-  <select
-    id="channel-dropdown"
-    [attr.aria-label]="automationID"
-    [ngClass]="{ 'invalid-select': selected && !selected.isValid }"
-    (change)="onSelectionChanged($event)"
-  >
-    <option
-      *ngFor="let option of options; trackBy: trackOptionByValue"
-      [value]="option.value"
-      [selected]="option.value === selected?.value"
-      [ngClass]="{ 'invalid-option': !option.isValid }"
+  <div class="select-wrapper">
+    <button
+      type="button"
+      id="channel-dropdown-trigger"
+      class="select-trigger"
+      role="combobox"
+      aria-haspopup="listbox"
+      aria-controls="channel-dropdown-list"
+      [attr.aria-expanded]="isOpen"
+      [attr.aria-label]="automationID"
+      [ngClass]="{ 'invalid-select': selected && !selected.isValid }"
+      [attr.title]="isOpen ? null : tooltipText"
+      (click)="toggle()"
+      (keydown)="onKeydown($event)"
     >
-      {{ option.label }}
-    </option>
-  </select>
+      <span class="selected-text">
+        <ng-container *ngIf="selected">
+          <span class="option-id">{{ optionId(selected) }}</span>
+          <span class="option-detail">{{ optionDetail(selected) }}</span>
+        </ng-container>
+      </span>
+      <span class="select-arrow" aria-hidden="true"></span>
+    </button>
+    <ul *ngIf="isOpen" id="channel-dropdown-list" class="options-list" role="listbox">
+      <li
+        *ngFor="let option of options; let i = index; trackBy: trackOptionByValue"
+        class="option"
+        role="option"
+        tabindex="-1"
+        (keydown.enter)="selectOption(option)"
+        [attr.aria-selected]="option.value === selected?.value"
+        [ngClass]="{
+          'invalid-option': !option.isValid,
+          active: i === activeIndex,
+          chosen: option.value === selected?.value
+        }"
+        (mousedown)="$event.preventDefault()"
+        (click)="selectOption(option)"
+        (mouseenter)="activeIndex = i"
+      >
+        <span class="option-id">{{ optionId(option) }}</span>
+        <span class="option-detail">{{ optionDetail(option) }}</span>
+      </li>
+    </ul>
+  </div>
 </div>

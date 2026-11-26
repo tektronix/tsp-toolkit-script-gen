@@ -39,10 +39,13 @@ The bias, step, and sweep UI dropdowns use address-and-model identities, display
 `address (model)`, retain invalid current assignments, and exclude occupied
 alternatives. Changes and removals send both address and model; channel edits and
 device validity lookups also match both fields.
-The dropdown updates immediately on selection. The backend response supplies the
-authoritative configuration, restoring the prior assignment if the operation is
-rejected. TSP addresses are not changed.
 
-Save/recall migration and role/mainframe constraints remain follow-up work.
-Legacy channels without `device_model` remain unresolved (including when only one
-device has the address); the UI does not infer a model.
+## Role assignments
+
+A configuration supports at most one stepper channel; no stepper is also valid.
+Bias and sweep channels have no role-specific count limit and may be assigned
+across any available nodes, including splitting a single role across mainframes.
+Multiple roles may share a mainframe. Each assignment still requires a valid,
+available device; a physical channel cannot be assigned to multiple roles.
+
+The existing UI hides Add Step when a stepper exists.

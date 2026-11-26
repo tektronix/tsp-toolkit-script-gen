@@ -22,83 +22,148 @@ describe('ChannelDropdownComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+  const address = 'node[2].slot[1].smu[1]';
 
-  it('renders labels while emitting distinct model-aware option values', async () => {
-    const address = 'node[2].slot[1].smu[1]';
-    component.options = ['MSMU60-2', 'MSMU200-2'].map((model) => new Option(
+  function setOptions(models: string[], selectedIndex = 0): void {
+    component.options = models.map((model) => new Option(
       JSON.stringify([address, model]), true, address, model, `${address} (${model})`,
     ));
-    component.selected = component.options[0];
-    const emitted = spyOn(component.selectedChange, 'emit');
+    component.selected = component.options[selectedIndex];
+    fixture.detectChanges();
+  }
+
+  const trigger = (): HTMLButtonElement => fixture.nativeElement.querySelector('.select-trigger');
+  const rows = (): HTMLElement[] => Array.from(fixture.nativeElement.querySelectorAll('.option'));
+
+  it('shows only the id when closed, with the full text in a tooltip', () => {
+    setOptions(['MSMU60-2', 'MSMU200-2']);
+    expect(trigger().querySelector('.option-id')?.textContent).toBe(address);
+    expect(trigger().querySelector('.option-detail')?.textContent).toBe('(MSMU60-2)');
+    expect(trigger().getAttribute('title')).toBe(`${address}\u00A0\u00A0(MSMU60-2)`);
+    expect(rows().length).toBe(0);
+  });
+
+  it('removes the tooltip while the list is open and lists id and model', () => {
+    setOptions(['MSMU60-2', 'MSMU200-2']);
+    trigger().click();
     fixture.detectChanges();
 
-    const select: HTMLSelectElement = fixture.nativeElement.querySelector('select');
-    expect(select.options[0].textContent?.trim()).toBe(`${address} (MSMU60-2)`);
-    expect(select.options[1].textContent?.trim()).toBe(`${address} (MSMU200-2)`);
-    select.value = component.options[1].value;
-    select.dispatchEvent(new Event('change'));
-    await fixture.whenStable();
+    expect(trigger().hasAttribute('title')).toBeFalse();
+    expect(rows().map((row) => row.querySelector('.option-id')?.textContent)).toEqual([address, address]);
+    expect(rows()[1].querySelector('.option-detail')?.textContent).toBe('(MSMU200-2)');
+
+    trigger().click();
+    fixture.detectChanges();
+    expect(rows().length).toBe(0);
+    expect(trigger().hasAttribute('title')).toBeTrue();
+  });
+
+  it('emits model-aware option values when an option is clicked', () => {
+    setOptions(['MSMU60-2', 'MSMU200-2']);
+    const emitted = spyOn(component.selectedChange, 'emit');
+    const changed = jasmine.createSpy('modelChange');
+    component.registerOnChange(changed);
+    trigger().click();
+    fixture.detectChanges();
+    rows()[1].click();
     fixture.detectChanges();
 
     expect(emitted).toHaveBeenCalledWith(component.options[1]);
-    expect(component.selected.deviceId).toBe(address);
-    expect(component.selected.deviceModel).toBe('MSMU200-2');
+    expect(changed).toHaveBeenCalledWith(component.options[1]);
+    expect(component.selected?.deviceModel).toBe('MSMU200-2');
+    expect(rows().length).toBe(0);
   });
 
-  it('updates immediately and accepts the authoritative selection afterward', async () => {
+  it('does not emit when the current option is chosen again', () => {
+    setOptions(['MSMU60-2', 'MSMU200-2']);
+    const emitted = spyOn(component.selectedChange, 'emit');
+    trigger().click();
+    fixture.detectChanges();
+    rows()[0].click();
+    expect(emitted).not.toHaveBeenCalled();
+  });
+
+  it('marks invalid selections and options and keeps the full invalid text in the list', () => {
     component.options = [
       new Option('old', false, 'smu[1]', '2450', 'smu[1] (2450) — invalid', 'Unavailable'),
       new Option('new', true, 'smu[1]', '2460', 'smu[1] (2460)'),
     ];
     component.selected = component.options[0];
-    const changed = jasmine.createSpy('modelChange');
-    component.registerOnChange(changed);
-    const emitted = spyOn(component.selectedChange, 'emit');
     fixture.detectChanges();
 
-    const select: HTMLSelectElement = fixture.nativeElement.querySelector('select');
-    select.value = 'new';
-    select.dispatchEvent(new Event('change'));
+    expect(trigger().classList).toContain('invalid-select');
+    expect(trigger().querySelector('.option-id')?.textContent).toBe('smu[1]');
+    expect(trigger().querySelector('.option-detail')?.textContent).toBe('(2450) — invalid');
+    trigger().click();
     fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    expect(emitted).toHaveBeenCalledWith(component.options[1]);
-    expect(changed).toHaveBeenCalledWith(component.options[1]);
-    expect(select.value).toBe('new');
-    expect(component.selected).toBe(component.options[1]);
-    component.selected = component.options[0];
-    fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-    expect(select.value).toBe('old');
-    expect(select.classList).toContain('invalid-select');
+    expect(rows()[0].classList).toContain('invalid-option');
+    expect(rows()[0].querySelector('.option-detail')?.textContent).toBe('(2450) — invalid');
+    expect(rows()[1].classList).not.toContain('invalid-option');
   });
 
-  it('keeps the selected option when option objects are refreshed', async () => {
-    const oldOptions = [
-      new Option('first', true, 'smu[1]', '2450', 'smu[1] (2450)'),
-      new Option('second', true, 'smu[2]', '2460', 'smu[2] (2460)'),
-    ];
-    component.options = oldOptions;
-    component.selected = oldOptions[1];
+  it('caps the open list at five rows and scrolls beyond that', () => {
+    setOptions(['A', 'B', 'C', 'D', 'E', 'F', 'G']);
+    trigger().click();
     fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
+    const list: HTMLElement = fixture.nativeElement.querySelector('.options-list');
+    const rowHeight = rows()[0].getBoundingClientRect().height;
 
-    component.options = [
-      new Option('first', true, 'smu[1]', '2450', 'smu[1] (2450)'),
-      new Option('second', true, 'smu[2]', '2460', 'smu[2] (2460)'),
-    ];
+    expect(rows().length).toBe(7);
+    expect(getComputedStyle(list).overflowY).toBe('auto');
+    expect(list.getBoundingClientRect().height).toBeLessThanOrEqual(rowHeight * 5 + 2);
+    expect(list.scrollHeight).toBeGreaterThan(list.clientHeight);
+  });
+
+  it('does not scroll when five or fewer rows exist', () => {
+    setOptions(['A', 'B', 'C', 'D', 'E']);
+    trigger().click();
+    fixture.detectChanges();
+    const list: HTMLElement = fixture.nativeElement.querySelector('.options-list');
+    expect(list.scrollHeight).toBeLessThanOrEqual(list.clientHeight);
+  });
+
+  it('supports keyboard selection and Escape', () => {
+    setOptions(['MSMU60-2', 'MSMU200-2']);
+    const emitted = spyOn(component.selectedChange, 'emit');
+    const key = (k: string) => {
+      trigger().dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
+      fixture.detectChanges();
+    };
+    key('ArrowDown');
+    expect(rows().length).toBe(2);
+    key('Escape');
+    expect(rows().length).toBe(0);
+    key('ArrowDown');
+    key('ArrowDown');
+    key('Enter');
+    expect(emitted).toHaveBeenCalledWith(component.options[1]);
+    expect(rows().length).toBe(0);
+  });
+
+  it('closes when clicking outside', () => {
+    setOptions(['MSMU60-2', 'MSMU200-2']);
+    trigger().click();
+    fixture.detectChanges();
+    document.body.click();
+    fixture.detectChanges();
+    expect(rows().length).toBe(0);
+  });
+
+  it('closes when clicking the label above the control', () => {
+    setOptions(['MSMU60-2', 'MSMU200-2']);
+    trigger().click();
+    fixture.detectChanges();
+    expect(rows().length).toBe(2);
+    fixture.nativeElement.querySelector('label').click();
+    fixture.detectChanges();
+    expect(rows().length).toBe(0);
+  });
+
+  it('accepts the authoritative selection afterward', () => {
+    setOptions(['MSMU60-2', 'MSMU200-2']);
     component.selected = component.options[1];
     fixture.detectChanges();
-    await fixture.whenStable();
-    fixture.detectChanges();
-
-    const select: HTMLSelectElement = fixture.nativeElement.querySelector('select');
-    expect(select.value).toBe('second');
+    expect(trigger().getAttribute('title')).toContain('(MSMU200-2)');
   });
 });
+

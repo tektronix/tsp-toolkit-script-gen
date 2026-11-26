@@ -181,6 +181,19 @@ export class MainSweepComponent implements OnChanges {
     );
   }
 
+  hasValidSweepDevice(): boolean {
+    return (
+      this.sweepChannels.length > 0 &&
+      this.sweepChannels.every((sweepChannel) => {
+        const selectedDeviceId =
+          sweepChannel.start_stop_channel.common_chan_attributes.device_id;
+        return this.deviceList.some(
+          (device) => device._id === selectedDeviceId && device.is_valid
+        );
+      })
+    );
+  }
+
   scrollToInstance(
     componentType: 'bias' | 'step' | 'sweep',
     index: number

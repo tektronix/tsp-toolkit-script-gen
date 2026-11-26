@@ -231,7 +231,8 @@
 }
 
 .button-icon:disabled,
-.button-icon[disabled] {
+.button-icon[disabled],
+.checkbox input[disabled]{
   // opacity: 0.3; // it is causing the tooltip to be greyed out as well
   color: var(--vscode-badge-background); //greying out effect when disabled
   cursor: not-allowed;

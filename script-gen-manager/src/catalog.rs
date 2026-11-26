@@ -1,15 +1,19 @@
 use std::collections::HashMap;
 
-use xml_handler::{generic_parser, group::Group};
+use script_templates::FunctionTemplate;
 
-/// Represents a catalog of function metadata.
+/// Represents a catalog of function templates.
 #[derive(Debug, Clone)]
 pub struct Catalog {
-    /// A map of function metadata, keyed by function type (e.g., Initialize, Finalize, etc.)
-    pub function_metadata_map: HashMap<String, Group>,
+    /// A map of function templates, keyed by function type (e.g., Initialize, Finalize, etc.)
+    pub function_metadata_map: HashMap<String, FunctionTemplate>,
 }
 
 impl Catalog {
+    /// The function types whose templates are included in generated scripts. Templates for
+    /// Initialize, Finalize and DataReport exist but are not yet enabled.
+    const ENABLED_FUNCTIONS: &'static [&'static str] = &["Sweep"];
+
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -17,17 +21,23 @@ impl Catalog {
         }
     }
 
-    /// Refreshes the function metadata by parsing XML data.
+    /// Refreshes the function metadata by loading the function templates.
     ///
-    /// This method updates the `function_metadata_map` with the parsed XML data.
+    /// This method updates the `function_metadata_map` with the enabled function templates.
     pub fn refresh_function_metadata(&mut self) {
-        if let Ok(res) = generic_parser::parse_xml() {
-            for item in res {
-                self.function_metadata_map.insert(item.type_.clone(), item);
+        match script_templates::load_templates() {
+            Ok(templates) => {
+                for template in templates
+                    .into_iter()
+                    .filter(|t| Self::ENABLED_FUNCTIONS.contains(&t.type_()))
+                {
+                    self.function_metadata_map
+                        .insert(template.type_().to_string(), template);
+                }
             }
-        } else {
-            //eprintln!("Error: {:?}", e);
-            //return Err(e.into());
+            Err(e) => {
+                eprintln!("Error loading function templates: {e}");
+            }
         }
     }
 }

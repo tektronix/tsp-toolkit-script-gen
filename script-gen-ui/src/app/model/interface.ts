@@ -126,6 +126,7 @@ export interface IStatusMsg {
   status_type: StatusType;
   message: string;
   time_stamp: string;
+  timeout_ms?: number;
 }
 
 export interface ISweepConfig {

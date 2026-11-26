@@ -219,19 +219,17 @@
         [(ngModel)]="sourceLimitI.value"
         [label]="'Source Limit I'"
         [unit]="sourceLimitI.unit"
-        *ngIf="sourceLimitI"
+        *ngIf="sourceLimitI && sourceFunction?.value === 'Voltage'"
         name="sourceLimitI"
         automationID="SourceLimitI"
         (inputChange)="submitStepData()"
         [disabled]="!selectedDeviceOption?.isValid"
       ></app-input-plain>
-    </div>
-    <div>
       <app-input-plain
         [(ngModel)]="sourceLimitV.value"
         [label]="'Source Limit V'"
         [unit]="sourceLimitV.unit"
-        *ngIf="sourceLimitV"
+        *ngIf="sourceLimitV && sourceFunction?.value === 'Current'"
         name="sourceLimitV"
         automationID="SourceLimitV"
         (inputChange)="submitStepData()"

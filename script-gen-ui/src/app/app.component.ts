@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, HostListener, OnInit, OnDestroy } from '@angular/core';
 import { WebSocketService } from './websocket.service';
 import { Subscription } from 'rxjs';
 import { ServerData } from './model/serverData';
@@ -43,11 +43,52 @@ export class AppComponent implements OnInit, OnDestroy {
   sweepModel: SweepModel | undefined;
   sweepConfig: SweepConfig | undefined;
   isMainSweepVisible = false;
+  isGeneratedScriptOpen = false;
 
   constructor(private webSocketService: WebSocketService, private statusService: StatusService) {}
 
+  // Handle both host replies here; separate window:message handlers caused Save As replies to be dropped.
+  @HostListener('window:message', ['$event'])
+  onHostMessage(event: MessageEvent<unknown>): void {
+    const data = event.data;
+    if (typeof data !== 'object' || data === null) {
+      return;
+    }
+
+    const message = data as {
+      command?: unknown;
+      path?: unknown;
+      isOpen?: unknown;
+    };
+
+    // Handle the file path returned by the VS Code Save As dialog.
+    // Forward the selected path to the backend so the generated script can be saved.
+    if (
+      message.command === 'save_as_target' &&
+      typeof message.path === 'string' &&
+      message.path
+    ) {
+      this.webSocketService.send(JSON.stringify(new IpcData({
+        request_type: 'save_as_generated_script',
+        additional_info: message.path,
+        json_value: '{}',
+      })));
+    } else if (
+      // Handle the script editor state returned by the VS Code extension.
+      // Update the UI state only when the host explicitly confirms whether
+      // the generated script editor tab is open
+      message.command === 'script_editor_state' &&
+      typeof message.isOpen === 'boolean'
+    ) {
+      // Only a host-confirmed button-owned tab activates the UI highlight.
+      this.isGeneratedScriptOpen = message.isOpen;
+    }
+  }
+
   ngOnInit() {
     this.webSocketService.connect();
+    // Restore only the host's button-owned tab state, not whether the file is open elsewhere.
+    vscode.postMessage({ command: 'get_script_editor_state', payload: '' });
 
     this.wsSubscription = this.webSocketService.getMessages().subscribe(
       (message) => {
@@ -89,31 +130,58 @@ export class AppComponent implements OnInit, OnDestroy {
         if (data.sweep_model) {
           this.sweepModel = new SweepModel(data.sweep_model);
           this.sweepConfig = this.sweepModel.sweep_config;
+          if (this.sweepConfig.status_msg) {
+            this.statusService.showTemporary(
+              this.sweepConfig.status_msg,
+              this.sweepConfig.status_msg.timeout_ms ?? 5000
+            );
+          } else {
+            this.statusService.clear();
+          }
 
           // Update visibility based on the device list
           if (this.sweepConfig.device_list.length > 0) {
             this.isMainSweepVisible = true;
-            
+
           }
         } else {
           console.error('sweep_model property is missing in the data');
+          this.statusService.clear();
         }
-      } 
-      
+      }
+
       else if (ipcData.request_type === 'open_script') {
         vscode.postMessage({ command: 'open_script' });
-      } 
-      
+        const statusMsg = this.sweepConfig?.status_msg;
+        if (statusMsg) {
+          this.statusService.showTemporary(statusMsg, statusMsg.timeout_ms ?? 5000);
+        } else {
+          this.statusService.clear();
+        }
+      }
+
+      else if (ipcData.request_type === 'save_as_generated_script') {
+        vscode.postMessage({ command: 'open_saved_script' , payload : ipcData.additional_info});
+        this.statusService.clear();
+      }
+
+      else if (ipcData.request_type === 'script_generation_error') {
+        const statusMsg = new StatusMsg(JSON.parse(ipcData.json_value));
+        this.statusService.show(statusMsg);
+      }
+
       else if (ipcData.request_type === 'empty_system_config_error') {
         // handle empty system config error
         console.log('Empty system config error received');
+        this.statusService.clear();
       } else {
         console.warn('Unhandled request_type:', ipcData.request_type);
+        this.statusService.clear();
       }
     } catch (error) {
       console.log('Error parsing server data:', error);
+      this.statusService.clear();
     }
-     this.statusService.clear()
   }
 
   ngOnDestroy(): void {

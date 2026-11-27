@@ -1,0 +1,13 @@
+[package]
+name = "script-templates"
+version = { workspace = true }
+edition = "2021"
+
+[dependencies]
+handlebars = { workspace = true }
+serde = { workspace = true }
+serde_yaml_ng = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+serde_json = "1.0"

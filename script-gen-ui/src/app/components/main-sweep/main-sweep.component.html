@@ -25,12 +25,22 @@
           (ok)="closeTimingDialog()"
         ></app-timing>
       </div>
-      <div>
+      <div class="script-actions">
+        <button
+          [attr.aria-label]="'SaveAsScript'"
+          class="open-script"
+          (click)="saveAsGeneratedScript()"
+          title="Choose a location and generate the script"
+        >
+          Save As
+        </button>
         <button
           [attr.aria-label]="'OpenScript'"
           class="open-script"
+          [class.script-open]="isScriptOpen"
+          [attr.aria-pressed]="isScriptOpen"
           (click)="openScript()"
-          title="Open generated script"
+          title="Regenerate and open the current session’s script"
         >
           Open Script
         </button>
@@ -283,6 +293,7 @@
             name="sweepPoints"
             automationID="SweepPoints"
             (inputChange)="updateSweepGlobalParameters()"
+            [disabled]="!hasValidSweepDevice()"
           ></app-input-numeric>
         </div>
         <!-- <div>
@@ -296,6 +307,7 @@
               [attr.aria-label]="'listSweep'"
               name="isListSweep"
               (change)="updateSweepGlobalParameters()"
+              [disabled]="!hasValidSweepDevice()"
             />
             <label
               for="list"
@@ -305,11 +317,11 @@
           </div>
           <div style="margin-top: auto; margin-bottom: 0.5vh">
             <button
-              [attr.aria-label]="!isListSweep ? 'EditSweepList-Disabled' : 'EditSweepList'"
+              [attr.aria-label]="!isListSweep || !hasValidSweepDevice() ? 'EditSweepList-Disabled' : 'EditSweepList'"
               [class.sweepList-open]="showList"
               class="timing"
               (click)="enableList()"
-              [disabled]="!isListSweep"
+              [disabled]="!isListSweep || !hasValidSweepDevice()"
             >
               Edit
             </button>
@@ -317,6 +329,7 @@
               *ngIf="showList"
               [listsWithNames]="sweepListsWithNames"
               [noOfPointsOrSteps]="sweepPoints?.value"
+              [isNoOfPointsOrSteps]="hasValidSweepDevice()"
               (closeList)="closeList()"
               (listOfPoints)="listOfSweepPointsUpdate($event)"
               (updatedStepsOrPoints)="sweepPointsUpdatefromList($event)"

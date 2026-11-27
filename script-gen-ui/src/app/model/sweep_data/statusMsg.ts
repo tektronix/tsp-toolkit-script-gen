@@ -4,10 +4,12 @@ export class StatusMsg {
   status_type: StatusType;
   message: string;
   time_stamp: string;
+  timeout_ms?: number;
 
   constructor(data: IStatusMsg) {
     this.status_type = data.status_type;
     this.message = data.message;
     this.time_stamp = data.time_stamp;
+    this.timeout_ms = data.timeout_ms;
   }
 }

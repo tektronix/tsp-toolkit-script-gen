@@ -133,6 +133,7 @@ export class MainSweepComponent implements OnChanges {
   showStepListStates: Record<string, boolean> = {}; // step list pop up box boolean tracking
   stepListPositions: Map<string, { left: number; top: number }> = new Map(); // step list positions
   @Input() sweepConfig: SweepConfig | undefined;
+  @Input() isScriptOpen = false;
 
   isBiasExpanded = false;
   isStepExpanded = false;
@@ -177,6 +178,19 @@ export class MainSweepComponent implements OnChanges {
       this.colorMap.get(
         sweepChannel.start_stop_channel.common_chan_attributes.uuid
       ) || 'gray'
+    );
+  }
+
+  hasValidSweepDevice(): boolean {
+    return (
+      this.sweepChannels.length > 0 &&
+      this.sweepChannels.every((sweepChannel) => {
+        const selectedDeviceId =
+          sweepChannel.start_stop_channel.common_chan_attributes.device_id;
+        return this.deviceList.some(
+          (device) => device._id === selectedDeviceId && device.is_valid
+        );
+      })
     );
   }
 
@@ -331,7 +345,7 @@ export class MainSweepComponent implements OnChanges {
 
   updateStatusMsg() {
     if (this.sweepConfig && this.sweepConfig.status_msg) {
-      this.statusService.showTemporary(this.sweepConfig.status_msg, 5000);
+      this.statusService.showTemporary(this.sweepConfig.status_msg, this.sweepConfig.status_msg.timeout_ms ?? 5000);
     }
   }
 
@@ -420,6 +434,11 @@ export class MainSweepComponent implements OnChanges {
 
     // Send request via WebSocket service
     this.webSocketService.send(message);
+  }
+
+  saveAsGeneratedScript() {
+    // The host asks for the destination first; generation then targets that path
+    this.webSocketService.requestSaveAsLocation();
   }
 
   updateBiasChannelsConfig(updatedBiasChannel: BiasChannel) {

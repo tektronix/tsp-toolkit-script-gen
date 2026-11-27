@@ -37,6 +37,8 @@
         <button
           [attr.aria-label]="'OpenScript'"
           class="open-script"
+          [class.script-open]="isScriptOpen"
+          [attr.aria-pressed]="isScriptOpen"
           (click)="openScript()"
           title="Regenerate and open the current session’s script"
         >

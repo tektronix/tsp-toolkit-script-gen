@@ -27,6 +27,7 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 - Source Limit I/V are now added/removed based on source function value
 - In List editing window, Tab key moves control to the next input.
 - Sweep points input, list checkbox and Edit list button disabled when any of the sweep channels are invalid.
+- Added active highlighting to the 'Open Script' button when clicked to open the corresponding script.
 
 ### Fixed
 - Waiting on more than two other channels of the same role no longer skips one of them
